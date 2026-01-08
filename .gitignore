@@ -1,9 +1,40 @@
-# Ignore everything in the root directory
-/*
+# Dependencies
+node_modules/
 
-# But don't ignore the standalone directory
-!/standalone/
+# Environment files
+.env
+.env.local
+.env.production
 
-# Don't ignore .gitignore and README.md
-!.gitignore
-!README.md
+# Database
+data/*.db
+data/*.db-journal
+data/*.db-shm
+data/*.db-wal
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+.cursor/
+*.swp
+*.swo
+
+# Build output
+dist/
+build/
+
+# Uploads (if any local)
+uploads/
+temp/
+
+# OG directory (old files)
+OG/

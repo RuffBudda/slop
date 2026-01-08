@@ -284,7 +284,7 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
 
 ```bash
 # On your Ubuntu server
-curl -sSL https://raw.githubusercontent.com/RuffBudda/slop/main/deploy.sh | bash
+curl -sSL https://raw.githubusercontent.com/RuffBudda/slop/main/standalone/deploy.sh | bash
 ```
 
 ### Docker (Coming Soon)
@@ -307,6 +307,29 @@ Docker support is planned for future releases.
 | `SPACES_SECRET` | DO Spaces secret key | No* |
 
 *Can be configured via Settings UI instead
+
+## Troubleshooting
+
+### Database Errors
+
+Reset the database:
+```bash
+rm -rf data/slop.db
+npm run migrate
+```
+
+### Port Already in Use
+
+Change the port in `.env`:
+```env
+PORT=3001
+```
+
+### API Key Issues
+
+1. Check keys are correctly set in Settings
+2. Use the "Test" buttons to verify connectivity
+3. Check API quotas and billing
 
 ## 🐛 Troubleshooting
 
