@@ -1,0 +1,1244 @@
+<!--
+    ============================================================
+    TAB-CONTENT.HTML - Content Tab JavaScript
+    ============================================================
+    
+    This file contains the JavaScript code for the Content tab when running
+    as a Google Apps Script web app. It handles:
+    - Loading posts with status "Generated" from Google Sheets
+    - Displaying posts in a card-based interface
+    - Approving/rejecting posts
+    - Editing content variants inline
+    - Selecting images (single or multiple)
+    - Uploading custom images
+    - Scheduling posts
+    
+    ARCHITECTURE:
+    - Uses google.script.run to call server-side functions in Code.gs
+    - Single-user application (no sheet switching)
+    - Card-based UI with Prev/Next navigation
+    - Real-time updates via caching system
+    - Spinner animations replace GIFs for better performance
+    
+    ============================================================
+-->
+
+<script>
+(function(){
+  'use strict';
+  
+  // ============================================================
+  // OVERLAY HELPERS - Content Generation Feedback
+  // ============================================================
+  // Functions for showing/hiding the "Generating Content" overlay
+  // that appears when AI is creating new posts via n8n webhook.
+  
+  /**
+   * Sets the visibility of the generating overlay with spinner.
+   * 
+   * Shows or hides a full-screen overlay indicating that content
+   * is being generated. This provides visual feedback during AI processing.
+   * Uses a CSS spinner instead of GIF for better performance.
+   * 
+   * @param {boolean} isVisible - Whether to show the overlay
+   * @param {string} text - Optional text to display below spinner
+   * 
+   * @example
+   * setGeneratingOverlayVisible(true, 'Generating content...');
+   * // Shows overlay with spinner and text
+   */
+  function setGeneratingOverlayVisible(isVisible, text) {
+    let overlay = document.querySelector('.generatingOverlay');
+    
+    // Create overlay if it doesn't exist
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.className = 'generatingOverlay';
+      // Use spinner instead of GIF
+      overlay.innerHTML = `
+        <div class="spinner-container">
+          <div class="spinner"></div>
+        </div>
+        <div class="text">Generating Content...</div>
+      `;
+      document.body.appendChild(overlay);
+    }
+
+    // Update text if provided
+    const label = overlay.querySelector('.text');
+    if (label && text) {
+      label.textContent = text;
+    }
+
+    // Show or hide overlay
+    if (isVisible) {
+      overlay.classList.add('show');
+      document.body.style.overflow = 'hidden';  // Prevent scrolling
+    } else {
+      overlay.classList.remove('show');
+      document.body.style.overflow = '';  // Restore scrolling
+    }
+  }
+
+  /**
+   * Polls the server to check if content generation is still in progress.
+   * 
+   * This function checks every 5 seconds if there are any rows with
+   * status "Queue" (indicating generation is in progress). When all
+   * Queue rows are processed, it hides the overlay and refreshes data.
+   * 
+   * @param {string} sheetName - Sheet name (uses default for single-user app)
+   * 
+   * @example
+   * startGenerationWatcher('Automated Content');
+   * // Starts polling every 5 seconds until generation completes
+   */
+  function startGenerationWatcher(sheetName) {
+    // Validate Google Apps Script is available
+    if (!window.google || !google.script) return;
+
+    // Clear existing timer if any
+    if (window._genPollTimer) {
+      clearInterval(window._genPollTimer);
+    }
+
+    // Poll every 5 seconds
+    window._genPollTimer = setInterval(function () {
+      google.script.run
+        .withSuccessHandler(function (o) {
+          // If no Queue rows exist, generation is finished
+          if (!o || !o.running) {
+            clearInterval(window._genPollTimer);
+            window._genPollTimer = null;
+
+            // Hide overlay and refresh content
+            setGeneratingOverlayVisible(false);
+            if (window.clearCache) window.clearCache();
+            window.fetchData();
+          }
+        })
+        .withFailureHandler(function (e) {
+          console.log('isGenerationInProgress error', e && e.message);
+        })
+        .isGenerationInProgress(sheetName);
+    }, 5000); // Poll every 5 seconds
+  }
+
+  // ============================================================
+  // DOM ELEMENT REFERENCES
+  // ============================================================
+  // Cache references to frequently accessed DOM elements
+  
+  const contentCards = document.getElementById('contentCards') || 
+                       document.querySelector('#contentTab .cards') ||
+                       document.querySelector('.cards');
+  
+  // Validate contentCards element exists
+  if (!contentCards) {
+    console.error('ERROR: contentCards element not found in DOM!');
+    console.log('Available elements:', document.querySelectorAll('[id]'));
+    return;
+  }
+  
+  // Get global state
+  const { cache, initial } = window.AppState || {};
+  
+  // ============================================================
+  // STATE MANAGEMENT
+  // ============================================================
+  // Track current card index and all loaded rows
+  
+  let currentCardIndex = 0;  // Index of currently displayed card (0-based)
+  let allRows = [];          // Array of all post rows loaded from server
+  
+  // ============================================================
+  // DATA FETCHING
+  // ============================================================
+  
+  /**
+   * Fetches posts with status "generated" from the server.
+   * 
+   * This function:
+   * 1. Checks cache first (if valid, uses cached data)
+   * 2. Calls server-side getContentFromSheet() function
+   * 3. Updates cache with new data
+   * 4. Renders content cards
+   * 
+   * Uses default sheet name for single-user application.
+   * 
+   * @example
+   * window.fetchData();
+   * // Fetches and displays generated posts
+   */
+  window.fetchData = function() {
+    // Use default sheet name (single-user app)
+    const sheetName = (window.AppState && window.AppState.activeSheet) || 'Automated Content';
+    const key = sheetName; // Cache key per sheet
+
+    // Check if cached data is still valid
+    if (
+      window.isCacheValid &&
+      window.isCacheValid('content') &&
+      cache &&
+      cache.content &&
+      cache.content.sheet === key
+    ) {
+      // Use cached data
+      renderContent(cache.content.data);
+      return;
+    }
+    
+    // Validate Google Apps Script is available
+    if (typeof google === 'undefined' || !google.script) {
+      console.error('Google Apps Script not available');
+      showEmptyState();
+      return;
+    }
+    
+    // Fetch data from server
+    google.script.run
+      .withSuccessHandler(function (o) {
+        // Cache the data
+        if (window.setCache) {
+          window.setCache('content', o, { sheet: key });
+        }
+        renderContent(o);
+      })
+      .withFailureHandler(function (e) {
+        // Hide loading indicator
+        if (initial) initial.classList.add('hidden');
+        
+        // Hide app loader if it exists
+        const appLoader = document.getElementById('appLoader');
+        if (appLoader) {
+          setTimeout(() => {
+            appLoader.classList.add('hidden');
+          }, 300);
+        }
+        
+        // Show empty state with error message
+        showEmptyState();
+        if (window.showToast) {
+          window.showToast(
+            'Error loading content. Click Generate to start.',
+            'bad'
+          );
+        }
+      })
+      .getContentFromSheet(sheetName); // Uses default sheet
+  };
+  
+  /**
+   * Renders content cards from server data.
+   * 
+   * Processes the data returned from getContentFromSheet() and:
+   * 1. Hides loading indicator
+   * 2. Shows empty state if no rows
+   * 3. Stores rows in allRows array
+   * 4. Updates dock navigation
+   * 5. Shows first card
+   * 
+   * @param {Object} o - Response object from getContentFromSheet()
+   *   - rows: Array of post objects
+   *   - msg: Optional message string
+   * 
+   * @example
+   * renderContent({rows: [...], msg: ''});
+   * // Renders posts and shows first card
+   */
+  function renderContent(o) {
+    // Hide initial loading indicator
+    if (initial) initial.classList.add('hidden');
+    
+    // Hide app loader if it exists
+    const appLoader = document.getElementById('appLoader');
+    if (appLoader) {
+      setTimeout(() => {
+        appLoader.classList.add('hidden');
+      }, 300);
+    }
+    
+    // Check if we have rows to display
+    if (!o || !o.rows || o.rows.length === 0) {
+      showEmptyState();
+      if (typeof window.updateDock === 'function') {
+        window.updateDock([]);
+      }
+      allRows = [];
+      return;
+    }
+    
+    // Store rows and reset card index
+    allRows = o.rows;
+    currentCardIndex = 0;
+    
+    // Update dock with post IDs for navigation
+    if (typeof window.updateDock === 'function') {
+      window.updateDock(allRows);
+    }
+    
+    // Show first card
+    showCard(currentCardIndex);
+  }
+  
+  /**
+   * Shows empty state when no posts are available.
+   * 
+   * Displays a message and conditionally shows "Generate Content" button
+   * only if there are NO "Queue" status rows (so status is null, Approved, Rejected, or generated).
+   * Otherwise shows a "come back" message. Uses spinner instead of GIF for loading indicator.
+   * 
+   * Button is shown only when:
+   * - No "Queue" status exists (so status is null, Approved, Rejected, or generated)
+   * 
+   * @param {boolean} showComeBackMessage - If true, show "come back" message instead of button
+   * @example
+   * showEmptyState();
+   * // Shows empty state UI with button or "come back" message
+   */
+  function showEmptyState(showComeBackMessage) {
+    if (!contentCards) return;
+    
+    const sheetName = (window.AppState && window.AppState.activeSheet) || 'Automated Content';
+    
+    if (showComeBackMessage === true) {
+      // Show "come back" message without button
+      contentCards.innerHTML = `
+        <div class="emptyState">
+          <div class="spinner-container">
+            <div class="spinner"></div>
+          </div>
+          <h2>No Content to Review</h2>
+          <p>Come back in some time to view generated posts</p>
+        </div>
+      `;
+      return;
+    }
+    
+    // Check backend: only check for "Queue" status
+    if (typeof google !== 'undefined' && google.script) {
+      // Check if generation is in progress (has "Queue" status)
+      google.script.run
+        .withSuccessHandler(function (genStatus) {
+          if (!contentCards) return;
+          
+          // If there are "Queue" rows, don't show button (show "come back" message)
+          if (genStatus && genStatus.running) {
+            contentCards.innerHTML = `
+              <div class="emptyState">
+                <div class="spinner-container">
+                  <div class="spinner"></div>
+                </div>
+                <h2>No Content to Review</h2>
+                <p>Come back in some time to view generated posts</p>
+              </div>
+            `;
+          } else {
+            // No Queue status - show button (status is null, Approved, Rejected, or generated)
+            contentCards.innerHTML = `
+              <div class="emptyState">
+                <div class="spinner-container">
+                  <div class="spinner"></div>
+                </div>
+                <h2>No Content to Review</h2>
+                <p>Generate fresh content to get started with reviewing and approving posts</p>
+                <button class="btn approve" data-role="generate" onclick="window.generateContent()">
+                  <span class="ico"></span> Generate Content
+                </button>
+              </div>
+            `;
+          }
+        })
+        .withFailureHandler(function (e) {
+          // On error checking Queue status, default to showing button (safer default)
+          if (!contentCards) return;
+          contentCards.innerHTML = `
+            <div class="emptyState">
+              <div class="spinner-container">
+                <div class="spinner"></div>
+              </div>
+              <h2>No Content to Review</h2>
+              <p>Generate fresh content to get started with reviewing and approving posts</p>
+              <button class="btn approve" data-role="generate" onclick="window.generateContent()">
+                <span class="ico"></span> Generate Content
+              </button>
+            </div>
+          `;
+        })
+        .isGenerationInProgress(sheetName);
+    } else {
+      // Google Apps Script not available - default to showing button
+      contentCards.innerHTML = `
+        <div class="emptyState">
+          <div class="spinner-container">
+            <div class="spinner"></div>
+          </div>
+          <h2>No Content to Review</h2>
+          <p>Generate fresh content to get started with reviewing and approving posts</p>
+          <button class="btn approve" data-role="generate" onclick="window.generateContent()">
+            <span class="ico"></span> Generate Content
+          </button>
+        </div>
+      `;
+    }
+  }
+
+  /**
+   * Updates the state of all "Generate" buttons.
+   * 
+   * Enables/disables generate buttons and updates their text
+   * to indicate loading state.
+   * 
+   * @param {boolean} isLoading - Whether generation is in progress
+   * 
+   * @example
+   * setGenerateButtonState(true);
+   * // Disables buttons and shows "Generating..." text
+   */
+  function setGenerateButtonState(isLoading) {
+    const btns = document.querySelectorAll('button[data-role="generate"]');
+    btns.forEach((btn) => {
+      btn.disabled = !!isLoading;
+
+      if (isLoading) {
+        btn.classList.add('is-loading');
+        btn.innerHTML = '<span class="ico"></span> Generating...';
+      } else {
+        btn.classList.remove('is-loading');
+        btn.innerHTML = '<span class="ico"></span> Generate Content';
+      }
+    });
+  }
+  
+  /**
+   * Generates new content by queuing posts and triggering n8n webhook.
+   * 
+   * This function:
+   * 1. Immediately hides the button and shows "come back" message
+   * 2. Shows generating overlay with spinner
+   * 3. Queues next 10 posts (via queueNextTen)
+   * 4. Triggers n8n webhook to start generation
+   * 5. Starts polling to detect when generation completes
+   * 
+   * Uses default sheet name for single-user application.
+   * 
+   * @example
+   * window.generateContent();
+   * // Queues posts and triggers content generation
+   */
+  window.generateContent = function () {
+    // Use default sheet name
+    const sheetName = (window.AppState && window.AppState.activeSheet) || 'Automated Content';
+
+    // Immediately hide button and show "come back" message
+    showEmptyState(true);
+
+    // Show generating overlay
+    setGeneratingOverlayVisible(true, 'Generating content...');
+
+    // Validate Google Apps Script is available
+    if (typeof google === 'undefined' || !google.script) {
+      setGeneratingOverlayVisible(false);
+      window.showToast('Google Apps Script not available', 'bad');
+      return;
+    }
+
+    // Step 1: Queue next posts in Sheets
+    google.script.run
+      .withSuccessHandler(function (result) {
+        if (result.queued > 0) {
+          window.showToast(`Queued ${result.queued} posts`, 'ok');
+        } else {
+          window.showToast('No posts available to queue', 'bad');
+        }
+
+        // Step 2: Trigger n8n webhook (which processes Queue rows)
+        google.script.run
+          .withSuccessHandler(function () {
+            // Webhook finished ⇒ whole workflow finished
+            setGeneratingOverlayVisible(false);
+            window.showToast('Workflow completed', 'ok');
+            if (window.clearCache) window.clearCache();
+            window.fetchData();
+          })
+          .withFailureHandler(function (e) {
+            setGeneratingOverlayVisible(false);
+            window.showToast('Webhook error: ' + e.message, 'bad');
+          })
+          .triggerN8NWebhook(sheetName);
+
+        // Also start a watcher in case page gets reloaded mid-run
+        startGenerationWatcher(sheetName);
+      })
+      .withFailureHandler(function (e) {
+        setGeneratingOverlayVisible(false);
+        window.showToast('Error: ' + e.message, 'bad');
+      })
+      .queueNextTen(sheetName);
+  };
+  
+  /**
+   * Displays a specific card by index.
+   * 
+   * Shows the card at the given index in the allRows array.
+   * Updates dock highlight and builds the card HTML.
+   * 
+   * @param {number} index - 0-based index of card to show
+   * 
+   * @example
+   * showCard(0);  // Shows first card
+   * showCard(5);  // Shows sixth card
+   */
+  function showCard(index) {
+    // Validate index and rows
+    if (!allRows || allRows.length === 0) {
+      showEmptyState();
+      return;
+    }
+    
+    if (index < 0 || index >= allRows.length) return;
+    
+    // Get row data and build card
+    const row = allRows[index];
+    const card = buildCard(row, index);
+    
+    // Replace content with new card
+    contentCards.innerHTML = '';
+    contentCards.appendChild(card);
+    
+    // Update dock highlight
+    if (typeof window.highlightDockItem === 'function') {
+      window.highlightDockItem(row.id);
+    }
+  }
+  
+  /**
+   * Builds a card element for a post row.
+   * 
+   * Creates the complete HTML structure for a post card including:
+   * - Header with ID, type, and card position
+   * - Variants section (3 content variants with radio selection)
+   * - Images section (3 images with multi-select capability)
+   * - Upload functionality for custom images
+   * - Actions footer (Prev/Next, Schedule, Approve/Reject)
+   * 
+   * @param {Object} row - Post row data from server
+   * @param {number} index - 0-based index of this card
+   * @returns {HTMLElement} Complete card DOM element
+   * 
+   * @example
+   * const card = buildCard(rowData, 0);
+   * contentCards.appendChild(card);
+   */
+  function buildCard(row, index) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.dataset.rowIndex = row.rowIndex;
+    card.dataset.cardIndex = index;
+    
+    // ============================================================
+    // CARD HEADER
+    // ============================================================
+    const header = document.createElement('div');
+    header.className = 'header';
+      header.innerHTML = 
+        '<div class="left">' +
+        '<span class="chip">ID: <b>' + row.id + '</b></span>' +
+        '<span class="chip">Card ' + (index + 1) + ' of ' + allRows.length + '</span>' +
+        '</div>';
+    
+    // ============================================================
+    // CARD CONTENT SECTION (Variants + Images)
+    // ============================================================
+    const section = document.createElement('div');
+    section.className = 'content';
+    
+    // Unique radio name for this card's variants
+    const radioName = 'v-' + row.rowIndex;
+    
+    // ============================================================
+    // VARIANTS SECTION
+    // ============================================================
+    const variants = document.createElement('div');
+    variants.className = 'variants';
+    
+    // Create variant elements for variant_1, variant_2, variant_3
+    ['variant_1', 'variant_2', 'variant_3'].forEach((vk, idx) => {
+      const vDiv = document.createElement('div');
+      vDiv.className = 'variant';
+      
+      // Mark as selected if this variant was previously chosen
+      if (String(row.choice) === String(idx + 1)) {
+        vDiv.classList.add('selected');
+      }
+
+      // Radio button for variant selection
+      const radio = document.createElement('input');
+      radio.type = 'radio';
+      radio.name = radioName;
+      radio.checked = String(row.choice) === String(idx + 1);
+
+      // Edit button
+      const editBtn = document.createElement('button');
+      editBtn.className = 'btn editBtn';
+      editBtn.innerHTML = '✏ Edit';
+      
+      // Text display div (read-only view)
+      const textDiv = document.createElement('div');
+      textDiv.className = 'text';
+      textDiv.textContent = row[vk] || '';
+      
+      // Textarea (edit mode)
+      const textarea = document.createElement('textarea');
+      textarea.value = row[vk] || '';
+      textarea.className = 'variantTextarea';
+      textarea.style.display = 'none';
+      
+      // Edit actions (Save/Cancel buttons)
+      const editActions = document.createElement('div');
+      editActions.className = 'editActions';
+      editActions.style.display = 'none';
+      
+      const saveBtn = document.createElement('button');
+      saveBtn.className = 'btn approve';
+      saveBtn.innerHTML = '<span class="ico"></span> Save';
+      saveBtn.style.fontSize = '13px';
+      saveBtn.style.padding = '6px 12px';
+      
+      const cancelBtn = document.createElement('button');
+      cancelBtn.className = 'btn clear';
+      cancelBtn.innerHTML = '<span class="ico"></span> Cancel';
+      cancelBtn.style.fontSize = '13px';
+      cancelBtn.style.padding = '6px 12px';
+      
+      editActions.appendChild(saveBtn);
+      editActions.appendChild(cancelBtn);
+
+      // Build variant HTML structure
+      vDiv.innerHTML = 
+        '<div class="controls">' +
+        '<div class="title">Variant ' + (idx + 1) + '</div>' +
+        '<div class="rightCtrls"></div>' +
+        '</div>';
+      
+      // Append controls
+      vDiv.querySelector('.rightCtrls').appendChild(radio);
+      vDiv.querySelector('.rightCtrls').appendChild(editBtn);
+      vDiv.appendChild(textDiv);
+      vDiv.appendChild(textarea);
+      vDiv.appendChild(editActions);
+
+      // ============================================================
+      // VARIANT CLICK HANDLER - Select variant
+      // ============================================================
+      vDiv.onclick = function(e) {
+        // Don't trigger selection when clicking edit buttons
+        if (e.target === editBtn || editBtn.contains(e.target)) return;
+        if (e.target === saveBtn || saveBtn.contains(e.target)) return;
+        if (e.target === cancelBtn || cancelBtn.contains(e.target)) return;
+        
+        // Select this variant
+        radio.checked = true;
+        variants.querySelectorAll('.variant').forEach(v => v.classList.remove('selected'));
+        vDiv.classList.add('selected');
+      };
+
+      // ============================================================
+      // EDIT BUTTON HANDLER - Enter edit mode
+      // ============================================================
+      editBtn.onclick = function(e) {
+        e.stopPropagation();
+        textDiv.style.display = 'none';
+        textarea.style.display = 'block';
+        editActions.style.display = 'flex';
+        editBtn.style.display = 'none';
+        textarea.focus();
+      };
+      
+      // ============================================================
+      // CANCEL BUTTON HANDLER - Exit edit mode without saving
+      // ============================================================
+      cancelBtn.onclick = function(e) {
+        e.stopPropagation();
+        // Restore original value
+        textarea.value = row[vk] || '';
+        textarea.style.display = 'none';
+        textDiv.style.display = 'block';
+        editActions.style.display = 'none';
+        editBtn.style.display = 'inline-flex';
+      };
+      
+      // ============================================================
+      // SAVE BUTTON HANDLER - Save edited variant to server
+      // ============================================================
+      saveBtn.onclick = function(e) {
+        e.stopPropagation();
+        saveBtn.disabled = true;
+        cancelBtn.disabled = true;
+        saveBtn.style.opacity = '0.5';
+        saveBtn.innerHTML = '<span class="ico"></span> Saving...';
+        
+        // Call server to update variant
+        google.script.run
+          .withSuccessHandler(function(){
+            // Update display
+            textDiv.textContent = textarea.value;
+            textarea.style.display = 'none';
+            textDiv.style.display = 'block';
+            editActions.style.display = 'none';
+            editBtn.style.display = 'inline-flex';
+            saveBtn.disabled = false;
+            cancelBtn.disabled = false;
+            saveBtn.style.opacity = '1';
+            saveBtn.innerHTML = '<span class="ico"></span> Save';
+            
+            // Add edited indicator badge
+            const editedBadge = vDiv.querySelector('.editedBadge');
+            if (!editedBadge) {
+              const badge = document.createElement('span');
+              badge.className = 'chip editedBadge';
+              badge.style.fontSize = '11px';
+              badge.style.background = '#fff3cd';
+              badge.style.borderColor = '#ffc107';
+              badge.innerHTML = '✓ Edited';
+              vDiv.querySelector('.controls .rightCtrls').insertBefore(badge, radio);
+            }
+            
+            window.showToast('Updated', 'ok');
+            window.clearCache('content');
+          })
+          .withFailureHandler(function(e){
+            saveBtn.disabled = false;
+            cancelBtn.disabled = false;
+            saveBtn.style.opacity = '1';
+            saveBtn.innerHTML = '<span class="ico"></span> Save';
+            window.showToast('Error: ' + e.message, 'bad');
+          })
+          .updateVariant(
+            row.rowIndex,
+            idx + 1,
+            textarea.value,
+            (window.AppState && window.AppState.activeSheet) || 'Automated Content');
+      };
+
+      variants.appendChild(vDiv);
+    });
+
+    // ============================================================
+    // IMAGES SECTION + UPLOAD FUNCTIONALITY
+    // ============================================================
+    const images = document.createElement('div');
+    images.className = 'images';
+
+    // Track if custom images have been uploaded for this row
+    let hasUploadedImages = !!row.additional_img;
+
+    // ============================================================
+    // UPLOAD BAR
+    // ============================================================
+    const uploadBar = document.createElement('div');
+    uploadBar.className = 'imgUploadBar';
+    uploadBar.style.display = 'flex';
+    uploadBar.style.justifyContent = 'flex-end';
+    uploadBar.style.marginBottom = '6px';
+    uploadBar.style.gap = '8px';
+
+    const uploadBtn = document.createElement('button');
+    uploadBtn.className = 'btn clear';
+    uploadBtn.style.fontSize = '12px';
+    uploadBtn.style.padding = '4px 10px';
+    uploadBtn.textContent = '⇪ Upload images';
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.multiple = true;
+    fileInput.style.display = 'none';
+
+    uploadBar.appendChild(uploadBtn);
+    uploadBar.appendChild(fileInput);
+    images.appendChild(uploadBar);
+
+    // Upload button click handler
+    uploadBtn.onclick = function (e) {
+      e.stopPropagation();
+      fileInput.click();
+    };
+
+    // File input change handler
+    fileInput.onchange = function () {
+      const files = Array.from(fileInput.files || []);
+      if (!files.length) return;
+
+      // Show upload overlay with spinner
+      const overlay = document.createElement('div');
+      overlay.className = 'imgUploadOverlay';
+      overlay.style.position = 'absolute';
+      overlay.style.inset = '0';
+      overlay.style.display = 'flex';
+      overlay.style.alignItems = 'center';
+      overlay.style.justifyContent = 'center';
+      overlay.style.background = 'rgba(255,255,255,0.8)';
+      overlay.style.zIndex = '5';
+      overlay.innerHTML = '<div class="spinner-container"><div class="spinner"></div></div><div style="padding:10px 16px;border-radius:999px;border:1px solid #ddd;background:#fff;font-size:13px;margin-top:10px;">Uploading...</div>';
+
+      images.style.position = 'relative';
+      images.appendChild(overlay);
+
+      // Read files as base64
+      const readers = files.map(f => new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = ev => {
+          const base64 = String(ev.target.result).split(',')[1]; // Remove data: prefix
+          resolve({ name: f.name, type: f.type, data: base64 });
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(f);
+      }));
+
+      // Upload all files
+      Promise.all(readers)
+        .then(payloadFiles => {
+          const sheetName = (window.AppState && window.AppState.activeSheet) || 'Automated Content';
+
+          google.script.run
+            .withSuccessHandler(res => {
+              if (images.contains(overlay)) images.removeChild(overlay);
+              fileInput.value = '';
+
+              if (res && res.ok) {
+                window.showToast(
+                  'Uploaded ' + (res.urls ? res.urls.length : payloadFiles.length) + ' image(s)',
+                  'ok'
+                );
+
+                // Mark as having custom images
+                hasUploadedImages = true;
+                row.additional_img = (res.urls || []).join(', ');
+
+                // Clear old image selections
+                images.querySelectorAll('.imgCell').forEach(c => {
+                  c.classList.remove('selected');
+                  c.classList.add('disabled');
+                });
+              } else {
+                window.showToast(
+                  'Upload failed: ' + (res && res.message ? res.message : ''),
+                  'bad'
+                );
+              }
+            })
+            .withFailureHandler(err => {
+              if (images.contains(overlay)) images.removeChild(overlay);
+              fileInput.value = '';
+              window.showToast('Error: ' + err.message, 'bad');
+            })
+            .saveAdditionalImages(row.rowIndex, payloadFiles, sheetName);
+        })
+        .catch(err => {
+          if (images.contains(overlay)) images.removeChild(overlay);
+          fileInput.value = '';
+          window.showToast('Error reading files: ' + err, 'bad');
+        });
+    };
+
+    // ============================================================
+    // EXISTING IMAGES (from generated content)
+    // ============================================================
+    ['image_url_1', 'image_url_2', 'image_url_3'].forEach((ik, idx) => {
+      const url = row[ik];
+      if (!url || String(url).trim() === '') return;
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'imgCell';
+      wrapper.dataset.imageIndex = idx + 1;
+
+      // Check if this image is selected
+      const imgChoice = String(row.img_choice || '');
+      const selectedIndices = imgChoice.split(',').map(s => s.trim()).filter(Boolean);
+      if (selectedIndices.includes(String(idx + 1))) {
+        wrapper.classList.add('selected');
+      }
+
+      // Create image element
+      const img = document.createElement('img');
+      // Convert Google Drive URLs to working format (use global function from utils.html)
+      img.src = (typeof window.convertGoogleDriveUrl === 'function') 
+        ? window.convertGoogleDriveUrl(url) 
+        : String(url).trim();
+      img.alt = 'Image ' + (idx + 1);
+      img.loading = 'lazy';
+      img.onerror = function() {
+        console.error('Failed to load image:', url);
+        const errorMsg = document.createElement('div');
+        errorMsg.className = 'imgError';
+        errorMsg.textContent = 'Image failed to load';
+        wrapper.innerHTML = '';
+        wrapper.appendChild(errorMsg);
+      };
+
+      // Selection badge (shown when selected)
+      const selectBadge = document.createElement('div');
+      selectBadge.className = 'selectBadge';
+      selectBadge.innerHTML = '✓';
+
+      // Number badge (shown when not selected)
+      const numberBadge = document.createElement('div');
+      numberBadge.className = 'numberBadge';
+      numberBadge.textContent = idx + 1;
+
+      // Open in new tab link (use original URL for link, converted URL for display)
+      const overlayLink = document.createElement('a');
+      overlayLink.className = 'imgOverlay';
+      overlayLink.href = String(url).trim(); // Keep original URL for link
+      overlayLink.target = '_blank';
+      overlayLink.rel = 'noopener';
+      overlayLink.innerHTML = '↗ Open';
+      overlayLink.onclick = e => e.stopPropagation();
+
+      // Image click handler - toggle selection
+      wrapper.onclick = function(e) {
+        if (e.target === overlayLink || overlayLink.contains(e.target)) return;
+        // Ignore clicks if custom images uploaded
+        if (hasUploadedImages) return;
+        wrapper.classList.toggle('selected');
+      };
+
+      wrapper.appendChild(img);
+      wrapper.appendChild(selectBadge);
+      wrapper.appendChild(numberBadge);
+      wrapper.appendChild(overlayLink);
+      images.appendChild(wrapper);
+    });
+
+    // Add images section to content
+    if (images.children.length > 0) {
+      section.appendChild(variants);
+      section.appendChild(images);
+    } else {
+      section.appendChild(variants);
+      const noImages = document.createElement('div');
+      noImages.className = 'images';
+      noImages.innerHTML = '<div style="padding:20px;text-align:center;color:#999;border:1px dashed var(--bd2);border-radius:12px">No images available</div>';
+      section.appendChild(noImages);
+    }
+
+    // ============================================================
+    // ACTIONS FOOTER
+    // ============================================================
+    const actions = document.createElement('div');
+    actions.className = 'actions';
+
+    // Navigation buttons (left)
+    const navBtns = document.createElement('div');
+    navBtns.style.display = 'flex';
+    navBtns.style.gap = '8px';
+
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'btn navBtn';
+    prevBtn.innerHTML = '‹ Prev';
+    prevBtn.disabled = currentCardIndex === 0;
+    prevBtn.onclick = function() {
+      if (currentCardIndex > 0) {
+        currentCardIndex--;
+        showCard(currentCardIndex);
+      }
+    };
+
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'btn navBtn';
+    nextBtn.innerHTML = 'Next ›';
+    nextBtn.disabled = currentCardIndex === allRows.length - 1;
+    nextBtn.onclick = function() {
+      if (currentCardIndex < allRows.length - 1) {
+        currentCardIndex++;
+        showCard(currentCardIndex);
+      }
+    };
+
+    navBtns.appendChild(prevBtn);
+    navBtns.appendChild(nextBtn);
+    
+    // Schedule input (middle)
+    const schedWrap = document.createElement('div');
+    schedWrap.style.flex = '1';
+    schedWrap.style.display = 'flex';
+    schedWrap.style.justifyContent = 'center';
+    
+    const schedInput = document.createElement('input');
+    schedInput.type = 'datetime-local';
+    schedInput.className = 'scheduleInput';
+    schedInput.required = true;
+    
+    // Set minimum date to now
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    schedInput.min = now.toISOString().slice(0, 16);
+    
+    // Set existing schedule if present
+    if (row.post_schedule) {
+      schedInput.value = row.post_schedule.replace(' ', 'T');
+    }
+    
+    schedWrap.appendChild(schedInput);
+
+    // Action buttons (right)
+    const rightBtns = document.createElement('div');
+    rightBtns.style.display = 'flex';
+    rightBtns.style.gap = '8px';
+
+    // Clear button
+    const clearBtn = document.createElement('button');
+    clearBtn.className = 'btn clear';
+    clearBtn.innerHTML = '<span class="ico"></span> Clear';
+    clearBtn.onclick = function() {
+      variants.querySelectorAll('.variant').forEach(v => v.classList.remove('selected'));
+      variants.querySelectorAll('input[type="radio"]').forEach(r => r.checked = false);
+      images.querySelectorAll('.imgCell').forEach(c => c.classList.remove('selected'));
+      schedInput.value = '';
+    };
+
+    // Reject button
+    const rejectBtn = document.createElement('button');
+    rejectBtn.className = 'btn reject';
+    rejectBtn.innerHTML = '<span class="ico"></span> Reject';
+    rejectBtn.onclick = function() {
+      // Show processing overlay with spinner
+      card.classList.add('processing');
+      document.body.classList.add('processing');
+      
+      google.script.run
+        .withSuccessHandler(function(){
+          card.classList.remove('processing');
+          document.body.classList.remove('processing');
+          window.showToast('Rejected', 'bad');
+          window.clearCache();
+          window.fetchData();
+        })
+        .withFailureHandler(function(e){
+          card.classList.remove('processing');
+          document.body.classList.remove('processing');
+          window.showToast('Error: ' + e.message, 'bad');
+        })
+        .rejectPost(
+          row.rowIndex,
+          getSelectedVariant(variants),
+          getSelectedImage(images),
+          (window.AppState && window.AppState.activeSheet) || 'Automated Content');
+    };
+
+    // Approve button
+    const approveBtn = document.createElement('button');
+    approveBtn.className = 'btn approve';
+    approveBtn.innerHTML = '<span class="ico"></span> Approve';
+    approveBtn.onclick = function() {
+      const choice = getSelectedVariant(variants);
+      const imgChoice = getSelectedImage(images);
+      const schedule = schedInput.value;
+
+      // Validate selections
+      if (!choice) {
+        window.showToast('Please select a variant', 'bad');
+        return;
+      }
+      // Allow approve if either generated image chosen OR custom images exist
+      if (!imgChoice && !hasUploadedImages) {
+        window.showToast('Please select at least one image or upload custom images', 'bad');
+        return;
+      }
+      if (!schedule) {
+        window.showToast('Schedule is required', 'bad');
+        schedInput.focus();
+        return;
+      }
+
+      // Validate schedule is in future
+      const schedDate = new Date(schedule);
+      if (schedDate < new Date()) {
+        window.showToast('Schedule must be in the future', 'bad');
+        schedInput.focus();
+        return;
+      }
+
+      // Show processing overlay with spinner
+      card.classList.add('processing');
+      document.body.classList.add('processing');
+      
+      google.script.run
+        .withSuccessHandler(function(){
+          card.classList.remove('processing');
+          document.body.classList.remove('processing');
+          window.showToast('Approved!', 'ok');
+          window.clearCache();
+          window.fetchData();
+        })
+        .withFailureHandler(function(e){
+          card.classList.remove('processing');
+          document.body.classList.remove('processing');
+          window.showToast('Error: ' + e.message, 'bad');
+        })
+        .updateChoices(
+          row.rowIndex,
+          choice,
+          imgChoice,
+          schedule.replace('T', ' '),
+          (window.AppState && window.AppState.activeSheet) || 'Automated Content');
+    };
+
+    rightBtns.appendChild(clearBtn);
+    rightBtns.appendChild(rejectBtn);
+    rightBtns.appendChild(approveBtn);
+
+    actions.appendChild(navBtns);
+    actions.appendChild(schedWrap);
+    actions.appendChild(rightBtns);
+
+    card.appendChild(header);
+    card.appendChild(section);
+    card.appendChild(actions);
+
+    return card;
+  }
+  
+  /**
+   * Gets the selected variant number from variants container.
+   * 
+   * @param {HTMLElement} variantsDiv - Variants container element
+   * @returns {string} Selected variant number ("1", "2", or "3") or empty string
+   * 
+   * @example
+   * const choice = getSelectedVariant(variants);
+   * // Returns "2" if variant 2 is selected
+   */
+  function getSelectedVariant(variantsDiv) {
+    const checked = variantsDiv.querySelector('input[type="radio"]:checked');
+    if (!checked) return '';
+    return String(Array.from(variantsDiv.querySelectorAll('input[type="radio"]')).indexOf(checked) + 1);
+  }
+
+  /**
+   * Gets the selected image indices from images container.
+   * 
+   * Returns comma-separated list of image indices (e.g., "1,2" or "1,2,3").
+   * 
+   * @param {HTMLElement} imagesDiv - Images container element
+   * @returns {string} Comma-separated image indices or empty string
+   * 
+   * @example
+   * const imgChoice = getSelectedImage(images);
+   * // Returns "1,3" if images 1 and 3 are selected
+   */
+  function getSelectedImage(imagesDiv) {
+    const selected = imagesDiv.querySelectorAll('.imgCell.selected');
+    if (!selected.length) return '';
+    
+    // Return comma-separated list of indices
+    const indices = Array.from(selected).map(el => el.dataset.imageIndex).filter(Boolean);
+    return indices.join(',');
+  }
+  
+  /**
+   * Jumps to a specific card by post ID.
+   * 
+   * Used by dock navigation to jump directly to a post.
+   * 
+   * @param {string|number} id - Post ID to jump to
+   * 
+   * @example
+   * window.jumpToCardById('POST-123');
+   * // Jumps to card with ID 'POST-123'
+   */
+  window.jumpToCardById = function(id) {
+    if (!allRows || !allRows.length) return;
+    const idx = allRows.findIndex(r => String(r.id) === String(id));
+    if (idx === -1) return;
+
+    currentCardIndex = idx;
+    showCard(currentCardIndex);
+  };
+
+  /**
+   * Renders content from external source (used by sheet switching).
+   * 
+   * Maintains compatibility with caching system.
+   * 
+   * @param {Object} o - Response object from getContentFromSheet()
+   */
+  window.renderGeneratedContent = function(o) {
+    renderContent(o);
+    if (window.setCache) {
+      window.setCache('content', o);
+    }
+  };
+
+  /**
+   * Starts background polling to check for status updates in the sheet.
+   * 
+   * Polls every 2 minutes to check if there are any "generated" status rows.
+   * If no "generated" rows exist, forces a refresh to check for newly generated content.
+   * If "generated" rows exist, does not refresh (waits for user activity).
+   * 
+   * @param {string} sheetName - Sheet name to check
+   * 
+   * @example
+   * startStatusPolling('Automated Content');
+   * // Starts polling every 2 minutes
+   */
+  function startStatusPolling(sheetName) {
+    // Validate Google Apps Script is available
+    if (!window.google || !google.script) return;
+
+    // Clear existing timer if any
+    if (window._statusPollTimer) {
+      clearInterval(window._statusPollTimer);
+    }
+
+    // Poll every 2 minutes (120000 ms)
+    window._statusPollTimer = setInterval(function () {
+      google.script.run
+        .withSuccessHandler(function (result) {
+          // If there are no "generated" rows, force refresh to check for updates
+          if (!result || !result.hasGenerated) {
+            if (window.clearCache) window.clearCache();
+            window.fetchData();
+          }
+          // If "generated" rows exist, do nothing (don't refresh, wait for user activity)
+        })
+        .withFailureHandler(function (e) {
+          console.log('statusPolling error', e && e.message);
+        })
+        .hasGeneratedContent(sheetName);
+    }, 120000); // Poll every 2 minutes (120000 ms)
+  }
+
+  // ============================================================
+  // INITIALIZATION
+  // ============================================================
+  // Load data when page loads
+  console.log('✓ Content tab loading...');
+  window.fetchData();
+  console.log('✓ Content tab loaded');
+
+  // Check if generation is already in progress when page loads
+  if (typeof google !== 'undefined' && google.script) {
+    const sheetName = (window.AppState && window.AppState.activeSheet) || 'Automated Content';
+
+    // Start background polling for status updates
+    startStatusPolling(sheetName);
+
+    google.script.run
+      .withSuccessHandler(function (o) {
+        if (o && o.running) {
+          // Generation in progress - show overlay and start watcher
+          setGeneratingOverlayVisible(true, 'Generating content...');
+          startGenerationWatcher(sheetName);
+        }
+      })
+      .withFailureHandler(function (e) {
+        console.log('Initial isGenerationInProgress failed', e && e.message);
+      })
+      .isGenerationInProgress(sheetName);
+  }
+})();
+</script>
+

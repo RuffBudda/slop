@@ -1,0 +1,3313 @@
+{
+  "name": "Adam Content Generation",
+  "nodes": [
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY",
+          "mode": "list",
+          "cachedResultName": "Adam Content Generator",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Automated Content",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY/edit#gid=0"
+        },
+        "filtersUI": {
+          "values": [
+            {
+              "lookupColumn": "=status",
+              "lookupValue": "Queue"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -2816,
+        -224
+      ],
+      "id": "432a9792-ade6-4328-b6e8-233b16205fb5",
+      "name": "Get row(s) in sheet4",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "MK0A3ewXCf3DF8tU",
+          "name": "Adam Content Generation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -2304,
+        -64
+      ],
+      "id": "0a7a0b82-7369-43a7-88bc-191e37111aa4",
+      "name": "Loop Over Items6"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5",
+          "mode": "list",
+          "cachedResultName": "GPT-5"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.Instruction }}\nRowId: {{ $json.Id }}\nMust also include {{ $json.Id }} in the json output.\n",
+              "role": "system"
+            },
+            {
+              "content": "=You are Adam Ridgway, Founder and CEO of ONE MOTO.\n\nYou are not a brand voice.\nYou are not a marketer.\nYou are not motivational.\n\nYou write as a founder who:\n• builds things\n• breaks things\n• fixes things\n• thinks long-term\n\nEvery sentence must sound like it was written after experience, not theory.\n\nIf a line could be written by a consultant, delete it.\n\nVOICE CONSTRAINTS (NON-NEGOTIABLE)\n\n• British English\n• Plainspoken, calm, grounded\n• Short paragraphs (one idea per line)\n• 8–12 lines exactly\n• Slightly witty, never clever\n• No emojis\n• No hype\n• No clichés\n• No dramatic framing\n• No selling\n• No brand slogans\n• No “thought leadership” language\n\nIf the tone drifts toward inspiration or marketing, correct it downward.\n\nINPUT AWARENESS (MANDATORY)\n\nYou MUST read and internalise every field:\n\nId\nInstruction\nType\nTemplate\nPurpose\nSample\nKeywords\n\nFailure to meaningfully use any field is an error.\n\nSTRUCTURAL DISCIPLINE\n\nYou MUST follow the Template exactly, invisibly.\n\nExample:\nHook → Context → Insight → Implication → Question → Hashtags\n\nIf the Template is violated:\n• regenerate silently\n• do not explain\n• do not apologise\n\nTYPE = LENS (CRITICAL)\n\nType defines how the post thinks, not what it talks about.\n\nExamples:\n• Founder reality → lived tension, trade-offs, scars\n• Leadership → decisions, responsibility, restraint\n• Sustainability → systems, consequences, economics\n• Scaling → sequencing, pressure points, second-order effects\n• Operations → friction, process, repetition\n• Strategy → choices, exclusion, focus\n\nIf the Type is ignored, the output is invalid.\n\nPURPOSE = INTENT (CRITICAL)\n\nPurpose defines why this exists.\n\nExamples:\n• Clarity → simplify something complex\n• Challenge → gently unsettle assumptions\n• Grounding → remove hype, add realism\n• Education → teach one practical truth\n• Perspective → widen the frame\n\nEvery line must serve the Purpose.\n\nIf the Purpose is not felt, rewrite.\n\nSAMPLE USAGE (STRICT)\n\nThe Sample is used ONLY for:\n• pacing\n• warmth\n• rhythm\n\nYou must NEVER:\n• copy structure verbatim\n• mirror sentence shapes\n• reuse phrases\n\nIf similarity > subtle influence, regenerate.\n\nKEYWORD HANDLING\n\n• Keywords must appear naturally\n• Never stacked\n• Never forced\n• Never all used if unnatural\n\nIf a keyword feels inserted, remove it.\n\n✍️ OUTPUT REQUIREMENTS\n\nProduce 3 distinct variants.\n\nEach variant must:\n• feel written on a different day\n• emphasise a different angle\n• use different sentence rhythms\n• avoid repeating metaphors, openings, or closings\n\nHard rule:\n\nNo two variants may share the same hook pattern.\n\nEach variant must:\n• end with a reflective question\n• end with 3–5 hashtags, including #ONEMOTO\n\nNo labels.\nNo bullets.\nNo lists.\n\n🧠 ANTI-REPETITION LOGIC (NEW)\n\nYou MUST actively avoid:\n\n• “I’ve learned that…”\n• “Here’s the thing…”\n• “Most people think…”\n• “It turns out…”\n• “In the early days…”\n• “As founders…”\n• “The reality is…”\n\nIf a sentence feels familiar, rewrite it colder and simpler.\n\n🎥 IMAGE PROMPTS — STABILITY-OPTIMISED (CRITICAL)\n\nWe are using Stability API.\nAvoid Midjourney-style abstraction or fantasy.\n\nImages must feel:\n• real\n• grounded\n• documentary\n• quiet\n• credible\n\nNo spectacle.\nNo cinematic drama.\nNo glossy nonsense.\n\nIMAGE SCENE SELECTION (MANDATORY)\n\nYou MUST choose a scene that directly matches:\nInstruction + Type + Purpose + Keywords\n\nUse this mapping as a hard guide:\n\n• Leadership → quiet boardrooms, founder desks, decision rooms\n• Strategy → whiteboards, planning walls, financial layouts\n• Scaling → startup offices, process walls, ops rooms\n• Operations → depots, workstations, checklists, logistics floors\n• Sustainability → R&D spaces, infrastructure, planning rooms\n• Economics / TCO → analyst desks, spreadsheets, cost models\n• Mistakes / lessons → dim offices, marked documents, late hours\n\nIf the scene does not clearly support the text, regenerate.\n\nIMAGE PROMPT TEMPLATE (LOCKED)\n\nEach variant gets one image prompt, using this structure exactly:\n\nScene: A hyper-detailed, documentary-style depiction of a real-world setting that directly reflects the post’s topic, Type, and Purpose. The scene must feel lived-in, practical, and believable, with no stylisation beyond reality.\n\nEnvironment: Describe the space in concrete terms — architecture, layout, surfaces, wear, cleanliness, reflections, ambient conditions — matching the functional reality of the topic.\n\nObjects: Include 6–12 relevant objects that naturally belong in this environment (documents, laptops, charging units, tools, whiteboards, notebooks, financial sheets, equipment). No decorative or symbolic items.\n\nLighting: Natural or practical lighting only (office light, warehouse light, overcast daylight). No dramatic lighting.\n\nTextures: 6–12 realistic materials (wood grain, brushed steel, concrete, rubber, paper, glass, fabric, plastic) consistent with the environment.\n\nComposition: Professional, restrained framing using real photographic principles. Nothing stylised or artificial.\n\nCamera: Sony A7R IV or Canon R5, 50mm lens, f/2.8–f/4, ISO 100–320, shutter 1/125.\n\nAtmosphere: Subtle imperfections only — dust, fingerprints, cable clutter, paper curl, scuffed floors.\n\nFormat: Ultra-photorealistic, editorial realism, no AI artefacts, suitable for a serious founder’s LinkedIn post.\n\nSTABILITY-SPECIFIC NEGATIVE PROMPT (ALWAYS APPLY)\n\nAdd implicitly to every image generation:\n\nAvoid:\n• people\n• faces\n• hands\n• scooters\n• labs\n• neon lighting\n• cinematic glow\n• fantasy elements\n• exaggerated depth\n• stylised art\n• over-polished renders\n• symmetry perfection\n• Text no text in any images please\n\nThe image must look like it was taken during a real workday.\n\n📦 FINAL OUTPUT FORMAT (STRICT JSON)\n\n{\n\"id\": \"{{ $json.Id }}\",\n\"variant_1\": \"...\",\n\"variant_2\": \"...\",\n\"variant_3\": \"...\",\n\"image_prompt_1\": \"...\",\n\"image_prompt_2\": \"...\",\n\"image_prompt_3\": \"...\"\n}\n\nNo extra keys.\nNo markdown.\nNo explanations.\nValid JSON only.\n\nFINAL QUALITY BAR (SELF-CHECK)\n\nBefore outputting, silently ask:\n\n• Would Adam actually post this?\n• Does this sound earned?\n• Is this calm but sharp?\n• Does the image match the idea exactly?\n• Is this clearly better than generic AI output?\n\nIf not, regenerate."
+            },
+            {
+              "content": "=Id: {{ $json.Id }}\nInstruction: {{ $json.Instruction }}\nType: {{ $json.Type }}\nTemplate: {{ $json.Template }}\nPurpose: {{ $json.Purpose }}\nSample: {{ $json.Sample }}\n"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -2016,
+        64
+      ],
+      "id": "29486393-005e-4033-9b57-a6cd23b7b7e8",
+      "name": "Message a model3",
+      "credentials": {
+        "openAiApi": {
+          "id": "fSUY9N5ZyeMwoQ4n",
+          "name": "Adam Content Generation Temporary Key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY",
+          "mode": "list",
+          "cachedResultName": "Adam Content Generator",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Automated Content",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "variant_1": "={{ $json.message.content.variant_1 }}",
+            "variant_2": "={{ $json.message.content.variant_2 }}",
+            "variant_3": "={{ $json.message.content.variant_3 }}",
+            "image_prompt_1": "={{ $json.message.content.image_prompt_1 }}",
+            "image_prompt_2": "={{ $json.message.content.image_prompt_2 }}",
+            "image_prompt_3": "={{ $json.message.content.image_prompt_3 }}",
+            "Id": "={{ $json.message.content.id }}",
+            "review": "needs_review",
+            "status": "generated"
+          },
+          "matchingColumns": [
+            "Id"
+          ],
+          "schema": [
+            {
+              "id": "Id",
+              "displayName": "Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Instruction",
+              "displayName": "Instruction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Type",
+              "displayName": "Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Template",
+              "displayName": "Template",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Purpose",
+              "displayName": "Purpose",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Days of the month",
+              "displayName": "Days of the month",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sample",
+              "displayName": "Sample",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "variant_1",
+              "displayName": "variant_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "variant_2",
+              "displayName": "variant_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "variant_3",
+              "displayName": "variant_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "choice",
+              "displayName": "choice",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_prompt_1",
+              "displayName": "image_prompt_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_prompt_2",
+              "displayName": "image_prompt_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_prompt_3",
+              "displayName": "image_prompt_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_url_1",
+              "displayName": "image_url_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_url_2",
+              "displayName": "image_url_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_url_3",
+              "displayName": "image_url_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "additional_img",
+              "displayName": "additional_img",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "img_choice",
+              "displayName": "img_choice",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "final_content",
+              "displayName": "final_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "final_img",
+              "displayName": "final_img",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "review",
+              "displayName": "review",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "post_schedule",
+              "displayName": "post_schedule",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -768,
+        592
+      ],
+      "id": "d14c25c8-580b-46c2-82fd-84bd9cb40c5c",
+      "name": "Update row in sheet9",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "MK0A3ewXCf3DF8tU",
+          "name": "Adam Content Generation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3b519e83-8145-42af-a25d-fc3e4b9ba130",
+              "name": "Image_prompt_1",
+              "value": "={{ $json.message.content.image_prompt_1 }}",
+              "type": "string"
+            },
+            {
+              "id": "67a39ad3-1aab-4a4a-8510-a2cc7d5ee011",
+              "name": "image_prompt_2",
+              "value": "={{ $json.message.content.image_prompt_2 }}",
+              "type": "string"
+            },
+            {
+              "id": "b486aec3-5b21-45ee-b966-42ce3e9b40e1",
+              "name": "image_prompt_3",
+              "value": "={{ $json.message.content.image_prompt_3 }}",
+              "type": "string"
+            },
+            {
+              "id": "ab304b20-1cea-461d-a054-36199e322bd0",
+              "name": "id",
+              "value": "={{ $json.message.content.id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "include": "selected",
+        "includeFields": "Id",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1664,
+        240
+      ],
+      "id": "01076f90-38e5-448c-93c2-8fcbecf6195c",
+      "name": "Edit Fields4"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.stability.ai/v2beta/stable-image/generate/sd3",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "authorization",
+              "value": "Bearer sk-AbZixJ6dsDDeDlWFyPadGEpqAPj8yZkMmEkfNBUU0N3EDeNO"
+            },
+            {
+              "name": "accept",
+              "value": "image/*"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $json.Image_prompt_1 }}"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "./lighthouse.jpeg"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1168,
+        48
+      ],
+      "id": "5346a243-3956-4d4f-8636-e8acbc709576",
+      "name": "HTTP Request7"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.stability.ai/v2beta/stable-image/generate/sd3",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "authorization",
+              "value": "Bearer sk-AbZixJ6dsDDeDlWFyPadGEpqAPj8yZkMmEkfNBUU0N3EDeNO"
+            },
+            {
+              "name": "accept",
+              "value": "image/*"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $json.image_prompt_2 }}"
+            },
+            {
+              "name": "output_format",
+              "value": "jpeg"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "./lighthouse.jpeg"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1168,
+        240
+      ],
+      "id": "89de28ad-033b-45f3-8508-edf288783c73",
+      "name": "HTTP Request8"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.stability.ai/v2beta/stable-image/generate/sd3",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "authorization",
+              "value": "Bearer sk-AbZixJ6dsDDeDlWFyPadGEpqAPj8yZkMmEkfNBUU0N3EDeNO"
+            },
+            {
+              "name": "accept",
+              "value": "image/*"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "prompt",
+              "value": "={{ $json.image_prompt_3 }}"
+            },
+            {
+              "name": "output_format",
+              "value": "jpeg"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "file",
+              "outputPropertyName": "./lighthouse.jpeg"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -1168,
+        432
+      ],
+      "id": "4ccbbeb8-8927-40d6-ab1e-c3f381a21841",
+      "name": "HTTP Request9"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "Image_url_1",
+              "value": "={{ 'https://cdweya.blr1.digitaloceanspaces.com/images/' +$('Edit Fields4').item.json .id + '-v1.jpeg' }}\n",
+              "type": "string",
+              "id": "98fc3caf-57c2-4944-a87f-c6a952ab1279"
+            },
+            {
+              "id": "3e9ee3f6-ae6d-4309-9f22-725dd26eb436",
+              "name": "Id",
+              "value": "={{ $('Get row(s) in sheet4').item.json.Id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "include": "selected",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -304,
+        48
+      ],
+      "id": "5b250ad1-383a-47ba-b10b-a2e19b12a49c",
+      "name": "Set URL 6"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "Image_url_2",
+              "value": "={{ 'https://cdweya.blr1.digitaloceanspaces.com/images/' +$('Edit Fields4').item.json .id + '-v2.jpeg' }}\n",
+              "type": "string",
+              "id": "225546de-dc1f-40a4-8faa-bf70929c6418"
+            },
+            {
+              "id": "fe19676d-afee-48cb-9bf4-06632acaf027",
+              "name": "Id",
+              "value": "={{ $('Get row(s) in sheet4').item.json.Id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -304,
+        240
+      ],
+      "id": "e5a9bfe4-3280-44ec-8749-dcb9521f4d19",
+      "name": "Set URL 7"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "name": "Image_url_3",
+              "value": "={{ 'https://cdweya.blr1.digitaloceanspaces.com/images/' +$('Edit Fields4').item.json .id + '-v3.jpeg' }}\n",
+              "type": "string",
+              "id": "7033eb71-34ff-44e6-86f4-048fd8ea51cd"
+            },
+            {
+              "id": "ffd49068-55a8-4150-8c2d-760ef972a501",
+              "name": "Id",
+              "value": "={{ $('Get row(s) in sheet4').item.json.Id }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -304,
+        432
+      ],
+      "id": "a705bba2-9e05-4b13-873e-df37f65e09b1",
+      "name": "Set URL 8"
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "bucketName": "cdweya",
+        "fileName": "=images/{{ $('Edit Fields4').item.json.id }}-v1.jpeg\n",
+        "binaryPropertyName": "./lighthouse.jpeg",
+        "additionalFields": {
+          "acl": "publicRead"
+        }
+      },
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        48
+      ],
+      "id": "266d42c6-0be8-4bf9-aa02-8b22c55d22aa",
+      "name": "Upload a file8",
+      "credentials": {
+        "s3": {
+          "id": "ZFtZH0XlHICwQQG2",
+          "name": "S3 account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "bucketName": "cdweya",
+        "fileName": "=images/{{ $('Edit Fields4').item.json.id }}-v2.jpeg\n",
+        "binaryPropertyName": "./lighthouse.jpeg",
+        "additionalFields": {
+          "acl": "publicRead"
+        }
+      },
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        240
+      ],
+      "id": "7134b799-0dc7-47c6-9d06-740009d1c275",
+      "name": "Upload a file9",
+      "credentials": {
+        "s3": {
+          "id": "ZFtZH0XlHICwQQG2",
+          "name": "S3 account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "upload",
+        "bucketName": "cdweya",
+        "fileName": "=images/{{ $('Edit Fields4').item.json.id }}-v3.jpeg\n",
+        "binaryPropertyName": "./lighthouse.jpeg",
+        "additionalFields": {
+          "acl": "publicRead"
+        }
+      },
+      "type": "n8n-nodes-base.s3",
+      "typeVersion": 1,
+      "position": [
+        -528,
+        432
+      ],
+      "id": "a35df132-8a11-4f52-a582-4a1c494f980d",
+      "name": "Upload a file10",
+      "credentials": {
+        "s3": {
+          "id": "ZFtZH0XlHICwQQG2",
+          "name": "S3 account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "numberInputs": 4
+      },
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 3.2,
+      "position": [
+        144,
+        224
+      ],
+      "id": "85379da7-17d5-4358-88aa-acbc52fa72e8",
+      "name": "Merge2"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json[\"credits\"] }}",
+              "value2": 100
+            }
+          ]
+        }
+      },
+      "id": "379e12c6-9f83-415e-9fc8-8cd8b06bd488",
+      "name": "Is Credit Low?1",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        -1600,
+        -112
+      ]
+    },
+    {
+      "parameters": {
+        "url": "https://api.stability.ai/v1/user/balance",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Bearer sk-bDXc0y59RA5kFOc9w3Qjqcpzky2YDnUi0jTDXXiTPSAiLUTM"
+            },
+            {
+              "name": "Accept",
+              "value": "application/json"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "82c93206-11cb-4da9-9280-0eac8e9efe7d",
+      "name": "Check Stability Credits",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 3,
+      "position": [
+        -2000,
+        -128
+      ]
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C09QWSP94JW",
+          "mode": "list",
+          "cachedResultName": "n8n-socials-notifications"
+        },
+        "messageType": "block",
+        "blocksUi": "={\n\t\"blocks\": [\n\t\t{\n\t\t\t\"type\": \"header\",\n\t\t\t\"text\": {\n\t\t\t\t\"type\": \"plain_text\",\n\t\t\t\t\"text\": \"⚠️ Stability Credits Are Running Low\"\n\t\t\t}\n\t\t},\n\t\t{\n\t\t\t\"type\": \"section\",\n\t\t\t\"text\": {\n\t\t\t\t\"type\": \"mrkdwn\",\n\t\t\t\t\"text\": \"*Current Balance:* {{ $json.credits }} credits\\nThe automation workflows may fail if credits reach zero. Please top up soon.\"\n\t\t\t}\n\t\t},\n\t\t{\n\t\t\t\"type\": \"actions\",\n\t\t\t\"elements\": [\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"button\",\n\t\t\t\t\t\"text\": {\n\t\t\t\t\t\t\"type\": \"plain_text\",\n\t\t\t\t\t\t\"text\": \"Buy / Top Up Credits\"\n\t\t\t\t\t},\n\t\t\t\t\t\"style\": \"primary\",\n\t\t\t\t\t\"url\": \"https://platform.stability.ai/account/billing\"\n\t\t\t\t}\n\t\t\t]\n\t\t},\n\t\t{\n\t\t\t\"type\": \"context\",\n\t\t\t\"elements\": [\n\t\t\t\t{\n\t\t\t\t\t\"type\": \"mrkdwn\",\n\t\t\t\t\t\"text\": \"Automated alert from n8n • Stability Image Generation\"\n\t\t\t\t}\n\t\t\t]\n\t\t}\n\t]\n}",
+        "text": "=Low Stability Credits: Only {{ $json.credits }} left. Top up soon.\n",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.3,
+      "position": [
+        -1392,
+        -128
+      ],
+      "id": "9d656cc6-bba3-423b-bb65-71a2d6e0a97b",
+      "name": "Send a message3",
+      "webhookId": "1d1dbdee-572c-46cf-85ef-25b57910cc36",
+      "credentials": {
+        "slackApi": {
+          "id": "5iAokU5j9wsKTezi",
+          "name": "CD Slack (for N8N Notifications)"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY",
+          "mode": "list",
+          "cachedResultName": "Adam Content Generator",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Automated Content",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Id": "={{ $json.Id }}",
+            "image_url_2": "={{ $json.Image_url_2 }}",
+            "review": "needs_review",
+            "status": "generated"
+          },
+          "matchingColumns": [
+            "Id"
+          ],
+          "schema": [
+            {
+              "id": "Id",
+              "displayName": "Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Instruction",
+              "displayName": "Instruction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Type",
+              "displayName": "Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Template",
+              "displayName": "Template",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Purpose",
+              "displayName": "Purpose",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Days of the month",
+              "displayName": "Days of the month",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sample",
+              "displayName": "Sample",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "variant_1",
+              "displayName": "variant_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "variant_2",
+              "displayName": "variant_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "variant_3",
+              "displayName": "variant_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "choice",
+              "displayName": "choice",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_prompt_1",
+              "displayName": "image_prompt_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_prompt_2",
+              "displayName": "image_prompt_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_prompt_3",
+              "displayName": "image_prompt_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_url_1",
+              "displayName": "image_url_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_url_2",
+              "displayName": "image_url_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_url_3",
+              "displayName": "image_url_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "additional_img",
+              "displayName": "additional_img",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "img_choice",
+              "displayName": "img_choice",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "final_content",
+              "displayName": "final_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "final_img",
+              "displayName": "final_img",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "review",
+              "displayName": "review",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "post_schedule",
+              "displayName": "post_schedule",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -80,
+        240
+      ],
+      "id": "d8cb263b-815a-418c-aac3-5306f6e46799",
+      "name": "Update row in sheet17",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "MK0A3ewXCf3DF8tU",
+          "name": "Adam Content Generation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY",
+          "mode": "list",
+          "cachedResultName": "Adam Content Generator",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Automated Content",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Id": "={{ $json.Id }}",
+            "image_url_3": "={{ $json.Image_url_3 }}",
+            "status": "generated",
+            "review": "needs_review"
+          },
+          "matchingColumns": [
+            "Id"
+          ],
+          "schema": [
+            {
+              "id": "Id",
+              "displayName": "Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Instruction",
+              "displayName": "Instruction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Type",
+              "displayName": "Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Template",
+              "displayName": "Template",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Purpose",
+              "displayName": "Purpose",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Days of the month",
+              "displayName": "Days of the month",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sample",
+              "displayName": "Sample",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "variant_1",
+              "displayName": "variant_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "variant_2",
+              "displayName": "variant_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "variant_3",
+              "displayName": "variant_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "choice",
+              "displayName": "choice",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_prompt_1",
+              "displayName": "image_prompt_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_prompt_2",
+              "displayName": "image_prompt_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_prompt_3",
+              "displayName": "image_prompt_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_url_1",
+              "displayName": "image_url_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_url_2",
+              "displayName": "image_url_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_url_3",
+              "displayName": "image_url_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "additional_img",
+              "displayName": "additional_img",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "img_choice",
+              "displayName": "img_choice",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "final_content",
+              "displayName": "final_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "final_img",
+              "displayName": "final_img",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "review",
+              "displayName": "review",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "post_schedule",
+              "displayName": "post_schedule",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -80,
+        432
+      ],
+      "id": "62673a73-47d9-4076-8e36-045536dd64cb",
+      "name": "Update row in sheet18",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "MK0A3ewXCf3DF8tU",
+          "name": "Adam Content Generation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY",
+          "mode": "list",
+          "cachedResultName": "Adam Content Generator",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Automated Content",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Id": "={{ $json.Id }}",
+            "image_url_1": "={{ $json.Image_url_1 }}",
+            "review": "needs_review",
+            "status": "generated"
+          },
+          "matchingColumns": [
+            "Id"
+          ],
+          "schema": [
+            {
+              "id": "Id",
+              "displayName": "Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Instruction",
+              "displayName": "Instruction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Type",
+              "displayName": "Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Template",
+              "displayName": "Template",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Purpose",
+              "displayName": "Purpose",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Days of the month",
+              "displayName": "Days of the month",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sample",
+              "displayName": "Sample",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "variant_1",
+              "displayName": "variant_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "variant_2",
+              "displayName": "variant_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "variant_3",
+              "displayName": "variant_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "choice",
+              "displayName": "choice",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_prompt_1",
+              "displayName": "image_prompt_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_prompt_2",
+              "displayName": "image_prompt_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_prompt_3",
+              "displayName": "image_prompt_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_url_1",
+              "displayName": "image_url_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_url_2",
+              "displayName": "image_url_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_url_3",
+              "displayName": "image_url_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "additional_img",
+              "displayName": "additional_img",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "img_choice",
+              "displayName": "img_choice",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "final_content",
+              "displayName": "final_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "final_img",
+              "displayName": "final_img",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "review",
+              "displayName": "review",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "post_schedule",
+              "displayName": "post_schedule",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -80,
+        48
+      ],
+      "id": "c51645f1-eb93-4626-8bcb-4ff0baad4119",
+      "name": "Update row in sheet19",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "MK0A3ewXCf3DF8tU",
+          "name": "Adam Content Generation"
+        }
+      }
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -1392,
+        48
+      ],
+      "id": "58981ba1-059c-4ea0-8fc2-67ffe4730c34",
+      "name": "Wait",
+      "webhookId": "efd76e80-fa91-4fd7-a62f-f63bb84cbf02"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -1392,
+        240
+      ],
+      "id": "b9af3e0c-d9c6-48dd-8ba3-49113b65bb51",
+      "name": "Wait1",
+      "webhookId": "efd76e80-fa91-4fd7-a62f-f63bb84cbf02"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.wait",
+      "typeVersion": 1.1,
+      "position": [
+        -1392,
+        432
+      ],
+      "id": "962bb6f1-3cc9-46ac-9f8c-79f00d04f1da",
+      "name": "Wait2",
+      "webhookId": "efd76e80-fa91-4fd7-a62f-f63bb84cbf02"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -1808,
+        -128
+      ],
+      "id": "2c6e4219-ff90-45f3-bedb-973ea8797631",
+      "name": "Loop Over Items1"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -2160,
+        288
+      ],
+      "id": "3b7dc7e8-0c66-4692-948d-39efc6e592f0",
+      "name": "Loop Over Items2"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.output.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "file",
+              "outputPropertyName": "./lighthouse.jpeg"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -736,
+        48
+      ],
+      "id": "8d634165-a892-421d-aaf0-4d0ef8a4eb26",
+      "name": "Download Tinified v1"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tinify.com/shrink",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "./lighthouse.jpeg",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -960,
+        48
+      ],
+      "id": "83c8dc01-84f9-4fd6-9ce2-0066b91eb964",
+      "name": "Tinify v1",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "RUoEM0LfSoxVoKKe",
+          "name": "Tinify"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tinify.com/shrink",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "./lighthouse.jpeg",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -960,
+        240
+      ],
+      "id": "e8ae21c0-0636-463b-ad74-59ece4b33b3c",
+      "name": "Tinify v2",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "RUoEM0LfSoxVoKKe",
+          "name": "Tinify"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.tinify.com/shrink",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpBasicAuth",
+        "sendBody": true,
+        "contentType": "binaryData",
+        "inputDataFieldName": "./lighthouse.jpeg",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -960,
+        432
+      ],
+      "id": "4684b239-7cb3-41f2-9482-51c7089768c1",
+      "name": "Tinify v3",
+      "credentials": {
+        "httpBasicAuth": {
+          "id": "RUoEM0LfSoxVoKKe",
+          "name": "Tinify"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.output.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "file",
+              "outputPropertyName": "./lighthouse.jpeg"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -736,
+        240
+      ],
+      "id": "f9d19e8f-68ab-44da-8fd7-edc4aecbe5ed",
+      "name": "Download Tinified v2"
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.body.output.url }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true,
+              "responseFormat": "file",
+              "outputPropertyName": "./lighthouse.jpeg"
+            }
+          }
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -736,
+        432
+      ],
+      "id": "40062224-e9ef-44c4-adcb-961689c6050c",
+      "name": "Download Tinified v3"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json[\"Identification\"]}}",
+                    "rightValue": "=brand",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "432d521c-8b62-4cf9-b989-5033ae639a7d"
+                  }
+                ],
+                "combinator": "and"
+              }
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 2
+                },
+                "conditions": [
+                  {
+                    "id": "0bdc4463-268b-4c4e-8dd5-f4b9f71163f8",
+                    "leftValue": "={{ $json.Identification }}",
+                    "rightValue": "others",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.3,
+      "position": [
+        -2608,
+        -224
+      ],
+      "id": "215f120d-2c1d-4050-898a-f71dfaeaea66",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-5.2",
+          "mode": "list",
+          "cachedResultName": "GPT-5.2"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "={{ $json.Instruction }}\nRowId: {{ $json.Id }}\nMust also include {{ $json.Id }} in the json output.\n",
+              "role": "system"
+            },
+            {
+              "content": "=You are Adam Ridgway, Founder and CEO of ONE MOTO.\n\nYour voice is experienced, steady, and grounded in the realities of building, scaling, and operating ventures in electric mobility, fleet decarbonisation, sustainability, and smart cities across multiple markets.\n\nYou speak as someone who has:\n\nbuilt, scaled, and exited companies,\n\nworked with governments and regulators,\n\nsupported fleets through real transition,\n\nand lived the trade-offs between climate ambition and commercial reality.\n\nYou are never selling. You are sharing perspective built through experience.\n\nYou think like a global CEO and CMO who doesn’t take himself too seriously, but takes the work seriously.\n\nGLOBAL TONE RULES (ALWAYS APPLY):\n\nUse British English.\n\nShort, clear paragraphs with natural pacing.\n\n8–12 lines per post, one idea per line.\n\nPlain, direct language.\n\nNo emojis.\n\nNo em dashes.\n\nNo buzzwords, hype, or motivational tone.\n\nNo exaggerated claims or dramatic language.\n\nNo “It’s not X, it’s Y” constructions.\n\nNo mechanical, template-like rhythm.\n\nWrite as if speaking to one person, not broadcasting.\n\nHuman, grounded, and slightly witty (not “funny”).\n\nProfessional, insightful, descriptive, personable, and relatable.\n\nUse first-person grounding where natural (“I’ve seen”, “In my experience”, “What I’ve found”).\n\nOVERALL PERSONA:\n\nYou are Adam Ridgway, not a brand account.\n\nYou have strong views, but you are not preachy.\n\nYou are comfortable showing mistakes, contradictions, and learning.\n\nYou balance sustainability with commercial reality.\n\nYou care about teams, riders, operators, cities, and long-term value.\n\nROW INPUTS (THIS CALL ONLY):\nEvery time you are called, you receive ONE row with fields:\n\n{{ $json.Id }}\n\n{{ $json.Instruction }}\n\n{{ $json.Type }}\n\n{{ $json.Template }}\n\n{{ $json.Purpose }}\n\n{{ $json.Sample }}\n\n{{ $json.Keywords }}\n\n{{ $json[\"Days of the month\"] }} (may be present but is for scheduling, not content)\n\nThese belong ONLY to this row.\n\nYou MUST use these fields as follows:\n\n1. {{ $json.Instruction }} — This is the primary directive.\n\nIt overrides all other guidance.\nIt defines tone, writing persona, content focus, angle, framing, and structural requirements.\n\nWhatever the Instruction says — you follow exactly, without interpretation drift.\n\nIf the Instruction says:\n\n“Write as Adam Ridgway…” — you write ONLY as Adam.\n\n“Write a brand-first EV education post…” — you produce that style.\n\n“Research and reference articles…” — you must research and reference.\n\n“Human, witty, personable” — you must write that way.\n\nNo other system message or persona may override {{ $json.Instruction }}.\n\n2. {{ $json.Type }} — Defines the post category and lens\n\n(e.g., Expert Insight, Founder Reflection, Industry Commentary, EV Insight, etc.)\n\nEach variant must clearly reflect this Type in depth and perspective.\n\n3. {{ $json.Template }} — Defines the structural flow\n\nHook → development (context / story / scene) → insight → implication or practical takeaway → engagement question → hashtags\n\nYou must follow this sequence invisibly.\n\nNever write section labels.\n\n4. {{ $json.Purpose }} — Defines WHY the post exists\n\n(e.g., educate, challenge, humanise, guide operators, clarify EV decisions)\n\nThe tone and content must clearly meet this Purpose.\n\n5. {{ $json.Sample }} — Defines style rhythm and pacing\n\nUse ONLY as a rhythm reference.\nDo NOT copy or paraphrase.\n\n6. {{ $json.Keywords }} — Must be integrated naturally\n\nNot listed.\nNot forced.\nWoven into the narrative where relevant.\n\nUse them to choose hashtags as well.\n\n7. {{ $json[\"Days of the month\"] }}\n\nIgnore for content.\nScheduling only.\n\nRESEARCH RULES\n\nIf {{ $json.Instruction }} requires research:\n\nYou MUST use credible recent articles from the specified websites.\n\nYou MUST extract genuine insights, statistics, or trends.\n\nYou MUST include article links where required.\n\nYou MUST tag authors when instructed.\n\nYou MUST NOT copy article text.\n\nYou are not summarising — you are using research as a foundation for Adam’s perspective.\n\nCRITICAL RULE\nOne row = Three variants of the SAME brief.\n\nEach variant must:\n\nFollow the Instruction exactly\n\nFollow the Template\n\nReflect the Type\n\nAchieve the Purpose\n\nUse the Keywords\n\nMirror the Sample’s pacing\n\nBe 8–12 lines\n\nEnd with a reflective question\n\nLast line = 3–5 hashtags including #ONEMOTO\n\nBe meaningfully different in angle or phrasing\n\nDo NOT reuse sentences between variants.\n\nSTRICT PROHIBITIONS\n\nNo labelled sections (no [HOOK], [INSIGHT], etc.)\n\nNo bullet points in the variants\n\nNo lists unless the Instruction explicitly allows\n\nNo emojis\n\nNo em dashes\n\nNo hype language\n\nNo clichés\n\nNo inspirational tone\n\nNo AI-template feel\n\nNo deviation from {{ $json.Instruction }}\n\nNo commentary outside JSON\n\nOUTPUT FORMAT (MANDATORY)\n{\n\"id\": \"...\",\n\"variant_1\": \"...\",\n\"variant_2\": \"...\",\n\"variant_3\": \"...\",\n\"image_prompt_1\": \"...\",\n\"image_prompt_2\": \"...\",\n\"image_prompt_3\": \"...\"\n}\n\n\n\"id\" MUST match {{ $json.Id }}\n\nAll variants MUST follow ONLY this row’s Instruction, Type, Template, Purpose, Sample, and Keywords\n\nNo extra keys\n\nNo markdown\n\nNo explanations\n\nFINAL RULE\n\nThe Instruction column governs EVERYTHING.\nAll other rules exist to support it — never override it."
+            },
+            {
+              "content": "=Id: {{ $json.Id }}\nInstruction: {{ $json.Instruction }}\nType: {{ $json.Type }}\nTemplate: {{ $json.Template }}\nPurpose: {{ $json.Purpose }}\nSample: {{ $json.Sample }}\n"
+            }
+          ]
+        },
+        "jsonOutput": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.8,
+      "position": [
+        -1840,
+        -336
+      ],
+      "id": "095cad23-cd53-43e4-a947-11c8d4f43179",
+      "name": "Message a model",
+      "credentials": {
+        "openAiApi": {
+          "id": "SO7z9wDlRxLnHBb6",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "options": {
+          "reset": false
+        }
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -2368,
+        -352
+      ],
+      "id": "14df232f-a9fd-4785-bf09-46a61f4ff772",
+      "name": "Loop Over Items"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY",
+          "mode": "list",
+          "cachedResultName": "Adam Content Generator",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Automated Content",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Id": "={{ $json.message.content.id }}",
+            "variant_1": "={{ $json.message.content.variant_1 }}",
+            "variant_2": "={{ $json.message.content.variant_2 }}",
+            "variant_3": "={{ $json.message.content.variant_3 }}",
+            "review": "needs_review",
+            "status": "generated"
+          },
+          "matchingColumns": [
+            "Id"
+          ],
+          "schema": [
+            {
+              "id": "Id",
+              "displayName": "Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Instruction",
+              "displayName": "Instruction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Type",
+              "displayName": "Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Template",
+              "displayName": "Template",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Purpose",
+              "displayName": "Purpose",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Identification",
+              "displayName": "Identification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sample",
+              "displayName": "Sample",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "variant_1",
+              "displayName": "variant_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "variant_2",
+              "displayName": "variant_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "variant_3",
+              "displayName": "variant_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "choice",
+              "displayName": "choice",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_prompt_1",
+              "displayName": "image_prompt_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_prompt_2",
+              "displayName": "image_prompt_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_prompt_3",
+              "displayName": "image_prompt_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_url_1",
+              "displayName": "image_url_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_url_2",
+              "displayName": "image_url_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "image_url_3",
+              "displayName": "image_url_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "additional_img",
+              "displayName": "additional_img",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "img_choice",
+              "displayName": "img_choice",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "final_content",
+              "displayName": "final_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "final_img",
+              "displayName": "final_img",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "review",
+              "displayName": "review",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "post_schedule",
+              "displayName": "post_schedule",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1328,
+        -336
+      ],
+      "id": "bbd15d5f-22bf-41ea-8349-12c7ba9a9931",
+      "name": "Update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "MK0A3ewXCf3DF8tU",
+          "name": "Adam Content Generation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "resource": "fileFolder",
+        "returnAll": true,
+        "filter": {
+          "driveId": {
+            "__rl": true,
+            "value": "My Drive",
+            "mode": "list",
+            "cachedResultName": "My Drive",
+            "cachedResultUrl": "https://drive.google.com/drive/my-drive"
+          },
+          "folderId": {
+            "__rl": true,
+            "value": "1Wiq5Hywt2Q3fdFXqio2ExKLgI8a0Y4hE",
+            "mode": "list",
+            "cachedResultName": "ONE MOTO EV Lifestyle Images",
+            "cachedResultUrl": "https://drive.google.com/drive/folders/1Wiq5Hywt2Q3fdFXqio2ExKLgI8a0Y4hE"
+          },
+          "whatToSearch": "files",
+          "includeTrashed": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        -1968,
+        -544
+      ],
+      "id": "4f907aa5-625d-489c-bb44-efe4ef47abe7",
+      "name": "Search files and folders",
+      "credentials": {
+        "googleDriveOAuth2Api": {
+          "id": "xMYevBert94UhEYe",
+          "name": "Google Drive account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY",
+          "mode": "list",
+          "cachedResultName": "Adam Content Generator",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Automated Content",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1afGSfCHB7FY-w5iChqivtZulXync3kEv8tvfgHS3VsY/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "row_number": 0,
+            "image_url_2": "={{ $json.image_url_2 }}",
+            "image_url_1": "={{ $json.image_url_1 }}",
+            "Id": "={{ $json.sheet_id }}",
+            "image_url_3": "={{ $json.image_url_3 }}"
+          },
+          "matchingColumns": [
+            "Id"
+          ],
+          "schema": [
+            {
+              "id": "Id",
+              "displayName": "Id",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Instruction",
+              "displayName": "Instruction",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Type",
+              "displayName": "Type",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Template",
+              "displayName": "Template",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Purpose",
+              "displayName": "Purpose",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Identification",
+              "displayName": "Identification",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Sample",
+              "displayName": "Sample",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Keywords",
+              "displayName": "Keywords",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "variant_1",
+              "displayName": "variant_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "variant_2",
+              "displayName": "variant_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "variant_3",
+              "displayName": "variant_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "choice",
+              "displayName": "choice",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_prompt_1",
+              "displayName": "image_prompt_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_prompt_2",
+              "displayName": "image_prompt_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_prompt_3",
+              "displayName": "image_prompt_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_url_1",
+              "displayName": "image_url_1",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_url_2",
+              "displayName": "image_url_2",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "image_url_3",
+              "displayName": "image_url_3",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "additional_img",
+              "displayName": "additional_img",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "img_choice",
+              "displayName": "img_choice",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "final_content",
+              "displayName": "final_content",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "final_img",
+              "displayName": "final_img",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "review",
+              "displayName": "review",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "post_schedule",
+              "displayName": "post_schedule",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "row_number",
+              "displayName": "row_number",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "readOnly": true,
+              "removed": false
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        -1040,
+        -544
+      ],
+      "id": "e71d68ff-8d6b-4cfa-9ecc-6d291738da41",
+      "name": "Update row in sheet1",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "MK0A3ewXCf3DF8tU",
+          "name": "Adam Content Generation"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "return [{\n  json: {\n    sheet_id: $node[\"Loop Over Items\"].json.Id,  // adjust column name\n    image_url_1: items[0]?.json.imageUrl || '',\n    image_url_2: items[1]?.json.imageUrl || '',\n    image_url_3: items[2]?.json.imageUrl || '',\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1296,
+        -544
+      ],
+      "id": "29043487-53e2-49c0-8b4c-80fc984d7ce6",
+      "name": "Seperating"
+    },
+    {
+      "parameters": {
+        "jsCode": "return items.map(item => ({\n  json: {\n    id: item.json.id,\n    name: item.json.name,\n    imageUrl: `https://drive.google.com/uc?id=${item.json.id}`\n  }\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1520,
+        -544
+      ],
+      "id": "1b05c9d6-9e51-4e08-ba8f-ef54bbd05976",
+      "name": "Assigning URL's"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Filter image files by filename (since mimeType is not present)\nconst images = items.filter(item =>\n  item.json.name &&\n  item.json.name.match(/\\.(jpg|jpeg|png|webp|gif)$/i)\n);\n\n// Safety check\nif (images.length === 0) {\n  return [];\n}\n\n// Shuffle helper\nfunction shuffle(arr) {\n  return arr.sort(() => 0.5 - Math.random());\n}\n\n// Pick 3 random images\nconst selected = shuffle(images).slice(0, 3);\n\n// Return in proper n8n format\nreturn selected.map(item => ({\n  json: item.json\n}));\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -1744,
+        -544
+      ],
+      "id": "ed231bb9-f0a2-4ab5-9f82-0731ff37ebe4",
+      "name": "Choosing Randomly"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "b153d2da-395b-4f63-abad-7d2561724a16",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -3088,
+        -224
+      ],
+      "id": "b3e6bad6-5bba-4f0e-b94b-1b5c13e0dcfb",
+      "name": "Abu's Webhook",
+      "webhookId": "b153d2da-395b-4f63-abad-7d2561724a16"
+    },
+    {
+      "parameters": {
+        "content": "I created a new webhook cuz the old webhook url has a space and its throwing random errors"
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -3152,
+        -432
+      ],
+      "typeVersion": 1,
+      "id": "1dc245d4-ec1f-4f25-86a2-5bfe70fdbcd1",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "sendTo": "azeem@contractors.direct",
+        "subject": "New content ready for your review",
+        "message": "<p>Hi Adam,</p>  <p>Your content is ready for review.</p>  <p> Please review it using the link below: <br> <a href=\"https://script.google.com/macros/s/AKfycbyF-QxTv2kXns4jrW9Lk79e14fK0SbGx3cJ8PWzLKB2hr6v7RH51Z-L1QJVECdkgVWc/exec\" target=\"_blank\"> Open review dashboard </a> </p>  <p>Thanks,<br> Automation</p>",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.1,
+      "position": [
+        -1872,
+        272
+      ],
+      "id": "98d65b07-0b62-41fc-8342-7e0038a59394",
+      "name": "Send a message1",
+      "webhookId": "1200ab48-969a-413b-ae51-99fc51d55d98",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "5ekWGpygZ54BnbzJ",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get row(s) in sheet4": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items6": {
+      "main": [
+        [
+          {
+            "node": "Check Stability Credits",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Loop Over Items2",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Message a model3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model3": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields4",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Update row in sheet9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet9": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 3
+          }
+        ]
+      ]
+    },
+    "Edit Fields4": {
+      "main": [
+        [
+          {
+            "node": "Wait",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait1",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Wait2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request7": {
+      "main": [
+        [
+          {
+            "node": "Tinify v1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request8": {
+      "main": [
+        [
+          {
+            "node": "Tinify v2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request9": {
+      "main": [
+        [
+          {
+            "node": "Tinify v3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set URL 6": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet19",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set URL 7": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet17",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set URL 8": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet18",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload a file8": {
+      "main": [
+        [
+          {
+            "node": "Set URL 6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload a file9": {
+      "main": [
+        [
+          {
+            "node": "Set URL 7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload a file10": {
+      "main": [
+        [
+          {
+            "node": "Set URL 8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Merge2": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Is Credit Low?1": {
+      "main": [
+        [
+          {
+            "node": "Send a message3",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Check Stability Credits": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet17": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "Update row in sheet18": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 2
+          }
+        ]
+      ]
+    },
+    "Update row in sheet19": {
+      "main": [
+        [
+          {
+            "node": "Merge2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request7",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait2": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Is Credit Low?1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items2": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Download Tinified v1": {
+      "main": [
+        [
+          {
+            "node": "Upload a file8",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tinify v1": {
+      "main": [
+        [
+          {
+            "node": "Download Tinified v1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tinify v2": {
+      "main": [
+        [
+          {
+            "node": "Download Tinified v2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tinify v3": {
+      "main": [
+        [
+          {
+            "node": "Download Tinified v3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Tinified v2": {
+      "main": [
+        [
+          {
+            "node": "Upload a file9",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Download Tinified v3": {
+      "main": [
+        [
+          {
+            "node": "Upload a file10",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Loop Over Items6",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Loop Over Items": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Message a model",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Search files and folders",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Message a model": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update row in sheet": {
+      "main": [
+        [
+          {
+            "node": "Loop Over Items",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Search files and folders": {
+      "main": [
+        [
+          {
+            "node": "Choosing Randomly",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Assigning URL's": {
+      "main": [
+        [
+          {
+            "node": "Seperating",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Choosing Randomly": {
+      "main": [
+        [
+          {
+            "node": "Assigning URL's",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Seperating": {
+      "main": [
+        [
+          {
+            "node": "Update row in sheet1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Abu's Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get row(s) in sheet4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message1": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "499e5caa-4ce2-4aa2-9e73-a212bb54521f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "168f63653195e332b65073b4893f48d8810903bc34c6e4ce99617507b7f281d6"
+  },
+  "id": "VLfIoVlVrChUgS9z",
+  "tags": []
+}

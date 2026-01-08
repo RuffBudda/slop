@@ -1,0 +1,1707 @@
+<!--
+    ============================================================
+    STYLES.HTML - CSS Styles for Apps Script Web App
+    ============================================================
+    
+    This file contains all CSS styles for the Google Apps Script
+    web app interface. It uses CSS custom properties (variables)
+    for theming and consistent styling throughout the application.
+    
+    The file is included in index.html using Apps Script template syntax:
+    <?!= include('styles') ?>
+    
+    IMPORTANT DESIGN DECISIONS:
+    - Light theme optimized for web app usage
+    - CSS custom properties for easy theming
+    - Responsive design with mobile considerations
+    - Spinner animations replace GIFs for better performance
+    - Consistent spacing and typography system
+    
+    ============================================================
+-->
+
+<style>
+/* ============================================================
+   CSS CUSTOM PROPERTIES (VARIABLES)
+   ============================================================
+   These variables define the color scheme and spacing used
+   throughout the application. Changing these values updates
+   the entire theme.
+   
+   Benefits:
+   - Centralized theming
+   - Easy to modify colors/spacing globally
+   - Consistent design system
+*/
+:root {
+  /* Color Palette */
+  --bg: #fff;              /* Background color - white */
+  --ink: #202020;          /* Text color - dark gray */
+  --bd: #e7e7e7;           /* Border color - light gray */
+  --bd2: #d8d8d8;          /* Secondary border color - slightly darker gray */
+  
+  /* Status Colors */
+  --ok: #0a7a2a;           /* Success/OK color - green */
+  --bad: #b20000;          /* Error/bad color - red */
+  --accent: #16a34a;       /* Accent color (green) - used for active states */
+  
+  /* Component Colors */
+  --chip: #fff;            /* Chip background - white */
+  --chipbd: #e1e1e1;       /* Chip border - light gray */
+  --wknd: #fff7f4;         /* Weekend background - light orange tint */
+  --today: #e9f5ff;        /* Today's date background - light blue */
+  --sel: #1e73b7;         /* Selected item color - blue */
+  
+  /* Layout */
+  --radius: 14px;          /* Border radius for rounded corners */
+  --g: 16px;               /* Grid spacing/gap - base unit for spacing */
+  --maxw: 1280px;          /* Maximum content width - prevents overly wide layouts */
+}
+
+/* ============================================================
+   BASE STYLES - HTML and Body
+   ============================================================
+   Sets up the foundation styles for the entire application.
+*/
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+}
+
+/* Links inherit text color */
+a {
+  color: inherit;
+}
+
+/* Utility class to hide elements */
+.hidden {
+  display: none !important;
+}
+
+/* ============================================================
+   HEADER STYLES
+   ============================================================
+   Sticky header bar at the top of the page.
+*/
+.top {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #000;
+  color: #fff;
+  border-bottom: 1px solid #111;
+}
+
+.top-inner {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 58px;
+  padding: 0 var(--g);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  position: relative;
+}
+
+.logo {
+  height: 40px;
+  cursor: pointer;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  display: block;
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.logo:hover {
+  opacity: 0.8 !important;
+  transform: scale(1.05);
+}
+
+.brand:hover .logo {
+  opacity: 0.8 !important;
+  transform: scale(1.05);
+}
+
+/* Logo shake animation */
+@keyframes logoShake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}
+
+.logo.shake {
+  animation: logoShake 2s ease-in-out infinite;
+}
+
+.brand {
+  position: relative;
+}
+
+/* ============================================================
+   NAVIGATION BUTTONS
+   ============================================================
+   Main tab navigation buttons (Content, Calendar, List, Bin).
+*/
+.navBtns {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.navBtn {
+  background: #fff;
+  color: #111;
+  border: 1px solid #333;
+  border-radius: 10px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: transform .08s, box-shadow .15s, background .15s;
+}
+
+.navBtn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .18);
+}
+
+.navBtn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+/* ============================================================
+   LAYOUT - Container Wrapper
+   ============================================================
+   Main content wrapper with max-width constraint.
+*/
+.wrap {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: var(--g);
+}
+
+/* ============================================================
+   CARD COMPONENTS
+   ============================================================
+   Card-based layout for post content.
+*/
+.card {
+  border: 1px solid var(--bd);
+  border-radius: var(--radius);
+  background: #fff;
+  margin-bottom: 16px;
+  overflow: hidden;
+  position: relative;
+}
+
+.card.processing {
+  pointer-events: none;
+}
+
+/* 
+   Processing Overlay
+   Shows a spinner overlay when a card is being processed
+   (e.g., during approve/reject operations).
+   Replaces the previous GIF-based overlay with a CSS spinner.
+*/
+.card.processing::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.card.processing::before {
+  content: 'Processing...';
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, 60px);
+  font-weight: 800;
+  font-size: 24px;
+  color: #10b981;
+  z-index: 10000;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* Prevent body scrolling when processing */
+body.processing {
+  overflow: hidden;
+}
+
+/* ============================================================
+   EMPTY STATE / END SCREEN
+   ============================================================
+   Shown when there's no content to display.
+*/
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 40px;
+  text-align: center;
+  position: fixed;
+  inset: 0;
+  background: #f5f5f5;
+  overflow: hidden;
+}
+
+.emptyState h2 {
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 12px;
+  color: #1a1a1a;
+}
+
+.emptyState p {
+  font-size: 16px;
+  color: #666;
+  margin: 0 0 24px;
+  max-width: 500px;
+}
+
+.emptyState .btn {
+  font-size: 18px;
+  padding: 14px 32px;
+}
+
+/* ============================================================
+   GENERATING OVERLAY
+   ============================================================
+   Full-screen overlay shown during content generation.
+   Uses spinner instead of GIF for better performance.
+*/
+.generatingOverlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+}
+
+.generatingOverlay.show {
+  display: flex;
+}
+
+.generatingOverlay .text {
+  font-size: 26px;
+  font-weight: 800;
+  color: #10b981;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  margin-top: 20px;
+}
+
+/* ============================================================
+   SPINNER ANIMATIONS
+   ============================================================
+   CSS-based spinner animations replace GIFs for better
+   performance and customization.
+   
+   The spinner uses a rotating border technique:
+   - Circular border with transparent sections
+   - Rotating animation
+   - Smooth, infinite loop
+*/
+.spinner-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Spinner for dark backgrounds */
+.spinner-container .spinner {
+  border-color: rgba(0, 0, 0, 0.1);
+  border-top-color: var(--accent);
+}
+
+/* Spinner animation keyframes */
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ============================================================
+   CARD HEADER
+   ============================================================
+   Header section of cards showing metadata.
+*/
+.card header {
+  background: #fafafa;
+  border-bottom: 1px solid var(--bd);
+  padding: 12px 16px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.card header .left {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+
+/* ============================================================
+   CHIP COMPONENTS
+   ============================================================
+   Small badge-like components for displaying metadata.
+*/
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  border: 1px solid var(--chipbd);
+  background: var(--chip);
+}
+
+/* ============================================================
+   CONTENT GRID LAYOUT
+   ============================================================
+   Two-column grid for post content:
+   - Left: Variants (content text)
+   - Right: Images
+*/
+.content {
+  display: grid;
+  grid-template-columns: 1fr minmax(280px, 380px);
+  gap: 16px;
+  padding: 16px;
+}
+
+/* ============================================================
+   VARIANT COMPONENTS
+   ============================================================
+   Content variant selection and editing.
+*/
+.variants {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.variant {
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+  transition: border .12s, box-shadow .12s, transform .06s;
+  cursor: pointer;
+}
+
+.variant:hover {
+  transform: translateY(-1px);
+}
+
+.variant.selected {
+  border-color: var(--sel);
+  box-shadow: 0 0 0 2px rgba(30, 115, 183, .15);
+}
+
+.variant .controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.variant .title {
+  font-weight: 700;
+}
+
+.variant .rightCtrls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.variant .text {
+  white-space: pre-wrap;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.variant .variantTextarea {
+  width: 100%;
+  min-height: 180px;
+  border: 1px solid var(--bd2);
+  border-radius: 10px;
+  padding: 12px;
+  resize: vertical;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 1.45;
+  box-sizing: border-box;
+}
+
+.variant .editActions {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.variant .editedBadge {
+  margin-right: 4px;
+}
+
+/* ============================================================
+   IMAGE COMPONENTS
+   ============================================================
+   Image selection and display with visual selection system.
+*/
+.images {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  position: relative;
+}
+
+.imgCell {
+  position: relative;
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f9f9f9;
+  transition: border .12s, box-shadow .12s, transform .06s;
+  cursor: pointer;
+}
+
+.imgCell:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .08);
+}
+
+.imgCell.selected {
+  border-color: var(--sel);
+  border-width: 3px;
+  box-shadow: 0 0 0 3px rgba(30, 115, 183, .15);
+}
+
+.imgCell img {
+  width: 100%;
+  height: 180px;
+  object-fit: contain;
+  display: block;
+  background: #fff;
+}
+
+.imgError {
+  padding: 20px;
+  text-align: center;
+  color: #999;
+  background: #fff;
+  height: 180px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+}
+
+/* Selection badge shown when image is selected */
+.selectBadge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: #16a34a;
+  color: #fff;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 800;
+  z-index: 3;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, .2);
+}
+
+.imgCell.selected .selectBadge {
+  display: flex;
+}
+
+/* Number badge shown when image is not selected */
+.numberBadge {
+  position: absolute;
+  bottom: 8px;
+  left: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 700;
+  z-index: 3;
+}
+
+.imgCell.selected .numberBadge {
+  display: none;
+}
+
+.imgOverlay {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  border-radius: 6px;
+  padding: 6px 8px;
+  font-size: 11px;
+  text-decoration: none;
+  z-index: 4;
+  cursor: pointer;
+  transition: background .15s;
+}
+
+.imgOverlay:hover {
+  background: rgba(0, 0, 0, 0.9);
+}
+
+/* ============================================================
+   ACTION BUTTONS
+   ============================================================
+   Footer section of cards with action buttons.
+*/
+.actions {
+  display: flex;
+  gap: 10px;
+  padding: 12px 16px;
+  background: #fafafa;
+  border-top: 1px solid var(--bd);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.scheduleInput {
+  height: 36px;
+  padding: 6px 10px;
+  border: 1px solid var(--bd2);
+  border-radius: 8px;
+  min-width: 200px;
+}
+
+/* ============================================================
+   BUTTON STYLES
+   ============================================================
+   Consistent button styling throughout the application.
+*/
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background .15s, box-shadow .15s, transform .08s;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.btn:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .12);
+}
+
+.btn:active {
+  transform: translateY(1px);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
+.btn .ico {
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-weight: 800;
+}
+
+/* Approve Button - Green theme */
+.btn.approve {
+  background: #e8f6ec;
+  border-color: #d0edd9;
+  color: var(--ok);
+}
+
+.btn.approve .ico::before {
+  content: "[✓]";
+}
+
+.btn.approve:hover {
+  background: #dff3e6;
+  box-shadow: 0 6px 16px rgba(10, 122, 42, .18);
+}
+
+/* Reject Button - Red theme */
+.btn.reject {
+  background: #fdeaea;
+  border-color: #f6cccc;
+  color: var(--bad);
+}
+
+.btn.reject .ico::before {
+  content: "[!]";
+}
+
+.btn.reject:hover {
+  background: #fbdede;
+  box-shadow: 0 6px 16px rgba(178, 0, 0, .18);
+}
+
+/* Clear Button - Gray theme */
+.btn.clear {
+  background: #f1f1f1;
+  border-color: #e0e0e0;
+  color: #222;
+}
+
+.btn.clear .ico::before {
+  content: "[x]";
+}
+
+.btn.clear:hover {
+  background: #e9e9e9;
+}
+
+/* Undo Button - Blue theme */
+.btn.undo {
+  background: #e0f2fe;
+  border-color: #bae6fd;
+  color: #0369a1;
+}
+
+.btn.undo:hover {
+  background: #d0ecfe;
+}
+
+/* Edit Button - Dark theme */
+.editBtn {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+.editBtn:hover {
+  filter: brightness(1.05);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .25);
+  transform: translateY(-1px);
+}
+
+/* ============================================================
+   EMPTY STATES
+   ============================================================
+   Shown when there's no content in a section.
+*/
+.empty {
+  display: none;
+  text-align: center;
+  border: 1px dashed var(--bd2);
+  border-radius: 16px;
+  padding: 28px;
+  background: #fff;
+  color: #444;
+}
+
+.empty .spinner-container {
+  margin: 8px auto 18px;
+}
+
+.empty p {
+  margin: 0;
+  font-weight: 800;
+  font-size: 22px;
+}
+
+.initial {
+  display: grid;
+  place-items: center;
+  min-height: 40vh;
+}
+
+.initial .spinner-container {
+  margin-bottom: 10px;
+}
+
+/* ============================================================
+   TOAST NOTIFICATIONS
+   ============================================================
+   Toast messages for user feedback.
+*/
+.toast-wrap {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  transform: translateX(-50%);
+  z-index: 300;
+  display: grid;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  background: #111;
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  box-shadow: 0 14px 28px rgba(0, 0, 0, .2);
+  animation: su .2s ease;
+  font-size: 14px;
+  max-width: 90vw;
+  pointer-events: auto;
+}
+
+.toast.ok {
+  background: var(--ok);
+}
+
+.toast.bad {
+  background: var(--bad);
+}
+
+.toast.neutral {
+  background: #8a8a8a;
+}
+
+@keyframes su {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ============================================================
+   CALENDAR STYLES
+   ============================================================
+   Calendar grid layout for scheduled posts.
+*/
+.calWrap {
+  display: none;
+}
+
+.calHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 12px 0;
+}
+
+.calHeader .title {
+  font-weight: 800;
+  font-size: 20px;
+}
+
+.calHeader .ctrls {
+  display: flex;
+  gap: 8px;
+}
+
+.calGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 8px;
+}
+
+.calDow {
+  font-weight: 700;
+  color: #555;
+  font-size: 12px;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+.calCell {
+  background: #fff;
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  padding: 8px;
+  min-height: 110px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.calCell.weekend {
+  background: var(--wknd);
+}
+
+.calCell.today {
+  outline: 2px solid var(--sel);
+  background: var(--today);
+}
+
+.calCell .dt {
+  font-size: 12px;
+  color: #666;
+}
+
+.ev {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: #111;
+  color: #fff;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 12px;
+  cursor: grab;
+  transition: box-shadow .15s, transform .06s;
+}
+
+.ev:hover {
+  opacity: .92;
+  box-shadow: 0 6px 14px rgba(0, 0, 0, .18);
+  transform: translateY(-1px);
+}
+
+.ev.dragging {
+  opacity: 0.5;
+  cursor: grabbing;
+}
+
+/* ============================================================
+   TIMELINE STYLES
+   ============================================================
+   Timeline/list view for approved posts.
+*/
+#timelineView {
+  max-width: var(--maxw);
+  margin: 0 auto;
+  padding: 0 var(--g);
+  display: none;
+}
+
+.tline {
+  display: grid;
+  grid-template-columns: 160px 1fr;
+  gap: 16px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--bd);
+}
+
+.tleft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.tleft span {
+  font-size: 18px;
+}
+
+.tright {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.trowHead {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.tarrow {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+  padding: 0;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+}
+
+.trowBody {
+  display: none;
+  padding: 12px;
+  border: 1px solid var(--bd);
+  border-radius: 10px;
+  background: #fafafa;
+  margin-top: 4px;
+}
+
+.trowBody.show {
+  display: block;
+}
+
+.gridImgs {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.gridImgs.grid-1 {
+  grid-template-columns: 1fr;
+}
+
+.gridImgs.grid-2 {
+  grid-template-columns: 1fr 1fr;
+}
+
+.gridImgs.grid-3 {
+  grid-template-columns: 1fr 1fr 1fr;
+}
+
+.gridImgs img {
+  width: 100%;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+/* ============================================================
+   DOCK STYLES
+   ============================================================
+   Floating dock for quick navigation.
+*/
+.dock {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  z-index: 150;
+  width: 56px;
+  height: 56px;
+}
+
+.fab {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #111;
+  color: #fff;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, .22);
+  cursor: pointer;
+  transition: transform .15s, box-shadow .15s;
+  border: none;
+}
+
+.fab:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 36px rgba(0, 0, 0, .26);
+}
+
+.dock-items {
+  position: absolute;
+  left: 0;
+  bottom: 64px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  opacity: 0;
+  transform: translateY(10px);
+  pointer-events: none;
+  transition: opacity .2s, transform .2s;
+}
+
+.dock:hover .dock-items {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.dock.open .dock-items {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.dot {
+  min-width: 46px;
+  height: 42px;
+  padding: 0 12px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  color: #111;
+  border: 1px solid #d5d5d5;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, .1);
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 12px;
+  transition: transform .12s, box-shadow .12s;
+}
+
+.dot:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, .14);
+}
+
+.dot.active {
+  background: #111;
+  color: #fff;
+  border-color: #111;
+}
+
+/* ============================================================
+   MODAL STYLES
+   ============================================================
+   Dialog windows for viewing details and editing.
+*/
+dialog {
+  border: 1px solid var(--bd);
+  border-radius: 14px;
+  padding: 0;
+  max-width: 640px;
+  width: 90vw;
+}
+
+dialog::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+}
+
+.calModal {
+  padding: 18px;
+  position: relative;
+}
+
+.closeBtn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #f1f1f1;
+  border: 1px solid var(--bd2);
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 16px;
+  display: grid;
+  place-items: center;
+}
+
+.closeBtn:hover {
+  background: #e5e5e5;
+}
+
+/* Shared Reschedule Modal */
+.reschedModal {
+  padding: 20px;
+  max-width: 400px;
+}
+
+.reschedModal h3 {
+  margin: 0 0 16px;
+  font-weight: 800;
+}
+
+.reschedModal .field {
+  margin-bottom: 12px;
+}
+
+.reschedModal label {
+  display: block;
+  margin-bottom: 4px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.reschedModal input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid var(--bd2);
+  border-radius: 8px;
+}
+
+.reschedModal .btns {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
+}
+
+.reschedModal .btn {
+  flex: 1;
+}
+
+/* ============================================================
+   UPLOAD BUTTON STYLES
+   ============================================================
+   Image upload functionality.
+*/
+.imgUploadBar .btn {
+  border-radius: 999px;
+}
+
+.images {
+  position: relative;
+}
+
+.imgUploadOverlay {
+  pointer-events: all;
+}
+
+/* ============================================================
+   APP LOADER (Initial Page Load)
+   ============================================================
+   Full-screen loading overlay shown when app first loads.
+*/
+.app-loader {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.95);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10000;
+  transition: opacity 0.3s ease;
+}
+
+.app-loader.hidden {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.app-loader .spinner-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.app-loader .spinner {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ============================================================
+   GLOBAL LOADER
+   ============================================================
+   Full-screen loading overlay with spinner.
+*/
+#globalLoader {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+#globalLoader.hidden {
+  display: none;
+}
+
+#globalLoader .spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 4px solid #fff;
+  border-top-color: #000;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ============================================================
+   LOGO MODAL
+   ============================================================
+   Modal dialog that opens when logo is clicked.
+*/
+.logo-modal {
+  border: 1px solid var(--bd);
+  border-radius: var(--radius);
+  padding: 0;
+  max-width: 800px;
+  width: 90vw;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.logo-modal::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.logo-modal-content {
+  padding: 24px;
+  position: relative;
+}
+
+.logo-modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: #f1f1f1;
+  border: 1px solid var(--bd2);
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  font-size: 24px;
+  display: grid;
+  place-items: center;
+  line-height: 1;
+  color: #333;
+  transition: background 0.15s, transform 0.1s;
+  z-index: 10;
+}
+
+.logo-modal-close:hover {
+  background: #e5e5e5;
+  transform: scale(1.1);
+}
+
+.logo-modal-close:active {
+  transform: scale(0.95);
+}
+
+/* GIF Section */
+.logo-modal-gif {
+  margin-bottom: 24px;
+  text-align: center;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #f5f5f5;
+}
+
+.logo-modal-gif img {
+  width: 100%;
+  max-width: 400px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+
+/* Calculator Section */
+.logo-modal-calculator {
+  margin-bottom: 24px;
+}
+
+.logo-modal-calculator h3 {
+  margin: 0 0 12px;
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink);
+  text-align: center;
+}
+
+.logo-modal-calculator h4 {
+  margin: 20px 0 12px;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.calculator-info {
+  font-size: 14px;
+  color: #666;
+  margin: 0 0 20px;
+  line-height: 1.5;
+}
+
+.calculator-input {
+  margin-bottom: 24px;
+}
+
+.calculator-input label {
+  display: block;
+  margin-bottom: 8px;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--ink);
+}
+
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.posts-slider {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bd);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.posts-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.posts-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.posts-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.posts-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.slider-value {
+  min-width: 40px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--accent);
+  background: #e8f6ec;
+  padding: 4px 12px;
+  border-radius: 8px;
+}
+
+/* Calculator Results */
+.calculator-results,
+.calculator-population {
+  margin-top: 24px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 12px;
+  border: 1px solid var(--bd);
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.result-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid var(--bd2);
+}
+
+.result-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.result-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.result-unit {
+  font-size: 11px;
+  color: #888;
+  margin-bottom: 8px;
+}
+
+/* Population Warning */
+.population-warning {
+  background: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 8px;
+  padding: 12px;
+  margin: 16px 0;
+  text-align: center;
+  color: #856404;
+  font-size: 14px;
+}
+
+.population-sources {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--bd);
+  font-size: 11px;
+  color: #666;
+  line-height: 1.6;
+}
+
+.population-sources a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.population-sources a:hover {
+  text-decoration: underline;
+}
+
+/* Comparison Section */
+.calculator-comparison {
+  margin-top: 24px;
+  padding: 16px;
+  background: #fafafa;
+  border-radius: 12px;
+  border: 1px solid var(--bd);
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.comparison-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid var(--bd2);
+  text-align: center;
+}
+
+.comparison-icon {
+  font-size: 32px;
+  margin-bottom: 4px;
+}
+
+.comparison-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.comparison-description {
+  font-size: 12px;
+  color: #666;
+  line-height: 1.4;
+  margin-top: 4px;
+}
+
+.comparison-sources {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--bd);
+  font-size: 10px;
+  color: #888;
+  line-height: 1.4;
+}
+
+.comparison-sources a {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.comparison-sources a:hover {
+  text-decoration: underline;
+}
+
+.comparison-bar-container {
+  width: 100%;
+  height: 8px;
+  background: var(--bd);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-top: 8px;
+}
+
+.comparison-bar {
+  height: 100%;
+  background: linear-gradient(90deg, #16a34a 0%, #22c55e 50%, #fbbf24 80%, #ef4444 100%);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+  width: 0%;
+}
+
+/* Carbon Credit Card */
+.carbon-credit-card {
+  grid-column: span 1;
+}
+
+.carbon-credit-card.full-width {
+  grid-column: 1 / -1;
+  margin-top: 16px;
+}
+
+.carbon-credit-costs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin: 8px 0;
+}
+
+.currency-display {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  background: #f0f9ff;
+  border-radius: 6px;
+  border: 1px solid #bae6fd;
+}
+
+.currency-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.currency-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+.dirham-symbol {
+  font-family: Arial, sans-serif;
+  direction: rtl;
+  text-align: left;
+}
+
+/* Branding Section */
+.logo-modal-branding {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  margin: 24px 0;
+  padding: 24px;
+  background: #000;
+  border-radius: 12px;
+  border: 1px solid #333;
+}
+
+.contractors-logo {
+  height: 50px;
+  width: auto;
+  max-width: 200px;
+}
+
+.logo-modal-branding p {
+  margin: 0;
+  font-size: 14px;
+  color: #fff;
+  font-style: italic;
+}
+
+.contractors-btn {
+  font-size: 16px;
+  padding: 12px 24px;
+  text-decoration: none;
+  display: inline-block;
+  margin-top: 8px;
+}
+
+/* Responsive Design */
+@media (max-width: 600px) {
+  .logo-modal {
+    width: 95vw;
+    max-height: 95vh;
+  }
+  
+  .logo-modal-content {
+    padding: 16px;
+  }
+  
+  .result-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .comparison-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .slider-container {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .slider-value {
+    text-align: center;
+  }
+}
+
+/* ============================================================
+   GOOGLE APPS SCRIPT WARNING BANNER
+   ============================================================
+   Hides the default Google Apps Script warning banner that
+   appears at the top of deployed web apps.
+*/
+#warning-bar-table,
+#warning,
+.warning-bar,
+.warning-banner-bar {
+  display: none !important;
+  visibility: hidden !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
+
+</style>
+

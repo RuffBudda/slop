@@ -1,0 +1,285 @@
+<!--
+    ============================================================
+    TAB-TIMELINE.HTML - Timeline/List Tab JavaScript
+    ============================================================
+    
+    This file contains the JavaScript code for the Timeline/List tab when running
+    as a Google Apps Script web app. It handles:
+    - Loading all approved posts from Google Sheets
+    - Displaying posts in chronological order
+    - Sorting by scheduled date (earliest first)
+    - Expandable cards to view full content
+    - Reschedule and reject actions
+    - Dock integration for quick navigation
+    
+    ARCHITECTURE:
+    - Linear timeline view of all scheduled posts
+    - Shows final content and images (not variants)
+    - Sorted chronologically (earliest first)
+    - Expandable/collapsible entries
+    - Uses default sheet name (single-user app)
+    
+    ============================================================
+-->
+
+<script>
+/** ============================================================
+ *  TAB-TIMELINE.HTML - List view of approved posts
+ *  Shows approved posts in chronological order with dock integration
+ *  ============================================================ */
+
+(function(){
+  'use strict';
+  
+  // Get cache from global AppState
+  const { cache } = window.AppState;
+  
+  /**
+   * Loads timeline data and displays approved posts.
+   * 
+   * Fetches all approved posts and displays them in chronological order.
+   * Posts are sorted by their post_schedule date (earliest first).
+   * 
+   * Uses caching to avoid unnecessary server calls.
+   * 
+   * @example
+   * window.loadTimeline();
+   * // Loads and displays all approved posts
+   */
+  window.loadTimeline = function() {
+    const timelineContainer = document.getElementById('timelineContainer');
+    if (!timelineContainer) return;
+
+    // Use default sheet name (single-user app)
+    const sheetName = (window.AppState && window.AppState.activeSheet) || 'Automated Content';
+    const key = sheetName;  // Cache key per sheet
+
+    // Check cache first
+    if (window.isCacheValid('timeline') && cache.timeline.sheet === key) {
+      renderTimeline(cache.timeline.data);
+      return;
+    }
+
+    // Show loading message
+    timelineContainer.innerHTML = `
+      <div style="text-align:center;padding:40px;color:#666">
+        Loading list for <strong>${sheetName}</strong>...
+      </div>
+    `;
+      
+    // Fetch approved posts from server
+    google.script.run
+      .withSuccessHandler(function(o){
+        window.setCache('timeline', o, { sheet: key });
+        renderTimeline(o);
+      })
+      .withFailureHandler(function(){
+        window.showToast('Error loading timeline', 'bad');
+        timelineContainer.innerHTML = '<div style="text-align:center;padding:40px;color:#666">Error loading posts</div>';
+      })
+      .getRowsByStatus('Approved', sheetName);
+  };
+
+  /**
+   * Renders timeline entries from server data.
+   * 
+   * Creates timeline entries for each approved post, sorted by
+   * scheduled date (earliest first). Each entry shows:
+   * - Date and time
+   * - Post ID and type
+   * - Final content (expandable)
+   * - Final images (expandable)
+   * - Action buttons (Reject, Reschedule)
+   * 
+   * @param {Object} o - Response object from getRowsByStatus()
+   *   - rows: Array of approved post objects
+   * 
+   * @example
+   * renderTimeline({rows: [...]});
+   */
+  function renderTimeline(o) {
+    const timelineContainer = document.getElementById('timelineContainer');
+    if (!timelineContainer) return;
+    
+    const rows = (o && o.rows ? o.rows : []);
+    timelineContainer.innerHTML = '';
+
+    // Show empty state if no posts
+    if (rows.length === 0) {
+      timelineContainer.innerHTML = '<div style="text-align:center;padding:40px;color:#666">List is empty</div>';
+      if (typeof window.updateDock === 'function') {
+        window.updateDock([]);
+      }
+      return;
+    }
+
+    // Sort by schedule date (earliest first)
+    const sorted = rows.slice().sort((a, b) => {
+      const dateA = new Date(a.post_schedule || 0);
+      const dateB = new Date(b.post_schedule || 0);
+      return dateA - dateB;
+    });
+
+    // Update dock with post IDs for navigation
+    if (typeof window.updateDock === 'function') {
+      window.updateDock(sorted.map(r => ({ id: r.id })));
+    }
+
+    // Create timeline entry for each post
+    sorted.forEach(r => {
+      const tline = document.createElement('div');
+      tline.className = 'tline';
+      tline.id = 'post-' + r.id;
+
+      // ============================================================
+      // LEFT SIDE - Date/Time Display
+      // ============================================================
+      const tleft = document.createElement('div');
+      tleft.className = 'tleft';
+      
+      const when = new Date(r.post_schedule);
+      tleft.innerHTML = 
+        '<span>' + when.toLocaleDateString(undefined, {month: 'short', day: 'numeric'}) + '</span>' +
+        '<span style="font-size:13px;color:#666">' + 
+        when.toLocaleTimeString([], {hour: '2-digit', minute: '2-digit'}) + 
+        '</span>';
+
+      // ============================================================
+      // RIGHT SIDE - Content and Actions
+      // ============================================================
+      const tright = document.createElement('div');
+      tright.className = 'tright';
+
+      // Header with ID, type, and expand button
+      const thead = document.createElement('div');
+      thead.className = 'trowHead';
+      
+      const arrow = document.createElement('button');
+      arrow.className = 'tarrow';
+      arrow.textContent = '▸';
+      arrow.title = 'Expand';
+
+      thead.innerHTML = 
+        '<span class="chip">ID: <b>' + r.id + '</b></span>';
+      thead.insertBefore(arrow, thead.firstChild);
+
+      // ============================================================
+      // BODY - Collapsible Content
+      // ============================================================
+      // Shows ONLY final content (not variants)
+      const tbody = document.createElement('div');
+      tbody.className = 'trowBody';
+
+      // Final content text
+      const contentDiv = document.createElement('div');
+      contentDiv.style.whiteSpace = 'pre-wrap';
+      contentDiv.style.marginBottom = '12px';
+      contentDiv.style.fontSize = '14px';
+      contentDiv.style.lineHeight = '1.5';
+      contentDiv.textContent = r.final_content || '(No final content)';
+      tbody.appendChild(contentDiv);
+
+      // Final images (if available)
+      if (r.final_img) {
+        const imgs = r.final_img.split(',').map(s => s.trim()).filter(Boolean);
+        if (imgs.length) {
+          const grid = document.createElement('div');
+          grid.className = 'gridImgs grid-' + Math.min(3, imgs.length);
+          
+          imgs.forEach(u => {
+            const a = document.createElement('a');
+            a.href = u;
+            a.target = '_blank';
+            a.rel = 'noopener';
+            const img = document.createElement('img');
+            // Convert Google Drive URLs to working format
+            img.src = (typeof window.convertGoogleDriveUrl === 'function') 
+              ? window.convertGoogleDriveUrl(u) 
+              : u;
+            img.alt = 'Image';
+            img.loading = 'lazy';
+            a.appendChild(img);
+            grid.appendChild(a);
+          });
+          
+          tbody.appendChild(grid);
+        }
+      }
+
+      // ============================================================
+      // ACTION BUTTONS
+      // ============================================================
+      const actions = document.createElement('div');
+      actions.style.marginTop = '12px';
+      actions.style.display = 'flex';
+      actions.style.gap = '8px';
+
+      // Reject button
+      const rejectBtn = document.createElement('button');
+      rejectBtn.className = 'btn reject';
+      rejectBtn.innerHTML = '<span class="ico"></span> Reject';
+      rejectBtn.onclick = function() {
+        if (!confirm('Reject this post?')) return;
+        
+        const sheetName = (window.AppState && window.AppState.activeSheet) || 'Automated Content';
+        
+        google.script.run
+          .withSuccessHandler(function(){
+            window.showToast('Rejected', 'bad');
+            window.clearCache();
+            window.loadTimeline();
+          })
+          .withFailureHandler(function(e){
+            window.showToast('Error: ' + e.message, 'bad');
+          })
+          .rejectAndClearByRow(r.rowIndex, sheetName);
+      };
+
+      // Reschedule button
+      const reschedBtn = document.createElement('button');
+      reschedBtn.className = 'btn editBtn';
+      reschedBtn.textContent = 'Reschedule';
+      reschedBtn.onclick = function() {
+        const sheetName = (window.AppState && window.AppState.activeSheet) || 'Automated Content';
+        
+        window.showRescheduleModal(
+          r.rowIndex,
+          r.post_schedule,
+          sheetName,
+          function() {
+            window.loadTimeline();
+          }
+        );
+      };
+
+      actions.appendChild(rejectBtn);
+      actions.appendChild(reschedBtn);
+      tbody.appendChild(actions);
+
+      // ============================================================
+      // EXPAND/COLLAPSE TOGGLE
+      // ============================================================
+      arrow.onclick = function() {
+        if (tbody.classList.contains('show')) {
+          tbody.classList.remove('show');
+          arrow.textContent = '▸';
+        } else {
+          tbody.classList.add('show');
+          arrow.textContent = '▾';
+        }
+      };
+
+      // Assemble timeline entry
+      tright.appendChild(thead);
+      tright.appendChild(tbody);
+      tline.appendChild(tleft);
+      tline.appendChild(tright);
+      timelineContainer.appendChild(tline);
+    });
+  }
+  
+  console.log('✓ Timeline tab loaded');
+  
+})();
+</script>
+

@@ -1,0 +1,1145 @@
+<!--
+    ============================================================
+    UTILS.HTML - Utility Functions for Apps Script Web App
+    ============================================================
+    
+    This file contains shared utility functions used throughout the
+    Apps Script web app interface. It provides:
+    - Caching system for API responses (reduces server calls)
+    - Toast notifications (user feedback messages)
+    - Loading indicators
+    - Tab switching logic
+    - Dock navigation
+    - Global state management (AppState)
+    - Reschedule modal functionality
+    
+    All functions are attached to the window object for global access.
+    This file is included in index.html via Apps Script template syntax.
+    
+    ARCHITECTURE:
+    - Single-user application (no sheet switching)
+    - Centralized state management
+    - Efficient caching with TTL
+    - Reusable UI components
+    
+    ============================================================
+-->
+
+<script>
+console.log('Utils loading...');
+(function(){
+  'use strict';
+  
+  // ============================================================
+  // CACHE CONFIGURATION
+  // ============================================================
+  // Cache system reduces server calls by storing API responses
+  // for a limited time (TTL - Time To Live).
+  
+  /**
+   * Cache Time-To-Live: 5 minutes (300,000 milliseconds)
+   * 
+   * Data cached for this duration to reduce server calls.
+   * After TTL expires, fresh data is fetched from server.
+   * 
+   * @type {number}
+   */
+  const CACHE_TTL = 5 * 60 * 1000;
+  
+  /**
+   * Cache storage object.
+   * 
+   * Each cache entry stores:
+   * - data: The cached data object
+   * - timestamp: When the data was cached (milliseconds since epoch)
+   * - Optional metadata: Additional info (e.g., sheet name, month)
+   * 
+   * Cache keys:
+   * - content: Content tab data
+   * - calendar: Calendar tab data
+   * - timeline: Timeline/List tab data
+   * - bin: Bin tab data
+   * 
+   * @type {Object}
+   */
+  const cache = {
+    content: {data: null, timestamp: 0},      // Cached content tab data
+    calendar: {data: null, timestamp: 0, month: null}, // Cached calendar data
+    timeline: {data: null, timestamp: 0},     // Cached timeline data
+    bin: {data: null, timestamp: 0}            // Cached bin data
+  };
+  
+  /**
+   * Current calendar month being viewed.
+   * 
+   * @type {Date}
+   */
+  let calMonth = new Date();
+  
+  /**
+   * Modal context (stores data for modals).
+   * 
+   * @type {Object}
+   */
+  let modalCtx = {};
+  
+  // ============================================================
+  // DOM ELEMENT REFERENCES
+  // ============================================================
+  // Cache references to frequently accessed DOM elements
+  // for better performance.
+  
+  const els = {
+    btnContent: document.getElementById('btnContent'),      // Content tab button
+    btnCalendar: document.getElementById('btnCalendar'),    // Calendar tab button
+    btnList: document.getElementById('btnList'),            // List tab button
+    btnBin: document.getElementById('btnBin'),              // Bin tab button
+    contentView: document.getElementById('contentView'),    // Content tab container
+    calendarView: document.getElementById('calendarView'),  // Calendar tab container
+    timelineView: document.getElementById('timelineView'),   // Timeline tab container
+    binView: document.getElementById('binView'),            // Bin tab container
+    contentCards: document.getElementById('contentCards'),   // Content cards container
+    fabDock: document.getElementById('fabDock'),            // Dock container
+    dockItems: document.getElementById('dockItems'),         // Dock items container
+    toastWrap: document.getElementById('toastWrap')          // Toast notifications container
+  };
+  
+  // ============================================================
+  // GLOBAL STATE (AppState)
+  // ============================================================
+  // Central state object accessible throughout the application.
+  // Combines DOM element references, cache, and other state.
+  
+  window.AppState = {
+    ...els, 
+    cache, 
+    CACHE_TTL, 
+    calMonth, 
+    modalCtx, 
+    initial: els.contentView?.querySelector('.initial'),  // Loading indicator
+    empty: els.contentView?.querySelector('.empty'),        // Empty state element
+    activeSheet: 'Automated Content'  // Default sheet name (single-user app)
+  };
+  
+  // ============================================================
+  // CACHE UTILITY FUNCTIONS
+  // ============================================================
+  
+  /**
+   * Checks if cached data is still valid (within TTL).
+   * 
+   * @param {string} k - Cache key ('content', 'calendar', 'timeline', 'bin')
+   * @returns {boolean} True if cache is valid, false otherwise
+   * 
+   * @example
+   * if (window.isCacheValid('content')) {
+   *   // Use cached data
+   * }
+   */
+  window.isCacheValid = function(k) {
+    return cache[k].data && (Date.now() - cache[k].timestamp < CACHE_TTL);
+  };
+  
+  /**
+   * Sets cached data with optional metadata.
+   * 
+   * @param {string} k - Cache key
+   * @param {*} d - Data to cache
+   * @param {Object} e - Optional metadata object
+   * 
+   * @example
+   * window.setCache('content', {rows: [...]}, {sheet: 'Automated Content'});
+   */
+  window.setCache = function(k, d, e = {}) {
+    cache[k] = {
+      data: d,
+      timestamp: Date.now(),
+      ...e
+    };
+  };
+  
+  /**
+   * Clears cached data.
+   * 
+   * @param {string|undefined} k - Cache key to clear, or undefined to clear all
+   * 
+   * @example
+   * window.clearCache('content');  // Clear content cache
+   * window.clearCache();            // Clear all caches
+   */
+  window.clearCache = function(k) {
+    if (k) {
+      cache[k] = {data: null, timestamp: 0};
+    } else {
+      Object.keys(cache).forEach(key => {
+        cache[key] = {data: null, timestamp: 0};
+      });
+    }
+  };
+  
+  // ============================================================
+  // TOAST NOTIFICATION SYSTEM
+  // ============================================================
+  
+  /**
+   * Shows a toast notification to the user.
+   * 
+   * Toast notifications appear at the bottom of the screen
+   * and automatically disappear after 3 seconds.
+   * 
+   * @param {string} msg - Message text to display
+   * @param {string} type - Toast type: 'ok' (green), 'bad' (red), or 'neutral' (gray)
+   * 
+   * @example
+   * window.showToast('Post approved!', 'ok');
+   * window.showToast('Error occurred', 'bad');
+   */
+  window.showToast = function(msg, type) {
+    const toast = document.createElement('div');
+    toast.className = 'toast ' + (type || 'neutral');
+    toast.textContent = msg;
+    els.toastWrap.appendChild(toast);
+    
+    // Auto-remove after 3 seconds
+    setTimeout(() => {
+      toast.style.opacity = '0';
+      toast.style.transition = 'opacity 0.3s';
+      setTimeout(() => toast.remove(), 300);
+    }, 3000);
+  };
+
+  // ============================================================
+  // LOADING INDICATORS
+  // ============================================================
+  
+  /**
+   * Shows the global loading overlay.
+   * 
+   * Displays a full-screen spinner overlay during server operations.
+   * 
+   * @example
+   * window.showLoader();
+   * // Shows loading overlay
+   */
+  window.showLoader = function () {
+    const el = document.getElementById('globalLoader');
+    if (el) el.classList.remove('hidden');
+  };
+
+  /**
+   * Hides the global loading overlay.
+   * 
+   * @example
+   * window.hideLoader();
+   * // Hides loading overlay
+   */
+  window.hideLoader = function () {
+    const el = document.getElementById('globalLoader');
+    if (el) el.classList.add('hidden');
+  };
+  
+  // ============================================================
+  // DOCK NAVIGATION
+  // ============================================================
+  
+  /**
+   * Updates the dock with post IDs for quick navigation.
+   * 
+   * Creates clickable dots in the dock, one for each post ID.
+   * Clicking a dot navigates to that post (Content tab) or
+   * scrolls to it (List tab).
+   * 
+   * @param {Array<Object>} rows - Array of post objects with 'id' property
+   * 
+   * @example
+   * window.updateDock([{id: 'POST-1'}, {id: 'POST-2'}]);
+   * // Creates dock dots for POST-1 and POST-2
+   */
+  window.updateDock = function(rows) {
+    if (!els.dockItems) return;
+
+    els.dockItems.innerHTML = '';
+
+    if (!rows || !rows.length) {
+      return;
+    }
+
+    // Create dot for each post ID
+    rows.forEach((r, i) => {
+      const dot = document.createElement('button');
+      dot.type = 'button';
+      dot.className = 'dot' + (i === 0 ? ' active' : '');
+      dot.textContent = r.id;
+
+      // Click handler for dock dot
+      dot.onclick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+
+        // Update active state
+        els.dockItems.querySelectorAll('.dot').forEach(d => d.classList.remove('active'));
+        dot.classList.add('active');
+
+        // Content tab: jump to that card
+        if (els.btnContent?.classList.contains('active')) {
+          if (typeof window.jumpToCardById === 'function') {
+            window.jumpToCardById(r.id);
+          }
+        }
+        // List tab: scroll to post
+        else if (els.btnList?.classList.contains('active')) {
+          const target = document.getElementById('post-' + r.id);
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          }
+        }
+      };
+
+      els.dockItems.appendChild(dot);
+    });
+  };
+  
+  /**
+   * Updates dock visibility based on active tab.
+   * 
+   * Shows dock only for Content and List tabs (where navigation is useful).
+   * Hides dock for Calendar and Bin tabs.
+   */
+  function updateDockVisibility() {
+    if (els.fabDock) {
+      // Show dock for Content tab and List tab
+      const showDock = els.btnContent?.classList.contains('active') || 
+                       els.btnList?.classList.contains('active');
+      els.fabDock.style.display = showDock ? 'block' : 'none';
+    }
+  }
+  
+  // ============================================================
+  // TAB SWITCHING LOGIC
+  // ============================================================
+  
+  /**
+   * Activates a specific tab and shows its content.
+   * 
+   * Handles tab switching by:
+   * 1. Removing active class from all tab buttons
+   * 2. Hiding all tab views
+   * 3. Adding active class to selected tab button
+   * 4. Showing selected tab view
+   * 5. Loading data if needed
+   * 6. Updating dock visibility
+   * 
+   * @param {string} tab - Tab name: 'content', 'calendar', 'list', or 'bin'
+   * 
+   * @example
+   * window.activateTab('content');  // Switch to Content tab
+   * window.activateTab('calendar'); // Switch to Calendar tab
+   */
+  window.activateTab = function(tab) {
+    // Remove active class from all buttons
+    [els.btnContent, els.btnCalendar, els.btnList, els.btnBin].forEach(b => {
+      if (b) b.classList.remove('active');
+    });
+    
+    // Hide all views
+    [els.contentView, els.calendarView, els.timelineView, els.binView].forEach(v => {
+      if (v) v.style.display = 'none';
+    });
+    
+    // Activate selected tab
+    if (tab === 'content') {
+      if (els.btnContent) els.btnContent.classList.add('active');
+      if (els.contentView) els.contentView.style.display = 'block';
+      // Load data if cache is invalid
+      if (!window.isCacheValid('content') && typeof window.fetchData === 'function') {
+        window.fetchData();
+      }
+    } else if (tab === 'calendar') {
+      if (els.btnCalendar) els.btnCalendar.classList.add('active');
+      if (els.calendarView) {
+        els.calendarView.style.display = 'block';
+        els.calendarView.classList.remove('hidden');
+      }
+      // Load calendar if function exists
+      if (typeof window.loadCalendarMonth === 'function') {
+        window.loadCalendarMonth(calMonth);
+      }
+    } else if (tab === 'list') {
+      if (els.btnList) els.btnList.classList.add('active');
+      if (els.timelineView) els.timelineView.style.display = 'block';
+      // Load timeline if function exists
+      if (typeof window.loadTimeline === 'function') {
+        window.loadTimeline();
+      }
+    } else if (tab === 'bin') {
+      if (els.btnBin) els.btnBin.classList.add('active');
+      if (els.binView) els.binView.style.display = 'block';
+      // Load bin if function exists
+      if (typeof window.loadBin === 'function') {
+        window.loadBin();
+      }
+    }
+    
+    // Update dock visibility
+    updateDockVisibility();
+  };
+  
+  // ============================================================
+  // TAB BUTTON EVENT HANDLERS
+  // ============================================================
+  // Attach click handlers to tab navigation buttons
+  
+  if (els.btnContent) {
+    els.btnContent.onclick = () => window.activateTab('content');
+  }
+  if (els.btnCalendar) {
+    els.btnCalendar.onclick = () => window.activateTab('calendar');
+  }
+  if (els.btnList) {
+    els.btnList.onclick = () => window.activateTab('list');
+  }
+  if (els.btnBin) {
+    els.btnBin.onclick = () => window.activateTab('bin');
+  }
+  
+  // ============================================================
+  // RESCHEDULE MODAL
+  // ============================================================
+  
+  /**
+   * Shows a modal dialog for rescheduling a post.
+   * 
+   * Allows user to pick a new date and time for a scheduled post.
+   * Used by Calendar and Timeline tabs.
+   * 
+   * @param {number} rowIndex - 1-based row index in the sheet
+   * @param {string} currentSchedule - Current schedule date/time (ISO string)
+   * @param {string} sheetName - Sheet name (uses default for single-user app)
+   * @param {Function} onSuccess - Callback function called after successful reschedule
+   * 
+   * @example
+   * window.showRescheduleModal(5, '2024-01-15T14:30:00Z', 'Automated Content', () => {
+   *   window.loadCalendarMonth(window.AppState.calMonth);
+   * });
+   */
+  window.showRescheduleModal = function(rowIndex, currentSchedule, sheetName, onSuccess) {
+    const modal = document.createElement('dialog');
+    modal.className = 'reschedModal';
+    const base = new Date(currentSchedule);
+
+    // Format date for input (YYYY-MM-DD)
+    const yyyy = base.getFullYear();
+    const mm = String(base.getMonth() + 1).padStart(2, '0');
+    const dd = String(base.getDate()).padStart(2, '0');
+    const formattedDate = `${yyyy}-${mm}-${dd}`;
+
+    // Format time for input (HH:MM in 24-hour format)
+    const hh = String(base.getHours()).padStart(2, '0');
+    const min = String(base.getMinutes()).padStart(2, '0');
+    const formattedTime = `${hh}:${min}`;
+
+    // Build modal HTML
+    modal.innerHTML = `
+      <h3>Reschedule Post</h3>
+
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="rDate" value="${formattedDate}" required>
+      </div>
+
+      <div class="field">
+        <label>Time</label>
+        <input type="time" id="rTime" value="${formattedTime}" required>
+      </div>
+
+      <div class="btns">
+        <button class="btn clear" id="rCancel"><span class="ico"></span> Cancel</button>
+        <button class="btn approve" id="rOk"><span class="ico"></span> Save</button>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    modal.showModal();
+
+    // Cancel button handler
+    modal.querySelector('#rCancel').onclick = () => {
+      modal.close();
+      modal.remove();
+    };
+
+    // Save button handler
+    modal.querySelector('#rOk').onclick = () => {
+      const d = modal.querySelector('#rDate').value.trim();
+      const t = modal.querySelector('#rTime').value.trim();
+
+      // Validate inputs
+      if (!d || !t) {
+        window.showToast('Date and time required', 'bad');
+        return;
+      }
+
+      // Build ISO string from date and time
+      const iso = `${d}T${t}:00`;
+
+      // Update schedule on server
+      google.script.run
+        .withSuccessHandler(() => {
+          modal.close();
+          modal.remove();
+          window.showToast('Rescheduled', 'ok');
+          window.clearCache();
+          if (onSuccess) onSuccess();
+        })
+        .withFailureHandler(e => window.showToast('Error: ' + e.message, 'bad'))
+        .updatePostScheduleByRow(rowIndex, iso, sheetName);
+    };
+  };
+  
+  /**
+   * Pads a number to 2 digits with leading zero.
+   * 
+   * @param {number} n - Number to pad
+   * @returns {string} Padded string (e.g., 5 -> "05", 12 -> "12")
+   * 
+   * @example
+   * window.pad2(5);  // Returns "05"
+   * window.pad2(12); // Returns "12"
+   */
+  window.pad2 = function(n) {
+    return n < 10 ? '0' + n : String(n);
+  };
+  
+  // ============================================================
+  // GOOGLE DRIVE IMAGE URL CONVERTER
+  // ============================================================
+  
+  /**
+   * Converts Google Drive URLs to a working image format.
+   * 
+   * Google Drive links in various formats don't always work directly
+   * as image sources. This function converts them to a format that
+   * can be used in img tags.
+   * 
+   * Handles multiple Google Drive URL formats:
+   * - https://drive.google.com/uc?id=FILE_ID
+   * - https://drive.google.com/file/d/FILE_ID/view
+   * - https://drive.google.com/open?id=FILE_ID
+   * 
+   * Converts them to: https://drive.google.com/uc?export=view&id=FILE_ID
+   * This format allows images to be displayed directly in img tags.
+   * 
+   * @param {string} url - Original Google Drive URL or any other URL
+   * @returns {string} Converted URL that works as image source
+   * 
+   * @example
+   * window.convertGoogleDriveUrl('https://drive.google.com/uc?id=1bXO13R7GzaigBDu5X6wMztPWB2Ixe4Vs');
+   * // Returns: 'https://drive.google.com/uc?export=view&id=1bXO13R7GzaigBDu5X6wMztPWB2Ixe4Vs'
+   */
+  /**
+   * Converts Google Drive URLs to a working image format.
+   * 
+   * Google Drive links in various formats don't always work directly
+   * as image sources. This function converts them to a format that
+   * can be used in img tags.
+   * 
+   * Uses the thumbnail API format which is more reliable for displaying
+   * images. The thumbnail format works better than export=view in many cases.
+   * 
+   * Handles multiple Google Drive URL formats:
+   * - https://drive.google.com/uc?id=FILE_ID
+   * - https://drive.google.com/file/d/FILE_ID/view
+   * - https://drive.google.com/open?id=FILE_ID
+   * 
+   * Converts them to: https://drive.google.com/thumbnail?id=FILE_ID&sz=w1000
+   * This format uses Google Drive's thumbnail API which is more reliable.
+   * 
+   * @param {string} url - Original Google Drive URL or any other URL
+   * @returns {string} Converted URL that works as image source
+   * 
+   * @example
+   * window.convertGoogleDriveUrl('https://drive.google.com/uc?id=1bXO13R7GzaigBDu5X6wMztPWB2Ixe4Vs');
+   * // Returns: 'https://drive.google.com/thumbnail?id=1bXO13R7GzaigBDu5X6wMztPWB2Ixe4Vs&sz=w1000'
+   */
+  window.convertGoogleDriveUrl = function(url) {
+    if (!url || typeof url !== 'string') return url;
+    
+    const trimmedUrl = url.trim();
+    
+    // Check if it's a Google Drive URL
+    if (!trimmedUrl.includes('drive.google.com')) {
+      return trimmedUrl; // Return as-is if not Google Drive
+    }
+    
+    // Extract file ID from various Google Drive URL formats
+    let fileId = null;
+    
+    // Format 1: https://drive.google.com/uc?id=FILE_ID
+    const ucMatch = trimmedUrl.match(/[?&]id=([a-zA-Z0-9_-]+)/);
+    if (ucMatch) {
+      fileId = ucMatch[1];
+    }
+    
+    // Format 2: https://drive.google.com/file/d/FILE_ID/view or /edit
+    if (!fileId) {
+      const fileMatch = trimmedUrl.match(/\/file\/d\/([a-zA-Z0-9_-]+)/);
+      if (fileMatch) {
+        fileId = fileMatch[1];
+      }
+    }
+    
+    // Format 3: https://drive.google.com/open?id=FILE_ID
+    if (!fileId) {
+      const openMatch = trimmedUrl.match(/\/open[?&]id=([a-zA-Z0-9_-]+)/);
+      if (openMatch) {
+        fileId = openMatch[1];
+      }
+    }
+    
+    // If we found a file ID, convert to thumbnail format (more reliable)
+    if (fileId) {
+      // Use thumbnail API with size parameter (w1000 = width 1000px, maintains aspect ratio)
+      // This format is more reliable than export=view
+      return 'https://drive.google.com/thumbnail?id=' + fileId + '&sz=w1000';
+    }
+    
+    // If no file ID found, return original URL
+    return trimmedUrl;
+  };
+  
+  // ============================================================
+  // PRELOAD DATA (Background Loading)
+  // ============================================================
+  // Preloads data for tabs in the background to improve
+  // perceived performance when switching tabs.
+  
+  setTimeout(() => {
+    // Preload calendar data if not cached
+    if (!window.isCacheValid('calendar')) {
+      const y = calMonth.getFullYear();
+      const m = calMonth.getMonth();
+      google.script.run
+        .withSuccessHandler(function(o) {
+          window.setCache('calendar', o, {month: y + '-' + m});
+        })
+        .getApprovedCalendar(
+          new Date(y, m, 1).toISOString(),
+          new Date(y, m + 1, 0, 23, 59, 59).toISOString()
+        );
+    }
+    
+    // Preload timeline data if not cached
+    if (!window.isCacheValid('timeline')) {
+      google.script.run
+        .withSuccessHandler(function(o) {
+          window.setCache('timeline', o);
+        })
+        .getRowsByStatus('Approved');
+    }
+    
+    // Preload bin data if not cached
+    if (!window.isCacheValid('bin')) {
+      google.script.run
+        .withSuccessHandler(function(o) {
+          window.setCache('bin', o);
+        })
+        .getRowsByStatus('Rejected');
+    }
+  }, 2000);  // Wait 2 seconds after page load
+  
+  // ============================================================
+  // DOCK HOVER BEHAVIOR
+  // ============================================================
+  // Keeps dock open while hovering to prevent flicker
+  
+  if (els.fabDock && els.dockItems) {
+    let dockHideTimer = null;
+
+    const openDock = function() {
+      if (dockHideTimer) clearTimeout(dockHideTimer);
+      els.fabDock.classList.add('open');
+    };
+
+    const closeDock = function() {
+      dockHideTimer = setTimeout(() => {
+        els.fabDock.classList.remove('open');
+      }, 150);
+    };
+
+    els.fabDock.addEventListener('mouseenter', openDock);
+    els.fabDock.addEventListener('mouseleave', closeDock);
+  }
+
+  // Initialize dock visibility
+  updateDockVisibility();
+  
+  // ============================================================
+  // LOGO MODAL FUNCTIONALITY
+  // ============================================================
+  
+  /**
+   * Opens the logo modal dialog.
+   * 
+   * Shows the modal with GIF, calculator, and branding information.
+   * 
+   * @example
+   * window.openLogoModal();
+   */
+  window.openLogoModal = function() {
+    const modal = document.getElementById('logoModal');
+    if (modal) {
+      modal.showModal();
+      // Initialize calculator and slider handler when modal opens
+      setTimeout(() => {
+        // Attach slider handler
+        const postsPerWeekSlider = document.getElementById('postsPerWeek');
+        if (postsPerWeekSlider) {
+          // Remove data attribute to allow re-attachment
+          postsPerWeekSlider.removeAttribute('data-handler-attached');
+          
+          // Remove all existing listeners by cloning
+          const newSlider = postsPerWeekSlider.cloneNode(true);
+          postsPerWeekSlider.parentNode.replaceChild(newSlider, postsPerWeekSlider);
+          
+          newSlider.setAttribute('data-handler-attached', 'true');
+          
+          newSlider.addEventListener('input', function() {
+            if (typeof window.updateCalculator === 'function') {
+              window.updateCalculator();
+            }
+          });
+          
+          newSlider.addEventListener('change', function() {
+            if (typeof window.updateCalculator === 'function') {
+              window.updateCalculator();
+            }
+          });
+          
+          // Trigger initial calculation
+          if (typeof window.updateCalculator === 'function') {
+            window.updateCalculator();
+          }
+        } else {
+          // If slider not found, try again
+          setTimeout(() => {
+            const retrySlider = document.getElementById('postsPerWeek');
+            if (retrySlider && typeof window.updateCalculator === 'function') {
+              retrySlider.addEventListener('input', window.updateCalculator);
+              retrySlider.addEventListener('change', window.updateCalculator);
+              window.updateCalculator();
+            }
+          }, 200);
+        }
+        
+        // Initialize calculator
+        if (typeof window.updateCalculator === 'function') {
+          window.updateCalculator();
+        }
+      }, 100);
+    }
+  };
+  
+  /**
+   * Closes the logo modal dialog.
+   * 
+   * @example
+   * window.closeLogoModal();
+   */
+  window.closeLogoModal = function() {
+    const modal = document.getElementById('logoModal');
+    if (modal) {
+      modal.close();
+    }
+  };
+  
+  // Start logo shake cycle: shake for 30 seconds every 2 minutes
+  function startLogoShakeCycle() {
+    const appLogo = document.getElementById('appLogo');
+    if (!appLogo) return;
+    
+    // Check if logo was already clicked in this session
+    const logoClicked = sessionStorage.getItem('logo_clicked');
+    if (logoClicked === 'true') {
+      return; // Don't start shaking if already clicked
+    }
+    
+    function shakeLogo() {
+      // Check if clicked before shaking
+      if (sessionStorage.getItem('logo_clicked') === 'true') {
+        return;
+      }
+      
+      // Add shake class to start animation
+      appLogo.classList.add('shake');
+      
+      // Remove shake class after 30 seconds (30000ms)
+      setTimeout(() => {
+        if (appLogo) {
+          appLogo.classList.remove('shake');
+        }
+      }, 30000);
+    }
+    
+    // Start first shake after 2 minutes (120000ms)
+    setTimeout(() => {
+      shakeLogo();
+      
+      // Then repeat every 2 minutes (120000ms)
+      window.logoShakeInterval = setInterval(() => {
+        shakeLogo();
+      }, 120000);
+    }, 120000);
+  }
+  
+  // Stop logo shake animation
+  function stopLogoShake() {
+    const appLogo = document.getElementById('appLogo');
+    if (appLogo) {
+      appLogo.classList.remove('shake');
+      sessionStorage.setItem('logo_clicked', 'true');
+      
+      // Clear any running intervals
+      if (window.logoShakeInterval) {
+        clearInterval(window.logoShakeInterval);
+        window.logoShakeInterval = null;
+      }
+    }
+  }
+  
+  // Attach logo click handler - ensure element exists
+  function attachLogoHandlers() {
+    // Try logo element first
+    const appLogo = document.getElementById('appLogo');
+    // Also try brand container as fallback
+    const brandContainer = document.querySelector('.brand');
+    
+    if (appLogo) {
+      // Remove any existing listeners by cloning
+      const newLogo = appLogo.cloneNode(true);
+      appLogo.parentNode.replaceChild(newLogo, appLogo);
+      
+      newLogo.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Stop shaking when logo is clicked
+        stopLogoShake();
+        if (typeof window.openLogoModal === 'function') {
+          window.openLogoModal();
+        }
+      });
+    } else if (brandContainer) {
+      // Fallback: attach to brand container
+      brandContainer.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        // Stop shaking when logo is clicked
+        stopLogoShake();
+        if (typeof window.openLogoModal === 'function') {
+          window.openLogoModal();
+        }
+      });
+    }
+    
+    // Start shaking cycle on page load (if not already clicked)
+    startLogoShakeCycle();
+    
+    // Attach close button handler
+    const logoModalClose = document.getElementById('logoModalClose');
+    if (logoModalClose) {
+      logoModalClose.addEventListener('click', () => {
+        if (typeof window.closeLogoModal === 'function') {
+          window.closeLogoModal();
+        }
+      });
+    }
+    
+    // Close modal when clicking backdrop
+    const logoModal = document.getElementById('logoModal');
+    if (logoModal) {
+      logoModal.addEventListener('click', (e) => {
+        if (e.target === logoModal) {
+          if (typeof window.closeLogoModal === 'function') {
+            window.closeLogoModal();
+          }
+        }
+      });
+    }
+  }
+  
+  // Attach handlers when DOM is ready
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', attachLogoHandlers);
+  } else {
+    // DOM already loaded
+    attachLogoHandlers();
+  }
+  
+  // Also try after a delay as fallback
+  setTimeout(attachLogoHandlers, 500);
+  
+  // ============================================================
+  // CO2/WATER CALCULATOR
+  // ============================================================
+  
+  /**
+   * Calculator constants
+   */
+  const CALCULATOR_CONSTANTS = {
+    CO2_PER_POST_MIN: 3,      // grams
+    CO2_PER_POST_MAX: 13,     // grams
+    CO2_PER_POST_AVG: 8,      // grams (average)
+    WATER_PER_POST_MIN: 10,    // milliliters
+    WATER_PER_POST_MAX: 500,  // milliliters
+    WATER_PER_POST_AVG: 255,  // milliliters (average)
+    TREES_PER_POST: 0.000008,  // trees cut down per post (3 variations + images)
+    UAE_POPULATION: 10000000,  // 10 million
+    WORLD_POPULATION: 8000000000  // 8 billion
+  };
+  
+  /**
+   * Comparison constants for real-world comparisons
+   */
+  const COMPARISON_CONSTANTS = {
+    DRIVE_DUBAI_ABU_DHABI_CO2: 25000,  // 25 kg CO2 for 140km drive
+    STEAK_CO2: 5400,                    // 5.4 kg CO2 for 200g steak
+    TOWNHOUSE_ELECTRICITY_CO2_PER_YEAR: 1200000,  // 1,200 kg CO2 per year
+    CARBON_CREDIT_COST_PER_TONNE_USD: 20,  // $20 per tonne CO2 (average voluntary market, nature-based removal)
+    USD_TO_AED_RATE: 3.67  // 1 USD = 3.67 AED
+  };
+  
+  /**
+   * Formats a number with appropriate units and commas.
+   * 
+   * @param {number} value - The value to format
+   * @param {string} type - 'CO2', 'WATER', or 'TREES'
+   * @returns {string} Formatted string with units
+   * 
+   * @example
+   * formatImpact(8500, 'CO2');  // Returns "8.5 kg CO₂"
+   * formatImpact(255000, 'WATER');  // Returns "255 L"
+   * formatImpact(0.008, 'TREES');  // Returns "0.008 trees"
+   */
+  function formatImpact(value, type) {
+    if (type === 'CO2') {
+      if (value >= 1000) {
+        // Convert to kg and format with commas
+        const kgValue = value / 1000;
+        return formatNumber(kgValue.toFixed(2)) + ' kg CO₂';
+      } else {
+        return value.toFixed(2) + ' g CO₂';
+      }
+    } else if (type === 'WATER') {
+      // Always convert to litres
+      const litres = value / 1000;
+      if (litres >= 1) {
+        return formatNumber(litres.toFixed(2)) + ' L';
+      } else {
+        return litres.toFixed(3) + ' L';
+      }
+    } else if (type === 'TREES') {
+      if (value >= 1000000) {
+        return (value / 1000000).toFixed(2) + ' million trees';
+      } else if (value >= 1000) {
+        return (value / 1000).toFixed(2) + ' thousand trees';
+      } else if (value >= 1) {
+        return value.toFixed(3) + ' trees';
+      } else {
+        return value.toFixed(6) + ' trees';
+      }
+    }
+    return value.toString();
+  }
+  
+  /**
+   * Formats large numbers with commas.
+   * 
+   * @param {number} num - Number to format
+   * @returns {string} Formatted number with commas
+   */
+  function formatNumber(num) {
+    return new Intl.NumberFormat('en-US').format(num);
+  }
+  
+  /**
+   * Updates the calculator display with current values.
+   * 
+   * Calculates and displays:
+   * - Individual impact (per day, month, year)
+   * - Population impact (UAE and World, 100% of population)
+   * 
+   * @example
+   * window.updateCalculator();
+   */
+  window.updateCalculator = function() {
+    const slider = document.getElementById('postsPerWeek');
+    const valueDisplay = document.getElementById('postsPerWeekValue');
+    
+    if (!slider || !valueDisplay) return;
+    
+    const postsPerWeek = parseInt(slider.value, 10);
+    valueDisplay.textContent = postsPerWeek;
+    
+    // Calculate individual impact
+    const postsPerDay = postsPerWeek / 7;
+    const postsPerMonth = postsPerWeek * 4.33; // Average weeks per month
+    const postsPerYear = postsPerWeek * 52;
+    
+    // CO2 calculations (using average 8g per post)
+    const co2PerDay = postsPerDay * CALCULATOR_CONSTANTS.CO2_PER_POST_AVG;
+    const co2PerMonth = postsPerMonth * CALCULATOR_CONSTANTS.CO2_PER_POST_AVG;
+    const co2PerYear = postsPerYear * CALCULATOR_CONSTANTS.CO2_PER_POST_AVG;
+    
+    // Water calculations (using average 255ml per post)
+    const waterPerDay = postsPerDay * CALCULATOR_CONSTANTS.WATER_PER_POST_AVG;
+    const waterPerMonth = postsPerMonth * CALCULATOR_CONSTANTS.WATER_PER_POST_AVG;
+    const waterPerYear = postsPerYear * CALCULATOR_CONSTANTS.WATER_PER_POST_AVG;
+    
+    // Tree calculations (using 0.000008 trees per post)
+    const treesPerDay = postsPerDay * CALCULATOR_CONSTANTS.TREES_PER_POST;
+    const treesPerMonth = postsPerMonth * CALCULATOR_CONSTANTS.TREES_PER_POST;
+    const treesPerYear = postsPerYear * CALCULATOR_CONSTANTS.TREES_PER_POST;
+    
+    // Update individual results
+    const resultDayCO2 = document.getElementById('resultDayCO2');
+    const resultDayWater = document.getElementById('resultDayWater');
+    const resultDayTrees = document.getElementById('resultDayTrees');
+    const resultMonthCO2 = document.getElementById('resultMonthCO2');
+    const resultMonthWater = document.getElementById('resultMonthWater');
+    const resultMonthTrees = document.getElementById('resultMonthTrees');
+    const resultYearCO2 = document.getElementById('resultYearCO2');
+    const resultYearWater = document.getElementById('resultYearWater');
+    const resultYearTrees = document.getElementById('resultYearTrees');
+    
+    if (resultDayCO2) resultDayCO2.textContent = formatImpact(co2PerDay, 'CO2');
+    if (resultDayWater) resultDayWater.textContent = formatImpact(waterPerDay, 'WATER');
+    if (resultDayTrees) resultDayTrees.textContent = formatImpact(treesPerDay, 'TREES');
+    if (resultMonthCO2) resultMonthCO2.textContent = formatImpact(co2PerMonth, 'CO2');
+    if (resultMonthWater) resultMonthWater.textContent = formatImpact(waterPerMonth, 'WATER');
+    if (resultMonthTrees) resultMonthTrees.textContent = formatImpact(treesPerMonth, 'TREES');
+    if (resultYearCO2) resultYearCO2.textContent = formatImpact(co2PerYear, 'CO2');
+    if (resultYearWater) resultYearWater.textContent = formatImpact(waterPerYear, 'WATER');
+    if (resultYearTrees) resultYearTrees.textContent = formatImpact(treesPerYear, 'TREES');
+    
+    // Calculate population impact (100% of population)
+    const uaeCO2PerYear = co2PerYear * CALCULATOR_CONSTANTS.UAE_POPULATION;
+    const uaeWaterPerYear = waterPerYear * CALCULATOR_CONSTANTS.UAE_POPULATION;
+    const uaeTreesPerYear = treesPerYear * CALCULATOR_CONSTANTS.UAE_POPULATION;
+    const worldCO2PerYear = co2PerYear * CALCULATOR_CONSTANTS.WORLD_POPULATION;
+    const worldWaterPerYear = waterPerYear * CALCULATOR_CONSTANTS.WORLD_POPULATION;
+    const worldTreesPerYear = treesPerYear * CALCULATOR_CONSTANTS.WORLD_POPULATION;
+    
+    // Update population results
+    const resultUAE_CO2 = document.getElementById('resultUAE_CO2');
+    const resultUAE_Water = document.getElementById('resultUAE_Water');
+    const resultUAE_Trees = document.getElementById('resultUAE_Trees');
+    const resultWorld_CO2 = document.getElementById('resultWorld_CO2');
+    const resultWorld_Water = document.getElementById('resultWorld_Water');
+    const resultWorld_Trees = document.getElementById('resultWorld_Trees');
+    
+    if (resultUAE_CO2) resultUAE_CO2.textContent = formatImpact(uaeCO2PerYear, 'CO2');
+    if (resultUAE_Water) resultUAE_Water.textContent = formatImpact(uaeWaterPerYear, 'WATER');
+    if (resultUAE_Trees) resultUAE_Trees.textContent = formatImpact(uaeTreesPerYear, 'TREES');
+    if (resultWorld_CO2) resultWorld_CO2.textContent = formatImpact(worldCO2PerYear, 'CO2');
+    if (resultWorld_Water) resultWorld_Water.textContent = formatImpact(worldWaterPerYear, 'WATER');
+    if (resultWorld_Trees) resultWorld_Trees.textContent = formatImpact(worldTreesPerYear, 'TREES');
+    
+    // Calculate and display comparison values
+    // Drives comparison
+    const drivesCount = co2PerYear / COMPARISON_CONSTANTS.DRIVE_DUBAI_ABU_DHABI_CO2;
+    const resultDrives = document.getElementById('resultDrives');
+    if (resultDrives) {
+      resultDrives.textContent = formatNumber(drivesCount.toFixed(1)) + ' drives';
+    }
+    
+    // Steaks comparison
+    const steaksCount = co2PerYear / COMPARISON_CONSTANTS.STEAK_CO2;
+    const resultSteaks = document.getElementById('resultSteaks');
+    if (resultSteaks) {
+      resultSteaks.textContent = formatNumber(steaksCount.toFixed(1)) + ' steaks';
+    }
+    
+    // Townhouse electricity comparison
+    const townhouseYears = co2PerYear / COMPARISON_CONSTANTS.TOWNHOUSE_ELECTRICITY_CO2_PER_YEAR;
+    const resultTownhouse = document.getElementById('resultTownhouse');
+    if (resultTownhouse) {
+      resultTownhouse.textContent = formatNumber(townhouseYears.toFixed(2)) + ' years';
+    }
+    
+    // Carbon credit costs
+    const tonnesCO2 = co2PerYear / 1000000; // Convert grams to tonnes
+    const usdCost = tonnesCO2 * COMPARISON_CONSTANTS.CARBON_CREDIT_COST_PER_TONNE_USD;
+    const aedCost = usdCost * COMPARISON_CONSTANTS.USD_TO_AED_RATE;
+    
+    const resultCarbonUSD = document.getElementById('resultCarbonUSD');
+    const resultCarbonAED = document.getElementById('resultCarbonAED');
+    
+    if (resultCarbonUSD) {
+      resultCarbonUSD.textContent = '$' + formatNumber(usdCost.toFixed(2));
+    }
+    if (resultCarbonAED) {
+      resultCarbonAED.textContent = 'د.إ ' + formatNumber(aedCost.toFixed(2));
+    }
+    
+    // Update comparison bar visualizations
+    updateComparisonBars(co2PerYear);
+  };
+  
+  /**
+   * Updates comparison bar visualizations
+   * 
+   * @param {number} annualCO2 - Annual CO2 in grams
+   */
+  function updateComparisonBars(annualCO2) {
+    // Calculate percentages for bar visualization
+    const drivesBar = document.getElementById('drivesBar');
+    const steaksBar = document.getElementById('steaksBar');
+    const townhouseBar = document.getElementById('townhouseBar');
+    
+    if (drivesBar) {
+      const drivesCount = annualCO2 / COMPARISON_CONSTANTS.DRIVE_DUBAI_ABU_DHABI_CO2;
+      // Show bar as percentage (cap at 100% for display)
+      const percentage = Math.min(100, (drivesCount / 10) * 100); // Scale: 10 drives = 100%
+      drivesBar.style.width = percentage + '%';
+    }
+    
+    if (steaksBar) {
+      const steaksCount = annualCO2 / COMPARISON_CONSTANTS.STEAK_CO2;
+      const percentage = Math.min(100, (steaksCount / 20) * 100); // Scale: 20 steaks = 100%
+      steaksBar.style.width = percentage + '%';
+    }
+    
+    if (townhouseBar) {
+      const townhouseYears = annualCO2 / COMPARISON_CONSTANTS.TOWNHOUSE_ELECTRICITY_CO2_PER_YEAR;
+      const percentage = Math.min(100, townhouseYears * 100); // Scale: 1 year = 100%
+      townhouseBar.style.width = percentage + '%';
+    }
+  }
+  
+  // Attach slider change handler - will be re-attached when modal opens
+  function attachSliderHandler() {
+    const postsPerWeekSlider = document.getElementById('postsPerWeek');
+    if (postsPerWeekSlider && !postsPerWeekSlider.hasAttribute('data-handler-attached')) {
+      postsPerWeekSlider.setAttribute('data-handler-attached', 'true');
+      postsPerWeekSlider.addEventListener('input', () => {
+        if (typeof window.updateCalculator === 'function') {
+          window.updateCalculator();
+        }
+      });
+      
+      postsPerWeekSlider.addEventListener('change', () => {
+        if (typeof window.updateCalculator === 'function') {
+          window.updateCalculator();
+        }
+      });
+    }
+  }
+  
+  // Try to attach immediately
+  attachSliderHandler();
+  
+  // Also try after delay
+  setTimeout(attachSliderHandler, 500);
+  
+  console.log('✓ Utils loaded');
+})();
+</script>
+

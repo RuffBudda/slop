@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SLOP - LinkedIn Content Automizer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/css/styles.css">
+  <link rel="icon" type="image/svg+xml" href="https://cdweya.blr1.cdn.digitaloceanspaces.com/logo.svg">
+</head>
+<body>
+  <!-- Skip to content link for accessibility -->
+  <a href="#mainContent" class="skip-link">Skip to main content</a>
+  
+  <!-- App Loader -->
+  <div class="app-loader" id="appLoader" role="alert" aria-live="polite" aria-label="Loading application">
+    <div class="spinner-container">
+      <div class="spinner"></div>
+    </div>
+  </div>
+
+  <!-- Login Page (hidden by default) -->
+  <div id="loginPage" class="auth-page hidden">
+    <div class="auth-container">
+      <img src="https://cdweya.blr1.cdn.digitaloceanspaces.com/logo.svg" alt="SLOP Logo" class="auth-logo">
+      <h1>Welcome to SLOP</h1>
+      <p class="auth-subtitle">LinkedIn Content Automizer</p>
+      
+      <form id="loginForm" class="auth-form">
+        <div class="form-group">
+          <label for="loginUsername">Username or Email</label>
+          <input type="text" id="loginUsername" name="username" required autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="loginPassword">Password</label>
+          <input type="password" id="loginPassword" name="password" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn approve btn-full">
+          <span class="ico"></span> Sign In
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Setup Page (for first user) -->
+  <div id="setupPage" class="auth-page hidden">
+    <div class="auth-container">
+      <img src="https://cdweya.blr1.cdn.digitaloceanspaces.com/logo.svg" alt="SLOP Logo" class="auth-logo">
+      <h1>Setup SLOP</h1>
+      <p class="auth-subtitle">Create your admin account to get started</p>
+      
+      <form id="setupForm" class="auth-form">
+        <div class="form-group">
+          <label for="setupUsername">Username</label>
+          <input type="text" id="setupUsername" name="username" required minlength="3" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="setupEmail">Email</label>
+          <input type="email" id="setupEmail" name="email" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label for="setupPassword">Password</label>
+          <input type="password" id="setupPassword" name="password" required minlength="8" autocomplete="new-password">
+          <small>Minimum 8 characters</small>
+        </div>
+        <div class="form-group">
+          <label for="setupDisplayName">Display Name (optional)</label>
+          <input type="text" id="setupDisplayName" name="displayName" autocomplete="name">
+        </div>
+        <button type="submit" class="btn approve btn-full">
+          <span class="ico"></span> Create Account
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <div id="mainApp" class="hidden">
+    <!-- Header -->
+    <header class="top">
+      <div class="top-inner">
+        <div class="brand" id="brandLogo">
+          <img class="logo" id="appLogo" src="https://cdweya.blr1.cdn.digitaloceanspaces.com/logo.svg" alt="SLOP Logo">
+        </div>
+        <nav class="navBtns">
+          <button class="navBtn active" id="btnContent" data-tab="content">
+            Content
+            <span class="badge ok" id="badgeContent" style="display: none;">0</span>
+          </button>
+          <button class="navBtn" id="btnCalendar" data-tab="calendar">
+            Calendar
+            <span class="badge ok" id="badgeCalendar" style="display: none;">0</span>
+          </button>
+          <button class="navBtn" id="btnList" data-tab="timeline">List</button>
+          <button class="navBtn" id="btnBin" data-tab="bin">
+            Bin
+            <span class="badge" id="badgeBin" style="display: none;">0</span>
+          </button>
+          <button class="navBtn" id="btnSettings" data-tab="settings">⚙ Settings</button>
+        </nav>
+        <div class="search-container" id="searchContainer">
+          <span class="search-icon"></span>
+          <input type="text" class="search-input" id="globalSearch" placeholder="Search posts... (Ctrl+K)">
+          <div class="search-results hidden" id="searchResults"></div>
+        </div>
+        <div class="user-menu">
+          <button class="navBtn" id="btnLogout">Logout</button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="wrap" id="mainContent" role="main" aria-label="Main content">
+      <!-- Content Tab -->
+      <div id="contentView" class="tab-view">
+        <div class="initial" id="initialLoader">
+          <div class="spinner-container">
+            <div class="spinner"></div>
+          </div>
+          <p>Loading content...</p>
+        </div>
+        <div id="contentCards" class="cards"></div>
+      </div>
+
+      <!-- Calendar Tab -->
+      <div id="calendarView" class="tab-view hidden">
+        <div id="calendarContainer"></div>
+      </div>
+
+      <!-- Timeline/List Tab -->
+      <div id="timelineView" class="tab-view hidden">
+        <div id="timelineContainer"></div>
+      </div>
+
+      <!-- Bin Tab -->
+      <div id="binView" class="tab-view hidden">
+        <div id="binContainer">
+          <div id="binWrap"></div>
+        </div>
+      </div>
+
+      <!-- Settings Tab -->
+      <div id="settingsView" class="tab-view hidden">
+        <div class="settings-container">
+          <h2>Settings</h2>
+          
+          <!-- Profile Section -->
+          <section class="settings-section">
+            <h3>Profile Settings</h3>
+            <form id="profileSettingsForm" class="settings-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="profileUsername">Username</label>
+                  <input type="text" id="profileUsername" name="username" required minlength="3">
+                </div>
+                <div class="form-group">
+                  <label for="profileEmail">Email</label>
+                  <input type="email" id="profileEmail" name="email" required>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="profileDisplayName">Display Name</label>
+                <input type="text" id="profileDisplayName" name="displayName" placeholder="Optional display name">
+              </div>
+              <button type="submit" class="btn approve">
+                <span class="ico"></span> Update Profile
+              </button>
+            </form>
+          </section>
+
+          <!-- Password Change Section -->
+          <section class="settings-section">
+            <h3>Change Password</h3>
+            <form id="passwordForm" class="settings-form">
+              <div class="form-group">
+                <label for="currentPassword">Current Password</label>
+                <input type="password" id="currentPassword" name="currentPassword" required>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="newPassword">New Password</label>
+                  <input type="password" id="newPassword" name="newPassword" required minlength="6">
+                  <small>Minimum 6 characters</small>
+                </div>
+                <div class="form-group">
+                  <label for="confirmPassword">Confirm New Password</label>
+                  <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6">
+                </div>
+              </div>
+              <button type="submit" class="btn approve">
+                <span class="ico"></span> Change Password
+              </button>
+            </form>
+          </section>
+          
+          <!-- API Keys Section -->
+          <section class="settings-section">
+            <h3>API Configuration</h3>
+            <form id="apiSettingsForm" class="settings-form">
+              <div class="form-group">
+                <label for="openaiKey">OpenAI API Key</label>
+                <div class="input-with-action">
+                  <input type="password" id="openaiKey" name="openai_api_key" placeholder="sk-...">
+                  <button type="button" class="btn clear btn-sm" data-test="openai">Test</button>
+                </div>
+              </div>
+              
+              <div class="form-group">
+                <label for="stabilityKey">Stability AI API Key</label>
+                <div class="input-with-action">
+                  <input type="password" id="stabilityKey" name="stability_api_key" placeholder="sk-...">
+                  <button type="button" class="btn clear btn-sm" data-test="stability">Test</button>
+                </div>
+              </div>
+              
+              <h4>DigitalOcean Spaces</h4>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="spacesName">Space Name</label>
+                  <input type="text" id="spacesName" name="spaces_name" placeholder="my-space">
+                </div>
+                <div class="form-group">
+                  <label for="spacesRegion">Region</label>
+                  <input type="text" id="spacesRegion" name="spaces_region" placeholder="blr1">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="spacesKey">Access Key</label>
+                <input type="password" id="spacesKey" name="spaces_key">
+              </div>
+              <div class="form-group">
+                <label for="spacesSecret">Secret Key</label>
+                <div class="input-with-action">
+                  <input type="password" id="spacesSecret" name="spaces_secret">
+                  <button type="button" class="btn clear btn-sm" data-test="spaces">Test</button>
+                </div>
+              </div>
+              
+              <button type="submit" class="btn approve">
+                <span class="ico"></span> Save API Settings
+              </button>
+            </form>
+          </section>
+
+          <!-- Prompts Section -->
+          <section class="settings-section">
+            <h3>AI Prompts Configuration</h3>
+            <p class="section-description">
+              Customize the AI prompts used for content generation. These prompts are pre-configured based on the SLOP workflow for optimal LinkedIn content creation.
+            </p>
+            <form id="promptsSettingsForm" class="settings-form">
+              <div class="form-group prompt-editor">
+                <label for="systemPrompt">System Prompt (OpenAI GPT)</label>
+                <p class="field-description">
+                  The comprehensive prompt that defines AI behavior, voice, content structure, and image prompt generation. 
+                  Pre-configured with Adam Ridgway's voice and ONE MOTO branding guidelines.
+                </p>
+                <textarea id="systemPrompt" name="system_prompt" class="prompt-textarea" rows="16" placeholder="Loading system prompt..."></textarea>
+              </div>
+              <div class="form-group prompt-editor">
+                <label for="userTemplatePrompt">User Prompt Template</label>
+                <p class="field-description">
+                  Template for building the user prompt from post data. Use placeholders: {{instruction}}, {{type}}, {{template}}, {{purpose}}, {{sample}}, {{keywords}}
+                </p>
+                <textarea id="userTemplatePrompt" name="user_template" class="prompt-textarea" rows="12" placeholder="Loading user template..."></textarea>
+              </div>
+              <div class="form-group prompt-editor">
+                <label for="imageStylePrefix">Image Prompt Style Prefix</label>
+                <p class="field-description">
+                  Prefix added to all image prompts to ensure consistent style.
+                </p>
+                <textarea id="imageStylePrefix" name="image_style_prefix" class="prompt-textarea" rows="4" placeholder="Loading image style prefix..."></textarea>
+              </div>
+              <div class="form-group prompt-editor">
+                <label for="imageStyleSuffix">Image Prompt Style Suffix</label>
+                <p class="field-description">
+                  Suffix added to all image prompts for additional styling.
+                </p>
+                <textarea id="imageStyleSuffix" name="image_style_suffix" class="prompt-textarea" rows="4" placeholder="Loading image style suffix..."></textarea>
+              </div>
+              <div class="prompt-actions" style="display: flex; gap: 12px; flex-wrap: wrap;">
+                <button type="submit" class="btn approve">
+                  <span class="ico">💾</span> Save Prompts
+                </button>
+                <button type="button" class="btn clear" id="btnResetPrompts">
+                  Reset to Defaults
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <!-- Stability AI Image Options Section -->
+          <section class="settings-section">
+            <h3>Stability AI Image Generation Options</h3>
+            <p class="section-description">
+              Configure all options for Stability AI image generation. These settings control how images are created.
+            </p>
+            <form id="stabilitySettingsForm" class="settings-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="stabilityAspectRatio">Aspect Ratio</label>
+                  <select id="stabilityAspectRatio" name="stability_aspect_ratio">
+                    <option value="1:1">1:1 (Square)</option>
+                    <option value="16:9">16:9 (Landscape)</option>
+                    <option value="9:16">9:16 (Portrait)</option>
+                    <option value="4:3">4:3 (Standard)</option>
+                    <option value="3:4">3:4 (Portrait Standard)</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="stabilityModel">Model</label>
+                  <select id="stabilityModel" name="stability_model">
+                    <option value="sd3-large-turbo">SD3 Large Turbo (Fast)</option>
+                    <option value="sd3">SD3 (Standard)</option>
+                    <option value="stable-diffusion-xl-1024-v1-0">Stable Diffusion XL</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="stabilityOutputFormat">Output Format</label>
+                  <select id="stabilityOutputFormat" name="stability_output_format">
+                    <option value="png">PNG</option>
+                    <option value="jpeg">JPEG</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="stabilityNegativePrompt">Negative Prompt</label>
+                <p class="field-description">
+                  Elements to avoid in generated images (comma-separated).
+                </p>
+                <textarea id="stabilityNegativePrompt" name="stability_negative_prompt" rows="3" placeholder="people, faces, hands, text..."></textarea>
+              </div>
+              <h4>Advanced Options (Optional)</h4>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="stabilitySeed">Seed</label>
+                  <input type="number" id="stabilitySeed" name="stability_seed" placeholder="Leave empty for random">
+                  <small>Random seed for reproducible results</small>
+                </div>
+                <div class="form-group">
+                  <label for="stabilitySteps">Steps</label>
+                  <input type="number" id="stabilitySteps" name="stability_steps" placeholder="Auto (default)">
+                  <small>Number of inference steps (higher = better quality)</small>
+                </div>
+                <div class="form-group">
+                  <label for="stabilityCfgScale">CFG Scale</label>
+                  <input type="number" id="stabilityCfgScale" name="stability_cfg_scale" placeholder="Auto (default)" step="0.1" min="1" max="35">
+                  <small>Classifier-free guidance scale (1-35)</small>
+                </div>
+              </div>
+              <button type="submit" class="btn approve">
+                <span class="ico">💾</span> Save Stability AI Settings
+              </button>
+            </form>
+          </section>
+
+          <!-- Google Drive Integration Section -->
+          <section class="settings-section">
+            <h3>Google Drive Integration</h3>
+            <p class="section-description">
+              Connect your Google Drive account to browse and upload images directly from your Drive.
+              You can use either OAuth (requires verification) or a Service Account key (no verification needed).
+            </p>
+            
+            <div id="googleDriveStatus" class="google-drive-status">
+              <p id="googleDriveStatusText">Checking connection status...</p>
+              <div id="googleDriveConnectionType" style="margin-top: 8px; font-size: 13px; color: #888;"></div>
+              <div id="googleDriveActions" style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+                <button id="btnConnectGoogleDrive" class="btn approve" style="display: none;">
+                  <span class="ico">🔗</span> Connect via OAuth
+                </button>
+                <button id="btnDisconnectGoogleDrive" class="btn reject" style="display: none;">
+                  <span class="ico">✕</span> Disconnect
+                </button>
+              </div>
+            </div>
+            
+            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--bd);">
+              <h4>Service Account Key (Recommended - No Verification Required)</h4>
+              <p class="field-description" style="margin-bottom: 16px;">
+                Upload a Google Service Account JSON key file. This method doesn't require OAuth verification.
+                <br><strong>How to get a Service Account key:</strong>
+                <br>1. Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>
+                <br>2. Create a project or select existing one
+                <br>3. Enable Google Drive API
+                <br>4. Go to "Credentials" → "Create Credentials" → "Service Account"
+                <br>5. Create a service account and download the JSON key file
+                <br>6. Upload the JSON file below
+              </p>
+              <form id="serviceAccountForm" class="settings-form">
+                <div class="form-group">
+                  <label for="serviceAccountFile">Service Account JSON Key File</label>
+                  <input type="file" id="serviceAccountFile" name="serviceAccountFile" accept=".json">
+                  <small>Select the JSON key file downloaded from Google Cloud Console</small>
+                </div>
+                <div class="form-group">
+                  <label for="serviceAccountJson">Or paste JSON directly</label>
+                  <textarea id="serviceAccountJson" name="serviceAccountJson" rows="8" 
+                            placeholder='{"type": "service_account", "project_id": "...", "private_key_id": "...", ...}' 
+                            class="prompt-textarea"></textarea>
+                  <small>Paste the entire JSON content from your service account key file</small>
+                </div>
+                <button type="submit" class="btn approve">
+                  <span class="ico">💾</span> Save Service Account Key
+                </button>
+              </form>
+            </div>
+          </section>
+
+          <!-- Sheet Management Section -->
+          <section class="settings-section">
+            <h3>Content Management</h3>
+            <p class="section-description">Add and manage content ideas. These will be processed during content generation.</p>
+            
+            <div class="sheet-toolbar">
+              <button class="btn approve" id="btnAddPost">
+                <span class="ico"></span> Add New Post
+              </button>
+              <button class="btn clear" id="btnImportPosts">
+                Import CSV
+              </button>
+              <button class="btn clear" id="btnExportPosts">
+                Export CSV
+              </button>
+            </div>
+            
+            <div class="sheet-container" id="sheetContainer">
+              <table class="sheet-table" id="sheetTable">
+                <thead>
+                  <tr>
+                    <th class="col-id">ID</th>
+                    <th class="col-instruction">Instruction</th>
+                    <th class="col-type">Type</th>
+                    <th class="col-template">Template</th>
+                    <th class="col-purpose">Purpose</th>
+                    <th class="col-sample">Sample</th>
+                    <th class="col-keywords">Keywords</th>
+                    <th class="col-status">Status</th>
+                    <th class="col-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="sheetBody">
+                  <!-- Rows populated by JavaScript -->
+                </tbody>
+              </table>
+            </div>
+          </section>
+
+          <!-- Environmental Calculator Section -->
+          <section class="settings-section">
+            <h3>🌱 Environmental Impact Calculator</h3>
+            <p class="section-description">
+              Track the environmental impact of your AI-powered content generation. Estimates are based on average energy consumption for AI inference.
+            </p>
+            
+            <div class="calculator-container" id="calculatorContainer">
+              <div class="calc-stats-grid">
+                <div class="calc-stat-card">
+                  <div class="calc-stat-icon">📝</div>
+                  <div class="calc-stat-value" id="calcTotalGenerations">0</div>
+                  <div class="calc-stat-label">Total Generations</div>
+                </div>
+                <div class="calc-stat-card">
+                  <div class="calc-stat-icon">⚡</div>
+                  <div class="calc-stat-value" id="calcEnergyUsed">0 Wh</div>
+                  <div class="calc-stat-label">Energy Used</div>
+                </div>
+                <div class="calc-stat-card">
+                  <div class="calc-stat-icon">🌿</div>
+                  <div class="calc-stat-value" id="calcCO2Saved">0 kg</div>
+                  <div class="calc-stat-label">CO₂ Equivalent</div>
+                </div>
+                <div class="calc-stat-card">
+                  <div class="calc-stat-icon">🌳</div>
+                  <div class="calc-stat-value" id="calcTreesEquiv">0</div>
+                  <div class="calc-stat-label">Trees to Offset</div>
+                </div>
+              </div>
+              
+              <div class="calc-breakdown">
+                <h4>Usage Breakdown</h4>
+                <div class="calc-breakdown-row">
+                  <span>GPT Content Generations:</span>
+                  <span id="calcGptCount">0</span>
+                </div>
+                <div class="calc-breakdown-row">
+                  <span>Stability AI Image Generations:</span>
+                  <span id="calcImageCount">0</span>
+                </div>
+                <div class="calc-breakdown-row">
+                  <span>Estimated GPT Energy (0.03 Wh/request):</span>
+                  <span id="calcGptEnergy">0 Wh</span>
+                </div>
+                <div class="calc-breakdown-row">
+                  <span>Estimated Image Energy (0.1 Wh/image):</span>
+                  <span id="calcImageEnergy">0 Wh</span>
+                </div>
+              </div>
+              
+              <div class="calc-manual">
+                <p style="font-size: 13px; color: var(--ink-muted); margin-bottom: 16px;">
+                  Estimate the environmental impact of your planned content generation.
+                </p>
+                <div class="calculator-input">
+                  <label for="calcManualPosts">Number of Posts</label>
+                  <div class="slider-container">
+                    <input type="range" id="calcManualPosts" min="1" max="100" value="10" class="posts-slider">
+                    <span class="slider-value" id="calcManualPostsValue">10</span>
+                  </div>
+                </div>
+                <div class="calculator-input">
+                  <label for="calcManualVariants">Variants per Post</label>
+                  <div class="slider-container">
+                    <input type="range" id="calcManualVariants" min="1" max="10" value="3" class="posts-slider">
+                    <span class="slider-value" id="calcManualVariantsValue">3</span>
+                  </div>
+                </div>
+                <div class="calculator-input">
+                  <label for="calcManualImages">Images per Post</label>
+                  <div class="slider-container">
+                    <input type="range" id="calcManualImages" min="0" max="10" value="3" class="posts-slider">
+                    <span class="slider-value" id="calcManualImagesValue">3</span>
+                  </div>
+                </div>
+                <div class="calc-result hidden" id="calcManualResult">
+                  <div class="calc-result-item">
+                    <span>Total API Requests:</span>
+                    <strong id="calcResultRequests">0</strong>
+                  </div>
+                  <div class="calc-result-item">
+                    <span>Estimated Energy:</span>
+                    <strong id="calcResultEnergy">0 Wh</strong>
+                  </div>
+                  <div class="calc-result-item">
+                    <span>CO₂ Equivalent:</span>
+                    <strong id="calcResultCO2">0 g</strong>
+                  </div>
+                  <div class="calc-result-item comparison">
+                    <span>Equivalent to:</span>
+                    <strong id="calcResultEquiv">--</strong>
+                  </div>
+                </div>
+              </div>
+              
+              <div class="calc-info">
+                <p><strong>How we calculate:</strong></p>
+                <ul>
+                  <li>GPT-4 inference: ~0.03 Wh per request (based on industry estimates)</li>
+                  <li>Stable Diffusion image: ~0.1 Wh per image</li>
+                  <li>CO₂ conversion: 0.4 kg CO₂ per kWh (global average grid)</li>
+                  <li>Tree offset: 1 tree absorbs ~21 kg CO₂ per year</li>
+                </ul>
+                <p style="margin-top: 12px; font-style: italic; color: #888;">
+                  Note: These are estimates based on publicly available research. Actual values may vary based on data center efficiency and location.
+                </p>
+              </div>
+            </div>
+          </section>
+
+          <!-- User Management Section (Admin only) -->
+          <section class="settings-section" id="userManagementSection">
+            <h3>User Management</h3>
+            <button class="btn approve" id="btnAddUser">
+              <span class="ico"></span> Add New User
+            </button>
+            <div id="usersList" class="users-list"></div>
+          </section>
+        </div>
+      </div>
+    </main>
+
+    <!-- Floating Dock -->
+    <div class="dock" id="dock">
+      <button class="fab" title="Quick navigation">⚡</button>
+      <div class="dock-items" id="dockItems">
+        <!-- Populated dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div class="toast-wrap" id="toastWrap" role="status" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Global Loader -->
+  <div id="globalLoader" class="hidden">
+    <div class="spinner"></div>
+  </div>
+
+  <!-- Generation Progress -->
+  <div id="generationProgress" class="generation-progress hidden">
+    <div class="title">Generating Content...</div>
+    <div class="progress-bar">
+      <div class="progress" id="generationProgressBar" style="width: 0%"></div>
+    </div>
+    <div class="status" id="generationStatus">Initializing...</div>
+  </div>
+
+  <!-- Bulk Actions Bar -->
+  <div id="bulkActionsBar" class="bulk-actions-bar hidden">
+    <span class="count"><span id="selectedCount">0</span> selected</span>
+    <button class="btn approve" id="bulkApprove">Approve All</button>
+    <button class="btn reject" id="bulkReject">Reject All</button>
+    <button class="btn clear" id="bulkCancel">Cancel</button>
+  </div>
+
+  <!-- Keyboard Shortcuts Help -->
+  <dialog id="shortcutsModal" class="post-edit-modal">
+    <button class="closeBtn" id="shortcutsClose">✕</button>
+    <h3>Keyboard Shortcuts</h3>
+    <div style="display: grid; gap: 12px; margin-top: 16px;">
+      <div class="shortcut-hint"><span class="kbd">Alt+1-5</span> Switch tabs</div>
+      <div class="shortcut-hint"><span class="kbd">1</span><span class="kbd">2</span><span class="kbd">3</span> Select variant</div>
+      <div class="shortcut-hint"><span class="kbd">A</span> Approve post</div>
+      <div class="shortcut-hint"><span class="kbd">R</span> Reject post</div>
+      <div class="shortcut-hint"><span class="kbd">E</span> Edit selected variant</div>
+      <div class="shortcut-hint"><span class="kbd">P</span> Preview post</div>
+      <div class="shortcut-hint"><span class="kbd">↑</span><span class="kbd">↓</span> Navigate cards</div>
+      <div class="shortcut-hint"><span class="kbd">Ctrl+K</span> Global search</div>
+      <div class="shortcut-hint"><span class="kbd">?</span> Show this help</div>
+    </div>
+  </dialog>
+
+  <!-- Reschedule Modal -->
+  <dialog id="rescheduleModal" class="reschedModal">
+    <h3>Reschedule Post</h3>
+    <div class="field">
+      <label for="rescheduleDate">New Date & Time</label>
+      <input type="datetime-local" id="rescheduleDate">
+    </div>
+    <div class="btns">
+      <button class="btn clear" id="rescheduleCancel">Cancel</button>
+      <button class="btn approve" id="rescheduleConfirm">Reschedule</button>
+    </div>
+  </dialog>
+
+  <!-- Post Edit Modal -->
+  <dialog id="postEditModal" class="post-edit-modal">
+    <button class="closeBtn" id="postEditClose">✕</button>
+    <h3 id="postEditTitle">Add New Post</h3>
+    <form id="postEditForm">
+      <input type="hidden" id="postEditId">
+      <div class="form-group">
+        <label for="postInstruction">Instruction *</label>
+        <textarea id="postInstruction" name="instruction" rows="3" required placeholder="Describe what content you want to create..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="postType">Type</label>
+          <input type="text" id="postType" name="type" placeholder="e.g., Thought Leadership">
+        </div>
+        <div class="form-group">
+          <label for="postTemplate">Template</label>
+          <input type="text" id="postTemplate" name="template" placeholder="e.g., Hook → Story → CTA">
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="postPurpose">Purpose</label>
+        <input type="text" id="postPurpose" name="purpose" placeholder="e.g., Build thought leadership">
+      </div>
+      <div class="form-group">
+        <label for="postSample">Sample</label>
+        <textarea id="postSample" name="sample" rows="2" placeholder="Reference text or example..."></textarea>
+      </div>
+      <div class="form-group">
+        <label for="postKeywords">Keywords</label>
+        <input type="text" id="postKeywords" name="keywords" placeholder="e.g., AI, leadership, innovation">
+      </div>
+      <div class="btns">
+        <button type="button" class="btn clear" id="postEditCancel">Cancel</button>
+        <button type="submit" class="btn approve">
+          <span class="ico"></span> Save
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Preview Modal -->
+  <dialog id="previewModal" class="preview-modal">
+    <div class="preview-header">
+      <h3>Post Preview</h3>
+      <button class="closeBtn" id="previewClose">✕</button>
+    </div>
+    <div class="preview-body">
+      <div class="preview-text" id="previewText"></div>
+      <img class="preview-image" id="previewImage" alt="Preview image">
+      <div class="preview-meta">
+        <span class="chip" id="previewId"></span>
+        <span class="chip" id="previewType"></span>
+      </div>
+    </div>
+  </dialog>
+
+  <!-- User Edit Modal -->
+  <dialog id="userEditModal" class="post-edit-modal">
+    <button class="closeBtn" id="userEditClose">✕</button>
+    <h3>Add New User</h3>
+    <form id="userEditForm">
+      <div class="form-group">
+        <label for="userUsername">Username *</label>
+        <input type="text" id="userUsername" name="username" required minlength="3">
+      </div>
+      <div class="form-group">
+        <label for="userEmail">Email *</label>
+        <input type="email" id="userEmail" name="email" required>
+      </div>
+      <div class="form-group">
+        <label for="userPassword">Password *</label>
+        <input type="password" id="userPassword" name="password" required minlength="8">
+      </div>
+      <div class="form-group">
+        <label for="userDisplayName">Display Name</label>
+        <input type="text" id="userDisplayName" name="displayName">
+      </div>
+      <div class="form-group">
+        <label for="userRole">Role</label>
+        <select id="userRole" name="role">
+          <option value="user">User</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+      <div class="btns">
+        <button type="button" class="btn clear" id="userEditCancel">Cancel</button>
+        <button type="submit" class="btn approve">
+          <span class="ico"></span> Create User
+        </button>
+      </div>
+    </form>
+  </dialog>
+
+  <!-- Scripts -->
+  <script src="/js/api.js"></script>
+  <script src="/js/utils.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/content.js"></script>
+  <script src="/js/calendar.js"></script>
+  <script src="/js/timeline.js"></script>
+  <script src="/js/bin.js"></script>
+  <script src="/js/settings.js"></script>
+  <script src="/js/app.js"></script>
+</body>
+</html>
