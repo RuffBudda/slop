@@ -24,6 +24,9 @@ async function loadSettings() {
     // Load Google Drive status
     await loadGoogleDriveStatus();
     
+    // Load Google Drive folder selection
+    await loadGoogleDriveFolder();
+    
     // Load posts for sheet view
     await loadSheetData();
     
@@ -476,10 +479,143 @@ function initStabilitySettings() {
   });
 }
 
+async function loadGoogleDriveFolder() {
+  try {
+    const result = await API.settings.get(['google_drive_folder_id', 'google_drive_folder_name']);
+    const settings = result.settings || {};
+    
+    const folderLinkInput = document.getElementById('googleDriveFolderLink');
+    const folderStatus = document.getElementById('googleDriveFolderStatus');
+    
+    if (settings.google_drive_folder_id) {
+      const folderId = settings.google_drive_folder_id;
+      const folderName = settings.google_drive_folder_name || 'Selected folder';
+      
+      if (folderLinkInput) {
+        folderLinkInput.value = folderId;
+      }
+      
+      if (folderStatus) {
+        folderStatus.textContent = `Selected: ${folderName} (${folderId})`;
+        folderStatus.style.color = '#4ade80';
+      }
+    } else {
+      if (folderLinkInput) {
+        folderLinkInput.value = '';
+      }
+      if (folderStatus) {
+        folderStatus.textContent = 'No folder selected. Images will be fetched from all folders.';
+        folderStatus.style.color = '#666';
+      }
+    }
+  } catch (error) {
+    console.error('Failed to load Google Drive folder:', error);
+  }
+}
+
+let selectedFolderId = null;
+let selectedFolderName = null;
+let currentFolderPath = [{ id: 'root', name: 'Root' }];
+
+async function loadFoldersForBrowser(parentId = null) {
+  const folderList = document.getElementById('folderBrowserList');
+  if (!folderList) return;
+  
+  try {
+    folderList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Loading folders...</p>';
+    
+    const result = await API.googleDrive.listFolders(parentId);
+    const folders = result.folders || [];
+    
+    if (folders.length === 0) {
+      folderList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No folders found in this location.</p>';
+      return;
+    }
+    
+    folderList.innerHTML = folders.map(folder => `
+      <div class="folder-item" style="padding: 12px; border-bottom: 1px solid var(--bd); cursor: pointer; display: flex; align-items: center; gap: 12px; transition: background 0.2s;"
+           data-folder-id="${folder.id}" data-folder-name="${escapeHtml(folder.name)}">
+        <span style="font-size: 20px;">📁</span>
+        <div style="flex: 1;">
+          <div style="font-weight: 500;">${escapeHtml(folder.name)}</div>
+          <div style="font-size: 12px; color: #666;">ID: ${folder.id}</div>
+        </div>
+        <button class="btn-link" style="text-decoration: none; color: var(--fg);" 
+                onclick="event.stopPropagation(); navigateToFolder('${folder.id}', '${escapeHtml(folder.name)}');">
+          Open →
+        </button>
+      </div>
+    `).join('');
+    
+    // Add click handlers
+    folderList.querySelectorAll('.folder-item').forEach(item => {
+      item.addEventListener('click', function(e) {
+        if (e.target.tagName === 'BUTTON') return;
+        const folderId = this.dataset.folderId;
+        const folderName = this.dataset.folderName;
+        selectFolderInBrowser(folderId, folderName);
+      });
+    });
+    
+  } catch (error) {
+    console.error('Failed to load folders:', error);
+    folderList.innerHTML = `<p style="text-align: center; color: #dc2626; padding: 20px;">Failed to load folders: ${error.message}</p>`;
+  }
+}
+
+function navigateToFolder(folderId, folderName) {
+  currentFolderPath.push({ id: folderId, name: folderName });
+  updateBreadcrumb();
+  loadFoldersForBrowser(folderId);
+}
+
+function updateBreadcrumb() {
+  const breadcrumb = document.getElementById('folderBrowserBreadcrumb');
+  if (!breadcrumb) return;
+  
+  breadcrumb.innerHTML = currentFolderPath.map((folder, index) => {
+    if (index === currentFolderPath.length - 1) {
+      return `<span style="color: var(--fg); font-weight: 500;">${escapeHtml(folder.name)}</span>`;
+    }
+    return `<button class="btn-link" onclick="navigateToBreadcrumb(${index});" style="text-decoration: none; color: var(--fg);">${escapeHtml(folder.name)}</button> <span style="color: #666;">/</span> `;
+  }).join('');
+}
+
+function navigateToBreadcrumb(index) {
+  currentFolderPath = currentFolderPath.slice(0, index + 1);
+  const targetFolder = currentFolderPath[currentFolderPath.length - 1];
+  updateBreadcrumb();
+  loadFoldersForBrowser(targetFolder.id === 'root' ? null : targetFolder.id);
+}
+
+function selectFolderInBrowser(folderId, folderName) {
+  selectedFolderId = folderId;
+  selectedFolderName = folderName;
+  
+  // Highlight selected folder
+  document.querySelectorAll('.folder-item').forEach(item => {
+    item.style.background = item.dataset.folderId === folderId ? 'var(--bg-alt)' : 'transparent';
+  });
+  
+  // Enable select button
+  const selectBtn = document.getElementById('folderBrowserSelect');
+  if (selectBtn) {
+    selectBtn.disabled = false;
+    selectBtn.textContent = `Select: ${folderName}`;
+  }
+}
+
 function initGoogleDrive() {
   const connectBtn = document.getElementById('btnConnectGoogleDrive');
   const disconnectBtn = document.getElementById('btnDisconnectGoogleDrive');
   const serviceAccountForm = document.getElementById('serviceAccountForm');
+  const folderForm = document.getElementById('googleDriveFolderForm');
+  const browseBtn = document.getElementById('btnBrowseFolders');
+  const clearFolderBtn = document.getElementById('btnClearFolder');
+  const folderBrowserModal = document.getElementById('folderBrowserModal');
+  const folderBrowserClose = document.getElementById('folderBrowserClose');
+  const folderBrowserCancel = document.getElementById('folderBrowserCancel');
+  const folderBrowserSelect = document.getElementById('folderBrowserSelect');
   
   if (connectBtn) {
     connectBtn.addEventListener('click', async () => {
@@ -574,6 +710,148 @@ function initGoogleDrive() {
       }
     });
   }
+  
+  // Folder selection form
+  if (folderForm) {
+    folderForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const folderLinkInput = document.getElementById('googleDriveFolderLink');
+      const linkOrId = folderLinkInput?.value.trim() || '';
+      
+      if (!linkOrId) {
+        showToast('Please enter a Google Drive folder link or ID', 'bad');
+        return;
+      }
+      
+      try {
+        showLoader();
+        
+        // Extract folder ID from link
+        const extractResult = await API.googleDrive.extractFolderId(linkOrId);
+        const folderId = extractResult.folderId;
+        
+        if (!folderId) {
+          showToast('Invalid Google Drive link format', 'bad');
+          return;
+        }
+        
+        // Get folder info to get the name
+        let folderName = 'Selected folder';
+        try {
+          const folderResult = await API.googleDrive.getFolder(folderId);
+          if (folderResult.folder && folderResult.folder.name) {
+            folderName = folderResult.folder.name;
+          }
+        } catch (error) {
+          console.warn('Could not get folder name:', error);
+        }
+        
+        // Save folder ID and name
+        await API.settings.set('google_drive_folder_id', folderId);
+        await API.settings.set('google_drive_folder_name', folderName);
+        
+        await loadGoogleDriveFolder();
+        showToast('Folder saved successfully', 'ok');
+      } catch (error) {
+        showToast(error.message || 'Failed to save folder', 'bad');
+      } finally {
+        hideLoader();
+      }
+    });
+  }
+  
+  // Browse folders button
+  if (browseBtn) {
+    browseBtn.addEventListener('click', async () => {
+      // Check if Google Drive is connected
+      try {
+        const status = await API.googleDrive.getStatus();
+        if (!status.connected) {
+          showToast('Please connect Google Drive first', 'bad');
+          return;
+        }
+      } catch (error) {
+        showToast('Failed to check Google Drive status', 'bad');
+        return;
+      }
+      
+      // Reset browser state
+      selectedFolderId = null;
+      selectedFolderName = null;
+      currentFolderPath = [{ id: 'root', name: 'Root' }];
+      
+      // Open modal and load folders
+      if (folderBrowserModal) {
+        folderBrowserModal.showModal();
+        updateBreadcrumb();
+        loadFoldersForBrowser(null);
+      }
+    });
+  }
+  
+  // Clear folder button
+  if (clearFolderBtn) {
+    clearFolderBtn.addEventListener('click', async () => {
+      if (!confirm('Clear the selected folder? Images will be fetched from all folders.')) {
+        return;
+      }
+      
+      try {
+        showLoader();
+        await API.settings.set('google_drive_folder_id', '');
+        await API.settings.set('google_drive_folder_name', '');
+        await loadGoogleDriveFolder();
+        showToast('Folder cleared', 'ok');
+      } catch (error) {
+        showToast('Failed to clear folder', 'bad');
+      } finally {
+        hideLoader();
+      }
+    });
+  }
+  
+  // Folder browser modal handlers
+  if (folderBrowserClose) {
+    folderBrowserClose.addEventListener('click', () => {
+      if (folderBrowserModal) folderBrowserModal.close();
+    });
+  }
+  
+  if (folderBrowserCancel) {
+    folderBrowserCancel.addEventListener('click', () => {
+      if (folderBrowserModal) folderBrowserModal.close();
+    });
+  }
+  
+  if (folderBrowserSelect) {
+    folderBrowserSelect.addEventListener('click', async () => {
+      if (!selectedFolderId) return;
+      
+      try {
+        showLoader();
+        await API.settings.set('google_drive_folder_id', selectedFolderId);
+        await API.settings.set('google_drive_folder_name', selectedFolderName);
+        await loadGoogleDriveFolder();
+        
+        const folderLinkInput = document.getElementById('googleDriveFolderLink');
+        if (folderLinkInput) {
+          folderLinkInput.value = selectedFolderId;
+        }
+        
+        if (folderBrowserModal) folderBrowserModal.close();
+        showToast('Folder selected successfully', 'ok');
+      } catch (error) {
+        showToast('Failed to save folder', 'bad');
+      } finally {
+        hideLoader();
+      }
+    });
+  }
+  
+  // Make functions globally available for inline handlers
+  window.navigateToFolder = navigateToFolder;
+  window.navigateToBreadcrumb = navigateToBreadcrumb;
 }
 
 // ============================================================

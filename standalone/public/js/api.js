@@ -326,6 +326,17 @@ const API = {
       return API.call(`/google-drive/file/${fileId}`);
     },
     
+    async getFolder(folderId) {
+      return API.call(`/google-drive/folder/${folderId}`);
+    },
+    
+    async extractFolderId(link) {
+      return API.call('/google-drive/extract-folder-id', {
+        method: 'POST',
+        body: { link }
+      });
+    },
+    
     async downloadFile(fileId) {
       const response = await fetch(`/api/google-drive/download/${fileId}`, {
         credentials: 'same-origin'

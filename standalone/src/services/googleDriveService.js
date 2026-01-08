@@ -181,6 +181,59 @@ async function getDriveClient(userId) {
 }
 
 /**
+ * Extract folder ID from Google Drive link
+ * Supports various Google Drive link formats:
+ * - https://drive.google.com/drive/folders/FOLDER_ID
+ * - https://drive.google.com/open?id=FOLDER_ID
+ * - FOLDER_ID (direct ID)
+ * @param {string} link - Google Drive link or folder ID
+ * @returns {string|null} Folder ID or null if invalid
+ */
+function extractFolderIdFromLink(link) {
+  if (!link || typeof link !== 'string') return null;
+  
+  const trimmed = link.trim();
+  
+  // If it's already just an ID (no special characters that would be in a URL)
+  if (/^[a-zA-Z0-9_-]+$/.test(trimmed)) {
+    return trimmed;
+  }
+  
+  // Try to extract from various Google Drive URL formats
+  const patterns = [
+    /\/folders\/([a-zA-Z0-9_-]+)/,  // /folders/FOLDER_ID
+    /[?&]id=([a-zA-Z0-9_-]+)/,       // ?id=FOLDER_ID or &id=FOLDER_ID
+    /\/d\/([a-zA-Z0-9_-]+)/,         // /d/FOLDER_ID
+  ];
+  
+  for (const pattern of patterns) {
+    const match = trimmed.match(pattern);
+    if (match && match[1]) {
+      return match[1];
+    }
+  }
+  
+  return null;
+}
+
+/**
+ * Get folder metadata by ID
+ * @param {number} userId - User ID
+ * @param {string} folderId - Folder ID
+ * @returns {Promise<Object>} Folder metadata
+ */
+async function getFolder(userId, folderId) {
+  const drive = await getDriveClient(userId);
+  
+  const response = await drive.files.get({
+    fileId: folderId,
+    fields: 'id, name, mimeType, webViewLink'
+  });
+
+  return response.data;
+}
+
+/**
  * List files in a folder
  * @param {number} userId - User ID
  * @param {string} folderId - Folder ID (optional, defaults to root)
@@ -339,11 +392,13 @@ module.exports = {
   getDriveClient,
   listFiles,
   getFile,
+  getFolder,
   downloadFile,
   uploadFile,
   listFolders,
   isConnected,
   getConnectionType,
+  extractFolderIdFromLink,
   GOOGLE_CLIENT_ID,
   GOOGLE_CLIENT_SECRET,
   GOOGLE_REDIRECT_URI

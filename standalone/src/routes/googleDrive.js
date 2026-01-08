@@ -145,6 +145,44 @@ router.get('/file/:fileId', async (req, res) => {
 });
 
 /**
+ * Get folder metadata
+ * GET /api/google-drive/folder/:folderId
+ */
+router.get('/folder/:folderId', async (req, res) => {
+  try {
+    const { folderId } = req.params;
+    const folder = await googleDriveService.getFolder(req.user.id, folderId);
+    res.json({ folder });
+  } catch (error) {
+    console.error('Get folder error:', error);
+    res.status(500).json({ error: 'Failed to get folder', details: error.message });
+  }
+});
+
+/**
+ * Extract folder ID from link
+ * POST /api/google-drive/extract-folder-id
+ */
+router.post('/extract-folder-id', (req, res) => {
+  try {
+    const { link } = req.body;
+    if (!link) {
+      return res.status(400).json({ error: 'Link is required' });
+    }
+    
+    const folderId = googleDriveService.extractFolderIdFromLink(link);
+    if (!folderId) {
+      return res.status(400).json({ error: 'Invalid Google Drive link format' });
+    }
+    
+    res.json({ folderId });
+  } catch (error) {
+    console.error('Extract folder ID error:', error);
+    res.status(500).json({ error: 'Failed to extract folder ID', details: error.message });
+  }
+});
+
+/**
  * Download file
  * GET /api/google-drive/download/:fileId
  */

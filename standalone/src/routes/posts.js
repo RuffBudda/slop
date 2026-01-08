@@ -84,7 +84,13 @@ router.get('/content', async (req, res) => {
     let driveImages = [];
     if (isDriveConnected) {
       try {
-        const driveFiles = await googleDriveService.listFiles(req.user.id, null, '');
+        // Get saved folder ID from settings
+        const { getSettingValue } = require('./settings');
+        const savedFolderId = getSettingValue(req.user.id, 'google_drive_folder_id');
+        
+        // Use saved folder ID if available, otherwise use root (null)
+        const folderId = savedFolderId || null;
+        const driveFiles = await googleDriveService.listFiles(req.user.id, folderId, '');
         // Get 3 random images from Drive
         const imageFiles = driveFiles.filter(f => f.mimeType && f.mimeType.startsWith('image/'));
         const shuffled = imageFiles.sort(() => 0.5 - Math.random());

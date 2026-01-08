@@ -407,6 +407,56 @@
                 </button>
               </form>
             </div>
+            
+            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--bd);">
+              <h4>Image Folder Selection</h4>
+              <p class="field-description" style="margin-bottom: 16px;">
+                Select a specific Google Drive folder to use for images. Only images from this folder will be available for your posts.
+                <br>Leave empty to use all images from your Drive.
+              </p>
+              <form id="googleDriveFolderForm" class="settings-form">
+                <div class="form-group">
+                  <label for="googleDriveFolderLink">Google Drive Folder Link or ID</label>
+                  <div style="display: flex; gap: 8px; align-items: flex-start;">
+                    <input type="text" id="googleDriveFolderLink" name="googleDriveFolderLink" 
+                           placeholder="https://drive.google.com/drive/folders/1ABC... or folder ID"
+                           style="flex: 1;">
+                    <button type="button" id="btnBrowseFolders" class="btn clear" style="white-space: nowrap;">
+                      <span class="ico">📁</span> Browse
+                    </button>
+                  </div>
+                  <small id="googleDriveFolderStatus" style="margin-top: 8px; display: block; color: #666;">
+                    No folder selected. Images will be fetched from all folders.
+                  </small>
+                </div>
+                <div class="form-group" style="display: flex; gap: 8px;">
+                  <button type="submit" class="btn approve">
+                    <span class="ico">💾</span> Save Folder
+                  </button>
+                  <button type="button" id="btnClearFolder" class="btn clear">
+                    <span class="ico">✕</span> Clear
+                  </button>
+                </div>
+              </form>
+              
+              <!-- Folder Browser Modal -->
+              <dialog id="folderBrowserModal" style="max-width: 600px; width: 90%; border-radius: 8px; border: 1px solid var(--bd);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                  <h3 style="margin: 0;">Select Google Drive Folder</h3>
+                  <button id="folderBrowserClose" class="btn clear" style="padding: 4px 8px;">✕</button>
+                </div>
+                <div id="folderBrowserBreadcrumb" style="margin-bottom: 12px; padding: 8px; background: var(--bg-alt); border-radius: 4px; font-size: 13px;">
+                  <button class="btn-link" data-folder-id="root" style="text-decoration: none; color: var(--fg);">Root</button>
+                </div>
+                <div id="folderBrowserList" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--bd); border-radius: 4px; padding: 8px;">
+                  <p style="text-align: center; color: #666; padding: 20px;">Loading folders...</p>
+                </div>
+                <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;">
+                  <button id="folderBrowserCancel" class="btn clear">Cancel</button>
+                  <button id="folderBrowserSelect" class="btn approve" disabled>Select Folder</button>
+                </div>
+              </dialog>
+            </div>
           </section>
 
           <!-- Sheet Management Section -->

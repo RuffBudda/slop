@@ -1,0 +1,8 @@
+# Ignore everything in the root directory
+/*
+
+# But don't ignore the standalone directory
+!/standalone/
+
+# Don't ignore .gitignore itself
+!.gitignore

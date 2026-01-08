@@ -1,47 +1,124 @@
-# SLOP - LinkedIn Content Automizer (Standalone Edition)
+<div align="center">
 
-SLOP is a standalone application for automating LinkedIn content creation using AI. It generates post variants and images based on your instructions, allowing you to review, edit, and schedule content.
+# 🚀 SLOP
 
-## Features
+### **S**ocial **L**inkedIn **O**ptimization **P**latform
 
-- **AI Content Generation**: Uses OpenAI GPT to generate multiple post variants
-- **AI Image Generation**: Uses Stability AI to create custom images for posts
-- **Fully Configurable Prompts**: All system prompts and AI settings are editable in the UI
-- **Stability AI Options**: Configure aspect ratio, model, output format, negative prompts, and more
-- **Google Drive Integration**: Browse and upload images directly from Google Drive
-- **Content Management**: Review, edit, approve, or reject generated content
-- **Calendar View**: Visual calendar for scheduled posts with drag-and-drop
-- **Sheet Interface**: Spreadsheet-like interface for bulk content management
-- **User Management**: Multi-user support with admin and user roles
-- **Environmental Calculator**: Track the environmental impact of AI usage
+**AI-Powered LinkedIn Content Creation & Automation**
 
-## Prerequisites
+[![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
+[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Status](https://img.shields.io/badge/Status-Active-success.svg)](https://github.com/RuffBudda/slop)
 
-- Node.js 18+ 
-- npm or yarn
-- API Keys:
+---
+
+</div>
+
+## 📖 Overview
+
+SLOP is an intelligent content automation platform designed to streamline LinkedIn post creation. It leverages AI to generate multiple post variants and custom images, helping you maintain a consistent, engaging presence on LinkedIn with minimal effort.
+
+### Key Features
+
+✨ **AI Content Generation**
+- Generate multiple post variants using OpenAI GPT
+- Fully customizable prompts and templates
+- British English voice with founder-focused tone
+
+🎨 **AI Image Generation**
+- Create custom images with Stability AI
+- Multiple models supported (SD3, Stable Diffusion XL)
+- Configurable aspect ratios, styles, and negative prompts
+
+📁 **Google Drive Integration**
+- Browse and select images from specific Google Drive folders
+- Upload generated images directly to Drive
+- OAuth and Service Account authentication support
+
+📅 **Content Management**
+- Visual calendar with drag-and-drop scheduling
+- Spreadsheet-like interface for bulk operations
+- Review, edit, approve, or reject generated content
+
+👥 **Multi-User Support**
+- Admin and user roles
+- Secure authentication and session management
+- User-specific settings and preferences
+
+🌱 **Environmental Tracking**
+- Monitor AI usage and environmental impact
+- Calculate CO2 emissions and energy consumption
+- Track your carbon footprint
+
+---
+
+## 🎯 What Makes SLOP Special?
+
+- **No Code Required**: Fully web-based interface, no technical knowledge needed
+- **Fully Configurable**: All AI prompts and settings editable through the UI
+- **Privacy First**: API keys stored encrypted, runs on your infrastructure
+- **Standalone**: Self-contained application, no external dependencies
+- **Production Ready**: Includes deployment guides and scripts
+
+---
+
+### Prerequisites
+
+- **Node.js** 18 or higher
+- **npm** or **yarn**
+- API Keys (can be configured later):
   - OpenAI API Key
   - Stability AI API Key
-  - DigitalOcean Spaces credentials (for image storage)
+  - DigitalOcean Spaces credentials (optional, for image storage)
 
-## Quick Start
+## 🚀 Quick Start
 
-### 1. Clone and Install
+### Installation
 
-```bash
-cd standalone
-npm install
-```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/RuffBudda/slop.git
+   cd slop/standalone
+   ```
 
-### 2. Configure Environment
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-```bash
-cp env.example.txt .env
-```
+3. **Configure environment**
+   ```bash
+   cp env.example.txt .env
+   ```
+   
+   Edit `.env` with your settings (see [Configuration](#-configuration) below)
 
-Edit `.env` with your settings:
+4. **Initialize database**
+   ```bash
+   npm run migrate
+   ```
+
+5. **Start the server**
+   ```bash
+   # Development mode (with auto-reload)
+   npm run dev
+   
+   # Production mode
+   npm start
+   ```
+
+6. **Access the application**
+   
+   Open `http://localhost:3000` in your browser and create your admin account.
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+Create a `.env` file in the `standalone` directory:
 
 ```env
+# Server Configuration
 PORT=3000
 NODE_ENV=development
 SESSION_SECRET=your-random-string-at-least-32-characters
@@ -49,11 +126,11 @@ SESSION_SECRET=your-random-string-at-least-32-characters
 # Database
 DATABASE_PATH=./data/slop.db
 
-# API Keys (can also be set in the UI)
+# API Keys (can also be set in UI)
 OPENAI_API_KEY=sk-your-openai-api-key
 STABILITY_API_KEY=sk-your-stability-api-key
 
-# DigitalOcean Spaces
+# DigitalOcean Spaces (for image storage)
 SPACES_NAME=your-space-name
 SPACES_REGION=blr1
 SPACES_KEY=your-access-key
@@ -65,123 +142,104 @@ GOOGLE_CLIENT_SECRET=your-google-client-secret
 GOOGLE_REDIRECT_URI=http://localhost:3000/api/google-drive/callback
 ```
 
-### 3. Run Database Migration
+> **Note**: API keys can be configured either via environment variables or through the Settings UI after logging in.
 
-```bash
-npm run migrate
-```
+### Google Drive Setup
 
-### 4. Start the Server
+1. Create a [Google Cloud Project](https://console.cloud.google.com/)
+2. Enable the Google Drive API
+3. Create OAuth 2.0 credentials or a Service Account
+4. Add credentials to `.env` or configure via Settings UI
 
-```bash
-# Development (with auto-reload)
-npm run dev
+For detailed setup instructions, see [DIGITALOCEAN-SETUP.md](DIGITALOCEAN-SETUP.md)
 
-# Production
-npm start
-```
+## 🔧 Advanced Configuration
 
-### 5. Access the Application
+### AI Prompts
 
-Open `http://localhost:3000` in your browser.
+All AI prompts are fully customizable in the Settings tab:
 
-On first launch, you'll be prompted to create an admin account.
+- **System Prompt**: Defines AI behavior, voice, and content structure
+- **User Prompt Template**: Template with placeholders (`{{instruction}}`, `{{type}}`, etc.)
+- **Image Style Prefix/Suffix**: Style modifiers for image generation
 
-## API Keys Setup
+### Stability AI Settings
 
-API keys can be configured in two ways:
+Configure image generation options:
 
-1. **Environment Variables** (`.env` file) - Set during deployment
-2. **Settings Panel** (UI) - Set after login via Settings tab
-
-## Configuration Features
-
-### AI Prompts Configuration
-
-All AI prompts are fully configurable in the Settings tab:
-
-- **System Prompt**: The main prompt that defines AI behavior, voice, and content structure
-- **User Prompt Template**: Template for building user prompts from post data (supports placeholders like `{{instruction}}`, `{{type}}`, etc.)
-- **Image Style Prefix/Suffix**: Style modifiers for image generation prompts
-
-### Stability AI Image Options
-
-Configure all Stability AI image generation settings:
-
-- **Aspect Ratio**: Choose from 1:1, 16:9, 9:16, 4:3, 3:4
-- **Model**: Select from SD3 Large Turbo, SD3, or Stable Diffusion XL
+- **Aspect Ratio**: 1:1, 16:9, 9:16, 4:3, 3:4
+- **Model**: SD3 Large Turbo, SD3, Stable Diffusion XL
 - **Output Format**: PNG or JPEG
-- **Negative Prompt**: Elements to avoid in generated images
-- **Advanced Options**: Seed, Steps, CFG Scale (optional)
+- **Negative Prompt**: Elements to avoid
+- **Advanced**: Seed, Steps, CFG Scale
 
-### Google Drive Integration
+### Google Drive Folder Selection
 
-Connect your Google Drive account to:
+Select a specific Google Drive folder to use for images:
 
-- Browse images from your Drive
-- Upload generated images to Drive
-- Access your image library directly from the app
+1. Go to **Settings** → **Google Drive Integration**
+2. Enter folder link or use **Browse** to navigate
+3. Only images from the selected folder will be available
 
-To set up Google Drive:
-
-1. Create a Google Cloud Project and enable Google Drive API
-2. Create OAuth 2.0 credentials
-3. Add the credentials to your `.env` file
-4. Connect via Settings → Google Drive Integration
-
-## Project Structure
+## 🏗️ Project Structure
 
 ```
 standalone/
-├── data/                 # SQLite database files
-├── public/               # Frontend files
-│   ├── css/             # Stylesheets
-│   ├── js/              # JavaScript modules
-│   └── index.html       # Main HTML file
 ├── src/
-│   ├── database/        # Database configuration and migrations
-│   ├── middleware/      # Express middleware (auth, etc.)
-│   ├── routes/          # API route handlers
-│   └── services/        # Business logic services
-├── .env                 # Environment configuration
-├── package.json         # Dependencies
-└── README.md            # This file
+│   ├── database/       # Database config & migrations
+│   ├── middleware/      # Express middleware
+│   ├── routes/         # API route handlers
+│   ├── services/       # Business logic
+│   └── server.js       # Express server
+├── public/             # Frontend files
+│   ├── css/            # Stylesheets
+│   ├── js/             # JavaScript modules
+│   └── index.html      # Main HTML
+├── data/               # SQLite database
+├── .env                # Environment config
+├── package.json        # Dependencies
+└── README.md           # This file
 ```
 
-## Usage Guide
+## 📚 Usage Guide
 
 ### Creating Content
 
-1. Go to **Settings** → **Content Management**
+1. Navigate to **Settings** → **Content Management**
 2. Click **Add New Post**
-3. Fill in the content instruction and optional fields
-4. Save the post
+3. Fill in:
+   - **Instruction**: Main content directive
+   - **Type**: Post category (e.g., Founder Reflection, Industry Commentary)
+   - **Template**: Structural flow (Hook → Context → Insight → Question)
+   - **Purpose**: Intent (Clarity, Challenge, Education, etc.)
+   - **Sample**: Style reference
+   - **Keywords**: Relevant keywords to include
 
 ### Generating Content
 
 1. Posts with "Pending" status are ready for generation
-2. Click **Generate Content** in the Content tab
-3. The system will generate 3 variants + 3 images per post
+2. Go to **Content** tab
+3. Click **Generate Content**
+4. System generates 3 variants + 3 images per post
 
-### Reviewing Content
+### Reviewing & Scheduling
 
-1. In the **Content** tab, review each generated post
-2. Click on a variant to select it
-3. Click on an image to select it
-4. Use **Edit** to modify variant text
-5. Set a schedule date/time
-6. Click **Approve** or **Reject**
+1. **Review** generated variants and images in the Content tab
+2. **Select** your preferred variant and image
+3. **Edit** text if needed
+4. **Set** schedule date/time
+5. **Approve** or **Reject** the post
 
 ### Keyboard Shortcuts
 
-- `Alt + 1-5`: Switch tabs
+- `Alt + 1-5`: Switch between tabs
 - `1, 2, 3`: Select variant
 - `A`: Approve post
 - `R`: Reject post
 - `E`: Edit selected variant
 - `↑/↓`: Navigate between cards
 
-## Development
+## 🛠️ Development
 
 ### Running in Development Mode
 
@@ -189,7 +247,7 @@ standalone/
 npm run dev
 ```
 
-This enables auto-reload on file changes.
+This enables auto-reload on file changes using `nodemon`.
 
 ### Database
 
@@ -216,19 +274,22 @@ The application uses SQLite with the following tables:
 | GET | `/api/settings` | Get settings |
 | POST | `/api/settings` | Save settings |
 
-## Production Deployment
+## 🚢 Deployment
 
-See `DEPLOYMENT.md` for detailed deployment instructions.
+### DigitalOcean Deployment
 
-### Quick Deploy to DigitalOcean
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
 
-1. Create an Ubuntu droplet
-2. SSH into the server
-3. Run the deployment script:
+**Quick Deploy:**
 
 ```bash
-curl -sSL https://raw.githubusercontent.com/your-repo/slop/main/deploy.sh | bash
+# On your Ubuntu server
+curl -sSL https://raw.githubusercontent.com/RuffBudda/slop/main/standalone/deploy.sh | bash
 ```
+
+### Docker (Coming Soon)
+
+Docker support is planned for future releases.
 
 ## Environment Variables
 
@@ -270,10 +331,74 @@ PORT=3001
 2. Use the "Test" buttons to verify connectivity
 3. Check API quotas and billing
 
-## License
+## 🐛 Troubleshooting
 
-MIT License - See LICENSE file for details.
+### Database Errors
 
-## Support
+```bash
+rm -rf data/slop.db*
+npm run migrate
+```
 
-For issues and feature requests, please create an issue on GitHub.
+### Port Already in Use
+
+Change port in `.env`:
+```env
+PORT=3001
+```
+
+### API Key Issues
+
+1. Check keys in Settings UI
+2. Use "Test" buttons to verify connectivity
+3. Check API quotas and billing
+
+### Google Drive Connection Issues
+
+1. Verify OAuth credentials in `.env`
+2. Check redirect URI matches exactly
+3. Ensure Google Drive API is enabled
+4. Try Service Account method instead
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- Built with [OpenAI GPT](https://openai.com/)
+- Image generation powered by [Stability AI](https://stability.ai/)
+- Storage via [DigitalOcean Spaces](https://www.digitalocean.com/products/spaces)
+
+---
+
+## 📞 Support
+
+- **Issues**: [GitHub Issues](https://github.com/RuffBudda/slop/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/RuffBudda/slop/discussions)
+
+---
+
+<div align="center">
+
+**Made with ❤️ by [RuffBudda](https://github.com/RuffBudda)**
+
+[⭐ Star this repo](https://github.com/RuffBudda/slop) | [🐛 Report Bug](https://github.com/RuffBudda/slop/issues) | [💡 Request Feature](https://github.com/RuffBudda/slop/issues)
+
+</div>
