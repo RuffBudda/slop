@@ -199,16 +199,16 @@ function initApiSettingsForm() {
     e.preventDefault();
     
     const formData = new FormData(form);
-    const settings = [];
+    const settings = {};
     
     // Only include non-empty values (don't override with empty)
     for (const [key, value] of formData.entries()) {
       if (value.trim()) {
-        settings.push({ key, value: value.trim() });
+        settings[key] = value.trim();
       }
     }
     
-    if (settings.length === 0) {
+    if (Object.keys(settings).length === 0) {
       showToast('No settings to save', 'neutral');
       return;
     }
@@ -882,6 +882,7 @@ async function loadLinkedInSettings() {
       if (clientSecret && typeof clientSecret === 'object' && clientSecret.isSet) {
         // Sensitive field - already masked
         clientSecretInput.placeholder = clientSecret.isSet ? '••••••••' : '';
+        clientSecretInput.value = '';
       } else {
         clientSecretInput.value = clientSecret && typeof clientSecret === 'string' ? clientSecret : '';
       }
@@ -891,6 +892,7 @@ async function loadLinkedInSettings() {
       const accessToken = settings.linkedin_access_token;
       if (accessToken && typeof accessToken === 'object' && accessToken.isSet) {
         accessTokenInput.placeholder = accessToken.isSet ? '••••••••' : '';
+        accessTokenInput.value = '';
       } else {
         accessTokenInput.value = accessToken && typeof accessToken === 'string' ? accessToken : '';
       }
@@ -900,12 +902,12 @@ async function loadLinkedInSettings() {
       const refreshToken = settings.linkedin_refresh_token;
       if (refreshToken && typeof refreshToken === 'object' && refreshToken.isSet) {
         refreshTokenInput.placeholder = refreshToken.isSet ? '••••••••' : '';
+        refreshTokenInput.value = '';
       } else {
         refreshTokenInput.value = refreshToken && typeof refreshToken === 'string' ? refreshToken : '';
       }
     }
     
-    // Update status
     await updateLinkedInStatus();
   } catch (error) {
     console.error('Failed to load LinkedIn settings:', error);
@@ -957,16 +959,16 @@ function initLinkedIn() {
     e.preventDefault();
     
     const formData = new FormData(form);
-    const settings = [];
+    const settings = {};
     
     // Only include non-empty values
     for (const [key, value] of formData.entries()) {
       if (value.trim()) {
-        settings.push({ key, value: value.trim() });
+        settings[key] = value.trim();
       }
     }
     
-    if (settings.length === 0) {
+    if (Object.keys(settings).length === 0) {
       showToast('No settings to save', 'neutral');
       return;
     }
