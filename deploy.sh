@@ -54,7 +54,7 @@ chown -R slop:slop /home/slop
 
 echo -e "${YELLOW}Installing application dependencies...${NC}"
 cd /home/slop/app
-su - slop -c "cd /home/slop/app && npm install --production"
+su - slop -c "cd /home/slop/app && npm install --omit=dev"
 
 # Generate session secret if .env doesn't exist
 if [ ! -f "/home/slop/app/.env" ]; then
