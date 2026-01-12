@@ -27,6 +27,9 @@ async function loadSettings() {
     // Load Google Drive folder selection
     await loadGoogleDriveFolder();
     
+    // Load LinkedIn settings
+    await loadLinkedInSettings();
+    
     // Load posts for sheet view
     await loadSheetData();
     
@@ -855,6 +858,156 @@ function initGoogleDrive() {
 }
 
 // ============================================================
+// LINKEDIN SETTINGS
+// ============================================================
+
+async function loadLinkedInSettings() {
+  try {
+    const result = await API.settings.getAll();
+    const settings = result.settings || {};
+    
+    // Load LinkedIn credentials (masked for sensitive fields)
+    const clientIdInput = document.getElementById('linkedInClientId');
+    const clientSecretInput = document.getElementById('linkedInClientSecret');
+    const accessTokenInput = document.getElementById('linkedInAccessToken');
+    const refreshTokenInput = document.getElementById('linkedInRefreshToken');
+    
+    if (clientIdInput) {
+      const clientId = settings.linkedin_client_id;
+      clientIdInput.value = clientId && typeof clientId === 'string' ? clientId : '';
+    }
+    
+    if (clientSecretInput) {
+      const clientSecret = settings.linkedin_client_secret;
+      if (clientSecret && typeof clientSecret === 'object' && clientSecret.isSet) {
+        // Sensitive field - already masked
+        clientSecretInput.placeholder = clientSecret.isSet ? '••••••••' : '';
+      } else {
+        clientSecretInput.value = clientSecret && typeof clientSecret === 'string' ? clientSecret : '';
+      }
+    }
+    
+    if (accessTokenInput) {
+      const accessToken = settings.linkedin_access_token;
+      if (accessToken && typeof accessToken === 'object' && accessToken.isSet) {
+        accessTokenInput.placeholder = accessToken.isSet ? '••••••••' : '';
+      } else {
+        accessTokenInput.value = accessToken && typeof accessToken === 'string' ? accessToken : '';
+      }
+    }
+    
+    if (refreshTokenInput) {
+      const refreshToken = settings.linkedin_refresh_token;
+      if (refreshToken && typeof refreshToken === 'object' && refreshToken.isSet) {
+        refreshTokenInput.placeholder = refreshToken.isSet ? '••••••••' : '';
+      } else {
+        refreshTokenInput.value = refreshToken && typeof refreshToken === 'string' ? refreshToken : '';
+      }
+    }
+    
+    // Update status
+    await updateLinkedInStatus();
+  } catch (error) {
+    console.error('Failed to load LinkedIn settings:', error);
+  }
+}
+
+async function updateLinkedInStatus() {
+  const statusText = document.getElementById('linkedInStatusText');
+  const testBtn = document.getElementById('btnTestLinkedIn');
+  
+  try {
+    const result = await API.settings.getAll();
+    const settings = result.settings || {};
+    
+    const hasClientId = settings.linkedin_client_id && 
+      (typeof settings.linkedin_client_id === 'string' || settings.linkedin_client_id.isSet);
+    const hasClientSecret = settings.linkedin_client_secret && 
+      (typeof settings.linkedin_client_secret === 'object' ? settings.linkedin_client_secret.isSet : true);
+    const hasAccessToken = settings.linkedin_access_token && 
+      (typeof settings.linkedin_access_token === 'object' ? settings.linkedin_access_token.isSet : true);
+    
+    const isConfigured = hasClientId && hasClientSecret && hasAccessToken;
+    
+    if (statusText) {
+      statusText.textContent = isConfigured 
+        ? '✓ LinkedIn API is configured' 
+        : 'LinkedIn API is not configured';
+    }
+    
+    if (testBtn) {
+      testBtn.style.display = isConfigured ? 'inline-flex' : 'none';
+    }
+  } catch (error) {
+    console.error('Failed to update LinkedIn status:', error);
+    if (statusText) {
+      statusText.textContent = 'Failed to check LinkedIn status';
+    }
+  }
+}
+
+function initLinkedIn() {
+  const form = document.getElementById('linkedInSettingsForm');
+  const testBtn = document.getElementById('btnTestLinkedIn');
+  
+  if (!form) return;
+  
+  // Form submission
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    const settings = [];
+    
+    // Only include non-empty values
+    for (const [key, value] of formData.entries()) {
+      if (value.trim()) {
+        settings.push({ key, value: value.trim() });
+      }
+    }
+    
+    if (settings.length === 0) {
+      showToast('No settings to save', 'neutral');
+      return;
+    }
+    
+    try {
+      showLoader();
+      await API.settings.setBulk(settings);
+      showToast('LinkedIn settings saved successfully', 'ok');
+      
+      // Reload to show updated status
+      await loadLinkedInSettings();
+    } catch (error) {
+      showToast('Failed to save LinkedIn settings', 'bad');
+    } finally {
+      hideLoader();
+    }
+  });
+  
+  // Test button
+  testBtn?.addEventListener('click', async () => {
+    try {
+      showLoader();
+      const result = await API.settings.test('linkedin');
+      
+      if (result.success) {
+        showToast('LinkedIn connection successful!', 'ok');
+        if (result.profile) {
+          showToast(`Connected as: ${result.profile.name || result.profile.email || 'LinkedIn User'}`, 'ok');
+        }
+      } else {
+        showToast(`LinkedIn test failed: ${result.error}`, 'bad');
+      }
+    } catch (error) {
+      showToast(`LinkedIn test failed: ${error.message}`, 'bad');
+    } finally {
+      hideLoader();
+    }
+  });
+}
+
+// ============================================================
 // SHEET MANAGEMENT (Content Ideas)
 // ============================================================
 
@@ -1529,6 +1682,7 @@ function initSettingsModule() {
   initPromptsSection();
   initStabilitySettings();
   initGoogleDrive();
+  initLinkedIn();
   initPostEditModal();
   initCsvButtons();
   initUserEditModal();

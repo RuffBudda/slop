@@ -75,6 +75,7 @@ CREATE TABLE IF NOT EXISTS posts (
   final_img TEXT,
   post_schedule DATETIME,
   posted_at DATETIME,
+  linkedin_post_url TEXT,
   created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
   updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
@@ -100,6 +101,20 @@ CREATE INDEX IF NOT EXISTS idx_settings_user_key ON settings(user_id, key);
 
 // Run schema creation
 db.exec(schema);
+
+// Migrations: Add new columns to existing tables
+try {
+  // Check if linkedin_post_url column exists, if not add it
+  const columns = db.prepare("PRAGMA table_info(posts)").all();
+  const hasLinkedInUrl = columns.some(col => col.name === 'linkedin_post_url');
+  
+  if (!hasLinkedInUrl) {
+    db.exec('ALTER TABLE posts ADD COLUMN linkedin_post_url TEXT');
+    console.log('✓ Added linkedin_post_url column to posts table');
+  }
+} catch (error) {
+  console.error('Migration error:', error);
+}
 
 console.log('✓ Database schema initialized');
 

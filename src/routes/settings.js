@@ -62,7 +62,11 @@ const SENSITIVE_KEYS = [
   'spaces_secret',
   'google_drive_refresh_token',
   'google_drive_access_token',
-  'google_drive_service_account'
+  'google_drive_service_account',
+  'linkedin_client_id',
+  'linkedin_client_secret',
+  'linkedin_access_token',
+  'linkedin_refresh_token'
 ];
 
 /**
@@ -1131,6 +1135,36 @@ router.post('/test/spaces', async (req, res) => {
     console.error('Spaces test error:', error);
     res.status(400).json({ 
       error: 'DigitalOcean Spaces test failed',
+      details: error.message 
+    });
+  }
+});
+
+/**
+ * Test LinkedIn API credentials
+ * POST /api/settings/test/linkedin
+ */
+router.post('/test/linkedin', async (req, res) => {
+  try {
+    const linkedInService = require('../services/linkedInService');
+    
+    // Test by getting user profile
+    const profile = await linkedInService.getProfile(req.user.id);
+    
+    res.json({ 
+      success: true, 
+      message: 'LinkedIn API credentials are valid',
+      profile: {
+        name: profile.name,
+        email: profile.email,
+        sub: profile.sub
+      }
+    });
+
+  } catch (error) {
+    console.error('LinkedIn test error:', error);
+    res.status(400).json({ 
+      error: 'LinkedIn API test failed',
       details: error.message 
     });
   }

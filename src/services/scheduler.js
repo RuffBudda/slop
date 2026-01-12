@@ -59,10 +59,51 @@ function initScheduler() {
     }
   });
 
+  // Check for scheduled posts to publish (every 5 minutes)
+  jobs.checkScheduledPosts = cron.schedule('*/5 * * * *', async () => {
+    console.log('[Scheduler] Checking for scheduled posts to publish...');
+    try {
+      const now = new Date();
+      const fiveMinutesFromNow = new Date(now.getTime() + 5 * 60 * 1000);
+      
+      // Find posts scheduled for now or in the past (within next 5 minutes)
+      const scheduledPosts = db.prepare(`
+        SELECT id, post_id, final_content
+        FROM posts 
+        WHERE status IN ('Approved', 'Scheduled')
+          AND post_schedule IS NOT NULL
+          AND post_schedule <= ?
+          AND (linkedin_post_url IS NULL OR linkedin_post_url = '')
+        ORDER BY post_schedule ASC
+        LIMIT 10
+      `).all(fiveMinutesFromNow.toISOString());
+      
+      if (scheduledPosts.length > 0) {
+        console.log(`[Scheduler] Found ${scheduledPosts.length} scheduled posts to publish`);
+        
+        const linkedInService = require('./linkedInService');
+        
+        for (const post of scheduledPosts) {
+          try {
+            console.log(`[Scheduler] Publishing post ${post.post_id} (ID: ${post.id})`);
+            await linkedInService.postScheduledPost(post.id);
+            console.log(`[Scheduler] Successfully published post ${post.post_id}`);
+          } catch (error) {
+            console.error(`[Scheduler] Failed to publish post ${post.post_id}:`, error.message);
+            // Post remains in Scheduled/Approved status for manual retry
+          }
+        }
+      }
+    } catch (error) {
+      console.error('[Scheduler] Scheduled posts check error:', error);
+    }
+  });
+
   // Log scheduler status
   console.log('[Scheduler] Background jobs initialized');
   console.log('  - Session cleanup: daily at midnight');
   console.log('  - Stuck posts check: every 30 minutes');
+  console.log('  - Scheduled posts check: every 5 minutes');
 }
 
 /**

@@ -459,6 +459,71 @@
             </div>
           </section>
 
+          <!-- LinkedIn Integration Section -->
+          <section class="settings-section">
+            <h3>LinkedIn API Integration</h3>
+            <p class="section-description">
+              Connect your LinkedIn account to automatically post approved and scheduled content.
+              You'll need to create a LinkedIn app and get OAuth credentials.
+              <br><strong>How to get LinkedIn API credentials:</strong>
+              <br>1. Go to <a href="https://www.linkedin.com/developers/apps" target="_blank">LinkedIn Developers</a>
+              <br>2. Create a new app or select an existing one
+              <br>3. In the "Auth" tab, add redirect URL: <code>http://localhost:3000/auth/linkedin/callback</code> (or your domain)
+              <br>4. Request the following scopes: <code>w_member_social</code>, <code>r_liteprofile</code>, <code>r_emailaddress</code>
+              <br>5. Copy the Client ID and Client Secret below
+              <br>6. Use the OAuth flow to get Access Token and Refresh Token
+            </p>
+            
+            <div id="linkedInStatus" class="google-drive-status">
+              <p id="linkedInStatusText">Checking connection status...</p>
+              <div id="linkedInActions" style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+                <button id="btnTestLinkedIn" class="btn clear" style="display: none;">
+                  <span class="ico">🔍</span> Test Connection
+                </button>
+              </div>
+            </div>
+            
+            <form id="linkedInSettingsForm" class="settings-form" style="margin-top: 24px;">
+              <h4>LinkedIn OAuth Credentials</h4>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="linkedInClientId">Client ID</label>
+                  <input type="text" id="linkedInClientId" name="linkedin_client_id" placeholder="Your LinkedIn App Client ID">
+                </div>
+                <div class="form-group">
+                  <label for="linkedInClientSecret">Client Secret</label>
+                  <div class="input-with-action">
+                    <input type="password" id="linkedInClientSecret" name="linkedin_client_secret" placeholder="Your LinkedIn App Client Secret">
+                    <button type="button" class="btn clear btn-sm" data-test="linkedin">Test</button>
+                  </div>
+                </div>
+              </div>
+              
+              <h4 style="margin-top: 24px;">Access Tokens</h4>
+              <p class="field-description" style="margin-bottom: 16px;">
+                After setting up Client ID and Secret, you'll need to complete the OAuth flow to get access tokens.
+                For now, you can manually paste the Access Token and Refresh Token if you have them.
+              </p>
+              
+              <div class="form-group">
+                <label for="linkedInAccessToken">Access Token</label>
+                <input type="password" id="linkedInAccessToken" name="linkedin_access_token" placeholder="LinkedIn Access Token">
+                <small>This token expires after 60 days. The system will automatically refresh it using the Refresh Token.</small>
+              </div>
+              
+              <div class="form-group">
+                <label for="linkedInRefreshToken">Refresh Token</label>
+                <input type="password" id="linkedInRefreshToken" name="linkedin_refresh_token" placeholder="LinkedIn Refresh Token">
+                <small>Used to automatically refresh the Access Token when it expires.</small>
+              </div>
+              
+              <button type="submit" class="btn approve">
+                <span class="ico">💾</span> Save LinkedIn Settings
+              </button>
+            </form>
+          </section>
+
           <!-- Sheet Management Section -->
           <section class="settings-section">
             <h3>Content Management</h3>
