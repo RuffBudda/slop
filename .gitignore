@@ -38,3 +38,6 @@ temp/
 
 # OG directory (old files)
 OG/
+
+# Deployment documentation
+DEPLOYMENT.md
