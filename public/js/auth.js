@@ -8,8 +8,16 @@
 // ============================================================
 
 async function checkAuthStatus() {
+  // Add timeout to prevent infinite loading
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Auth check timeout')), 10000); // 10 second timeout
+  });
+  
   try {
-    const result = await API.auth.status();
+    const result = await Promise.race([
+      API.auth.status(),
+      timeoutPromise
+    ]);
     
     if (result.setupRequired) {
       showSetupPage();
@@ -25,6 +33,8 @@ async function checkAuthStatus() {
     return false;
   } catch (error) {
     console.error('Auth check failed:', error);
+    // Always hide loader on error
+    hideAppLoader();
     showLoginPage();
     return false;
   }
@@ -58,17 +68,30 @@ function showLoginPage() {
 
 function initLoginPasswordToggles() {
   const passwordField = document.getElementById('loginPassword');
-  if (!passwordField) return;
+  if (!passwordField) {
+    // Retry if password field not found yet
+    setTimeout(() => initLoginPasswordToggles(), 100);
+    return;
+  }
   
   // Check if already has toggle
   if (passwordField.parentElement.classList.contains('password-input-wrapper')) {
     const toggle = passwordField.parentElement.querySelector('.password-toggle');
     if (toggle) {
-      toggle.addEventListener('click', () => {
+      // Remove existing listeners and add new one
+      const newToggle = toggle.cloneNode(true);
+      toggle.parentNode.replaceChild(newToggle, toggle);
+      newToggle.addEventListener('click', () => {
         const isPassword = passwordField.type === 'password';
         passwordField.type = isPassword ? 'text' : 'password';
-        toggle.innerHTML = isPassword ? (window.Icons ? window.Icons.get('eyeSlash') : '👁️') : (window.Icons ? window.Icons.get('eye') : '👁️');
+        if (window.Icons && window.Icons.get) {
+          newToggle.innerHTML = isPassword ? window.Icons.get('eyeSlash', 'password-toggle-icon') : window.Icons.get('eye', 'password-toggle-icon');
+        }
       });
+      // Initialize icon
+      if (window.Icons && window.Icons.get) {
+        newToggle.innerHTML = window.Icons.get('eye', 'password-toggle-icon');
+      }
     }
     return;
   }
@@ -81,7 +104,9 @@ function initLoginPasswordToggles() {
   toggle.type = 'button';
   toggle.className = 'password-toggle';
   toggle.setAttribute('aria-label', 'Toggle password visibility');
-  toggle.innerHTML = window.Icons ? window.Icons.get('eye') : '👁️';
+  if (window.Icons && window.Icons.get) {
+    toggle.innerHTML = window.Icons.get('eye', 'password-toggle-icon');
+  }
   
   passwordField.parentNode.insertBefore(wrapper, passwordField);
   wrapper.appendChild(passwordField);
@@ -90,7 +115,9 @@ function initLoginPasswordToggles() {
   toggle.addEventListener('click', () => {
     const isPassword = passwordField.type === 'password';
     passwordField.type = isPassword ? 'text' : 'password';
-    toggle.innerHTML = isPassword ? (window.Icons ? window.Icons.get('eyeSlash') : '👁️') : (window.Icons ? window.Icons.get('eye') : '👁️');
+    if (window.Icons && window.Icons.get) {
+      toggle.innerHTML = isPassword ? window.Icons.get('eyeSlash', 'password-toggle-icon') : window.Icons.get('eye', 'password-toggle-icon');
+    }
   });
 }
 

@@ -78,13 +78,35 @@ const Router = {
       // Show loading state
       mainContent.innerHTML = '<div class="spinner-container"><div class="spinner"></div><p>Loading...</p></div>';
       
-      // Load page HTML
-      const response = await fetch(`/pages/${pagePath}.html`);
-      if (!response.ok) {
-        throw new Error(`Failed to load page: ${pagePath}`);
+      // Handle settings pages
+      let html;
+      if (pagePath.startsWith('settings/')) {
+        const settingsPage = pagePath.replace('settings/', '');
+        if (settingsPage === 'index' || settingsPage === '') {
+          const response = await fetch(`/pages/settings/index.html`);
+          if (!response.ok) throw new Error(`Failed to load settings index`);
+          html = await response.text();
+        } else {
+          // Try to load specific settings page
+          const response = await fetch(`/pages/settings/${settingsPage}.html`);
+          if (!response.ok) {
+            // Fallback to index if specific page doesn't exist
+            const indexResponse = await fetch(`/pages/settings/index.html`);
+            if (!indexResponse.ok) throw new Error(`Failed to load settings page`);
+            html = await indexResponse.text();
+          } else {
+            html = await response.text();
+          }
+        }
+      } else {
+        // Load regular page
+        const response = await fetch(`/pages/${pagePath}.html`);
+        if (!response.ok) {
+          throw new Error(`Failed to load page: ${pagePath}`);
+        }
+        html = await response.text();
       }
       
-      const html = await response.text();
       mainContent.innerHTML = html;
       
       // Initialize page-specific scripts
@@ -120,7 +142,15 @@ const Router = {
       'settings/storage': () => { if (typeof loadSettings === 'function') loadSettings(); },
       'settings/ai': () => { if (typeof loadSettings === 'function') loadSettings(); },
       'settings/content': () => { if (typeof loadSettings === 'function') loadSettings(); },
-      'settings/admin': () => { if (typeof loadSettings === 'function') loadSettings(); }
+      'settings/admin': () => { 
+        if (typeof loadSettings === 'function') loadSettings(); 
+        // Show admin section after loading
+        setTimeout(() => {
+          if (typeof window.showSettingsSection === 'function') {
+            window.showSettingsSection('admin');
+          }
+        }, 200);
+      }
     };
     
     const initFn = pageMap[pagePath];

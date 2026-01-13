@@ -1533,7 +1533,11 @@ function initSettingsTiles() {
   const backContainer = document.getElementById('settingsBack');
   const backBtn = document.getElementById('btnSettingsBack');
   
-  if (!tilesGrid) return;
+  if (!tilesGrid) {
+    // Retry if tiles grid not found yet (page might still be loading)
+    setTimeout(() => initSettingsTiles(), 100);
+    return;
+  }
   
   // Populate tile icons
   populateSettingsTileIcons();
@@ -1625,7 +1629,7 @@ function initSettingsTiles() {
 }
 
 /**
- * Populate settings tile icons with SVG icons
+ * Populate settings tile icons with Flaticon icons
  */
 function populateSettingsTileIcons() {
   // Map section names to icon names
@@ -1650,11 +1654,11 @@ function populateSettingsTileIcons() {
   // Populate each tile icon
   Object.keys(iconMap).forEach(section => {
     const iconEl = document.getElementById(`tileIcon${section.charAt(0).toUpperCase() + section.slice(1)}`);
-    if (iconEl && !iconEl.innerHTML.trim()) {
+    if (iconEl) {
       const iconName = iconMap[section];
-      const iconSvg = window.Icons.get(iconName, 'icon');
-      if (iconSvg) {
-        iconEl.innerHTML = iconSvg;
+      const iconHtml = window.Icons.get(iconName, 'tile-icon-flaticon', { size: '24px' });
+      if (iconHtml) {
+        iconEl.innerHTML = iconHtml;
       }
     }
   });
@@ -1662,18 +1666,27 @@ function populateSettingsTileIcons() {
 
 function initPasswordVisibilityToggles() {
   // Add toggle buttons to all password fields in settings
-  const passwordFields = document.querySelectorAll('#settingsView input[type="password"]');
+  const passwordFields = document.querySelectorAll('input[type="password"]');
   
   passwordFields.forEach(field => {
     // Skip if already has a toggle
     if (field.parentElement.classList.contains('password-input-wrapper')) {
       const toggle = field.parentElement.querySelector('.password-toggle');
       if (toggle) {
-        toggle.addEventListener('click', () => {
+        // Remove existing listeners and add new one
+        const newToggle = toggle.cloneNode(true);
+        toggle.parentNode.replaceChild(newToggle, toggle);
+        newToggle.addEventListener('click', () => {
           const isPassword = field.type === 'password';
           field.type = isPassword ? 'text' : 'password';
-          toggle.innerHTML = isPassword ? (window.Icons ? window.Icons.get('eyeSlash') : '👁️') : (window.Icons ? window.Icons.get('eye') : '👁️');
+          if (window.Icons && window.Icons.get) {
+            newToggle.innerHTML = isPassword ? window.Icons.get('eyeSlash', 'password-toggle-icon') : window.Icons.get('eye', 'password-toggle-icon');
+          }
         });
+        // Initialize icon
+        if (window.Icons && window.Icons.get) {
+          newToggle.innerHTML = window.Icons.get('eye', 'password-toggle-icon');
+        }
       }
       return;
     }
@@ -1687,7 +1700,9 @@ function initPasswordVisibilityToggles() {
     toggle.type = 'button';
     toggle.className = 'password-toggle';
     toggle.setAttribute('aria-label', 'Toggle password visibility');
-    toggle.innerHTML = window.Icons ? window.Icons.get('eye') : '👁️';
+    if (window.Icons && window.Icons.get) {
+      toggle.innerHTML = window.Icons.get('eye', 'password-toggle-icon');
+    }
     
     // Wrap the field
     field.parentNode.insertBefore(wrapper, field);
@@ -1698,7 +1713,9 @@ function initPasswordVisibilityToggles() {
     toggle.addEventListener('click', () => {
       const isPassword = field.type === 'password';
       field.type = isPassword ? 'text' : 'password';
-      toggle.innerHTML = isPassword ? (window.Icons ? window.Icons.get('eyeSlash') : '👁️') : (window.Icons ? window.Icons.get('eye') : '👁️');
+      if (window.Icons && window.Icons.get) {
+        toggle.innerHTML = isPassword ? window.Icons.get('eyeSlash', 'password-toggle-icon') : window.Icons.get('eye', 'password-toggle-icon');
+      }
     });
   });
 }

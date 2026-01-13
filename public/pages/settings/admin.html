@@ -1,0 +1,129 @@
+<div class="settings-container">
+  <div class="settings-group settings-section-content" id="settingsSectionAdmin" data-section="admin">
+    <h2 class="settings-group-title">Administration</h2>
+    
+    <!-- User Management Section (Admin only) -->
+    <section class="settings-section" id="userManagementSection">
+      <h3>User Management</h3>
+      <p class="section-description">
+        Manage user accounts, roles, and permissions. Only administrators can access this section.
+      </p>
+      <button class="btn approve" id="btnAddUser">
+        <span class="ico"></span> Add New User
+      </button>
+      <div id="usersList" class="users-list" style="margin-top: 20px;"></div>
+    </section>
+    
+    <!-- Instance Refresh Section (Admin only) -->
+    <section class="settings-section" id="instanceRefreshSection">
+      <h3>Instance Refresh</h3>
+      <p class="section-description">
+        Reset the entire instance to a clean state. This action is irreversible and will delete all data.
+      </p>
+      <div class="warning-box" style="background: #fee2e2; border: 2px solid #dc2626; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+        <div style="display: flex; align-items: start; gap: 12px;">
+          <span class="warning-icon-large"></span>
+          <div style="flex: 1;">
+            <h4 style="margin: 0 0 8px 0; color: #dc2626; font-size: 16px; font-weight: 600;">DANGER ZONE</h4>
+            <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.5;">
+              This action will <strong>permanently delete ALL data</strong> from the instance including:
+            </p>
+            <ul style="margin: 8px 0 0 0; padding-left: 20px; color: #991b1b; font-size: 14px; line-height: 1.6;">
+              <li>All posts and content</li>
+              <li>All settings and API keys</li>
+              <li>All workflow sessions</li>
+              <li>All users (except your admin account)</li>
+            </ul>
+            <p style="margin: 12px 0 0 0; color: #991b1b; font-size: 14px; font-weight: 600;">
+              This action is <strong>IRREVERSIBLE</strong> and cannot be undone.
+            </p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="clear-options" style="display: flex; flex-direction: column; gap: 16px; max-width: 600px;">
+        <div class="clear-option-card" style="border: 1px solid #444; border-radius: 8px; padding: 16px;">
+          <h4 style="margin: 0 0 8px 0;">Clear All Posts</h4>
+          <p style="margin: 0 0 12px 0; color: #999; font-size: 14px;">Remove all generated posts and content from the database.</p>
+          <button type="button" class="btn reject btn-sm" data-clear-action="posts">Clear Posts</button>
+        </div>
+        
+        <div class="clear-option-card" style="border: 1px solid #444; border-radius: 8px; padding: 16px;">
+          <h4 style="margin: 0 0 8px 0;">Clear All Settings</h4>
+          <p style="margin: 0 0 12px 0; color: #999; font-size: 14px;">Remove all user settings including API keys and configurations.</p>
+          <button type="button" class="btn reject btn-sm" data-clear-action="settings">Clear Settings</button>
+        </div>
+        
+        <div class="clear-option-card" style="border: 1px solid #444; border-radius: 8px; padding: 16px;">
+          <h4 style="margin: 0 0 8px 0;">Clear Workflow Sessions</h4>
+          <p style="margin: 0 0 12px 0; color: #999; font-size: 14px;">Remove all workflow session data.</p>
+          <button type="button" class="btn reject btn-sm" data-clear-action="sessions">Clear Sessions</button>
+        </div>
+        
+        <div class="clear-option-card" style="border: 1px solid #444; border-radius: 8px; padding: 16px;">
+          <h4 style="margin: 0 0 8px 0;">Clear All Users</h4>
+          <p style="margin: 0 0 12px 0; color: #999; font-size: 14px;">Remove all users except your current admin account.</p>
+          <button type="button" class="btn reject btn-sm" data-clear-action="users">Clear Users</button>
+        </div>
+      </div>
+      
+      <div style="margin-top: 32px; padding-top: 24px; border-top: 2px solid #dc2626;">
+        <h3 style="color: #dc2626; margin-bottom: 16px;">Full Instance Reset</h3>
+        <p class="section-description" style="margin-bottom: 20px;">
+          Reset the entire instance to a clean state. This action is irreversible and will delete all data.
+        </p>
+        <form id="instanceRefreshForm" style="max-width: 600px;">
+          <div class="form-group">
+            <label for="refreshAdminUsername">Admin Username</label>
+            <input type="text" id="refreshAdminUsername" name="adminUsername" required 
+                   placeholder="Enter your admin username" autocomplete="username">
+            <small style="color: #666; font-size: 12px; display: block; margin-top: 4px;">
+              Must match your current admin username
+            </small>
+          </div>
+          
+          <div class="form-group">
+            <label for="refreshAdminPassword">Admin Password</label>
+            <input type="password" id="refreshAdminPassword" name="adminPassword" required 
+                   placeholder="Enter your admin password" autocomplete="current-password">
+            <small style="color: #666; font-size: 12px; display: block; margin-top: 4px;">
+              Must match your current admin password
+            </small>
+          </div>
+          
+          <div class="form-group">
+            <label for="refreshConfirmationText">Confirmation Text</label>
+            <textarea id="refreshConfirmationText" name="confirmationText" rows="3" required 
+                      placeholder="Copy and paste the confirmation text here..." 
+                      style="font-family: monospace; font-size: 13px;"></textarea>
+            <div style="background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; padding: 12px; margin-top: 8px;">
+              <div style="display: flex; align-items: start; gap: 8px; margin-bottom: 8px;">
+                <span class="copy-icon-small"></span>
+                <div style="flex: 1;">
+                  <strong style="font-size: 12px; color: #374151; display: block; margin-bottom: 4px;">Copy this text exactly:</strong>
+                  <code style="font-size: 11px; color: #6b7280; line-height: 1.6; display: block; user-select: all; cursor: text;">
+                    Humpty Dumpty sat on a wall. Humpty Dumpty had a great fall. All the king's horses and all the king's men couldn't put Humpty together again.
+                  </code>
+                </div>
+              </div>
+              <button type="button" class="btn clear btn-sm" id="btnCopyConfirmation" 
+                      style="width: 100%; margin-top: 8px;">
+                <span class="copy-icon-inline"></span> Copy Confirmation Text
+              </button>
+            </div>
+            <small style="color: #666; font-size: 12px; display: block; margin-top: 4px;">
+              You must copy and paste the exact text above to confirm this action
+            </small>
+          </div>
+          
+          <div class="btns" style="margin-top: 24px;">
+            <button type="submit" class="btn reject" id="btnResetInstance" 
+                    style="background: #dc2626; border-color: #dc2626;">
+              <span class="warning-icon-inline"></span> Reset Instance
+            </button>
+          </div>
+        </form>
+      </div>
+    </section>
+  </div>
+</div>

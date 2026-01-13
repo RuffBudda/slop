@@ -10,6 +10,17 @@
 async function initApp() {
   console.log('Initializing SLOP...');
   
+  // Initialize icons (Flaticon)
+  if (window.Icons && window.Icons.init) {
+    window.Icons.init();
+  }
+  
+  // Initialize search icon
+  const searchIcon = document.querySelector('.search-icon');
+  if (searchIcon && window.Icons && window.Icons.get) {
+    searchIcon.innerHTML = window.Icons.get('search', 'search-icon-flaticon', { size: '14px' });
+  }
+  
   // Initialize keyboard shortcuts
   initKeyboardShortcuts();
   
@@ -20,7 +31,9 @@ async function initApp() {
   initDock();
   
   // Initialize global search
-  initGlobalSearch();
+  if (typeof initGlobalSearch === 'function') {
+    initGlobalSearch();
+  }
   
   // Initialize bulk actions
   initBulkActions();

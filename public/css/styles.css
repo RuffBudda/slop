@@ -97,6 +97,9 @@ a {
 
 .search-container {
   grid-column: 3;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .user-menu {
@@ -1021,7 +1024,8 @@ body.processing {
 }
 
 .app-loader.hidden {
-  display: none !important;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .app-loader .spinner {
@@ -2170,6 +2174,35 @@ dialog::backdrop {
   transform: translateY(-50%);
   color: #666;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Flaticon icon styles */
+.nav-icon-flaticon,
+.tile-icon-flaticon,
+.password-toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nav-icon-flaticon {
+  font-size: 18px;
+}
+
+.tile-icon-flaticon {
+  font-size: 24px;
+}
+
+.password-toggle-icon {
+  font-size: 16px;
+}
+
+/* Ensure Flaticon icons inherit color */
+.fi {
+  color: inherit;
 }
 
 .search-results {
