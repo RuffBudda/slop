@@ -162,10 +162,10 @@ const Router = {
       'settings/content': () => { if (typeof loadSettings === 'function') loadSettings(); },
       'settings/admin': () => { 
         if (typeof loadSettings === 'function') loadSettings(); 
-        // Show admin section after loading
+        // Load users if admin
         setTimeout(() => {
-          if (typeof window.showSettingsSection === 'function') {
-            window.showSettingsSection('admin');
+          if (window.AppState.user?.role === 'admin' && typeof loadUsers === 'function') {
+            loadUsers();
           }
         }, 200);
       }

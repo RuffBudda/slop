@@ -114,6 +114,13 @@ if (typeof window !== 'undefined') {
     render: renderIcon,
     init: function() {
       initNavigationIcons();
+      
+      // Initialize search icon
+      const searchIcon = document.querySelector('.search-icon');
+      if (searchIcon && !searchIcon.innerHTML.trim()) {
+        searchIcon.innerHTML = this.get('search', 'search-icon-flaticon', { size: '14px' });
+      }
+      
       // Replace all elements with data-icon attribute
       document.querySelectorAll('[data-icon]').forEach(el => {
         const iconName = el.dataset.icon;
