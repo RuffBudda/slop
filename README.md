@@ -494,9 +494,9 @@ This software is **proprietary** and confidential. All rights reserved.
 
 **NOTICE**: This Software is NOT open source. Unauthorized copying, modification, distribution, or use of this software, via any medium, is strictly prohibited.
 
-This software is owned by **Contractors Direct**. For licensing inquiries or permissions, please contact:
+This software is owned by **Contractors Direct x 21 SIXTY Media**. For licensing inquiries or permissions, please contact:
 
-- **Email**: abu@contractors.direct
+- **Email**: abu@contractors.direct / abubakr@21sixty.media
 - **Website**: https://contractors.direct
 
 See [LICENSE](LICENSE) file for full terms and conditions.
@@ -505,8 +505,13 @@ See [LICENSE](LICENSE) file for full terms and conditions.
 
 <div align="center">
 
-**Proprietary Software by [Contractors Direct](https://contractors.direct)**
+**Proprietary Software by Contractors Direct x 21 SIXTY Media**
 
-For inquiries: **abu@contractors.direct**
+For inquiries: **abu@contractors.direct / abubakr@21sixty.media**
+
+<div style="display: flex; justify-content: center; align-items: center; gap: 30px; margin-top: 20px; flex-wrap: wrap;">
+  <img src="https://via.placeholder.com/200x80/000000/FFFFFF?text=Contractors+Direct" alt="Contractors Direct Logo" style="height: 80px; max-width: 200px;">
+  <img src="https://via.placeholder.com/200x80/000000/FFFFFF?text=21+SIXTY+Media" alt="21 SIXTY Media Logo" style="height: 80px; max-width: 200px;">
+</div>
 
 </div>
