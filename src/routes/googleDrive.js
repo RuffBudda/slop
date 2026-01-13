@@ -26,8 +26,7 @@ router.get('/callback', async (req, res) => {
       return res.redirect('/login?redirect=/settings&googleDrive=error');
     }
 
-    // Exchange code for tokens (use userId if available)
-    const userId = req.session.userId;
+    // Exchange code for tokens
     const tokens = await googleDriveService.getTokensFromCode(code, userId);
     
     // Save tokens for current user
