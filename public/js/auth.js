@@ -34,6 +34,8 @@ function showLoginPage() {
   document.getElementById('loginPage').classList.remove('hidden');
   document.getElementById('setupPage').classList.add('hidden');
   document.getElementById('mainApp').classList.add('hidden');
+  const dock = document.getElementById('dock');
+  if (dock) dock.classList.add('hidden');
   hideAppLoader();
   
   // Load saved username if "Remember me" was checked
@@ -55,6 +57,8 @@ function showSetupPage() {
   document.getElementById('loginPage').classList.add('hidden');
   document.getElementById('setupPage').classList.remove('hidden');
   document.getElementById('mainApp').classList.add('hidden');
+  const dock = document.getElementById('dock');
+  if (dock) dock.classList.add('hidden');
   hideAppLoader();
 }
 
@@ -62,6 +66,8 @@ function showMainApp() {
   document.getElementById('loginPage').classList.add('hidden');
   document.getElementById('setupPage').classList.add('hidden');
   document.getElementById('mainApp').classList.remove('hidden');
+  const dock = document.getElementById('dock');
+  if (dock) dock.classList.remove('hidden');
   hideAppLoader();
 }
 

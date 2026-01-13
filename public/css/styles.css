@@ -1233,6 +1233,15 @@ body.processing {
   height: 56px;
 }
 
+.dock.hidden {
+  display: none;
+}
+
+#mainApp.hidden ~ .dock,
+#mainApp.hidden .dock {
+  display: none;
+}
+
 .fab {
   position: absolute;
   left: 0;
