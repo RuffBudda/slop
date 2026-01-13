@@ -9,6 +9,10 @@
 
 async function loadSettings() {
   try {
+    // Initialize tiles and password toggles when settings tab is activated
+    initSettingsTiles();
+    initPasswordVisibilityToggles();
+    
     // Load profile settings
     await loadProfileSettings();
     
@@ -41,6 +45,11 @@ async function loadSettings() {
     // Re-initialize calculator when settings tab is loaded
     // This ensures sliders work even if tab wasn't visible on page load
     initCalculator();
+    
+    // Re-initialize password toggles after content loads (in case of dynamic content)
+    setTimeout(() => {
+      initPasswordVisibilityToggles();
+    }, 100);
   } catch (error) {
     console.error('Failed to load settings:', error);
     showToast('Failed to load settings', 'bad');
@@ -1522,6 +1531,9 @@ function getEnergyComparison(wh) {
 // SETTINGS TILES NAVIGATION
 // ============================================================
 
+// Store tile handlers to prevent duplicate listeners
+let tilesInitialized = false;
+
 function initSettingsTiles() {
   const tilesGrid = document.getElementById('settingsTilesGrid');
   const backBtn = document.getElementById('btnSettingsBack');
@@ -1529,40 +1541,51 @@ function initSettingsTiles() {
   
   if (!tilesGrid) return;
   
-  // Show tiles by default
-  showTiles();
-  
-  // Handle tile clicks
-  tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
-    tile.addEventListener('click', () => {
-      const section = tile.dataset.section;
-      if (section) {
-        showSection(section);
-      }
+  // Only add event listeners once
+  if (!tilesInitialized) {
+    // Handle tile clicks
+    tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
+      tile.addEventListener('click', () => {
+        const section = tile.dataset.section;
+        if (section) {
+          showSection(section);
+        }
+      });
     });
-  });
-  
-  // Handle back button
-  if (backBtn) {
-    backBtn.addEventListener('click', () => {
-      showTiles();
-    });
+    
+    // Handle back button
+    if (backBtn) {
+      backBtn.addEventListener('click', () => {
+        showTiles();
+      });
+    }
+    
+    tilesInitialized = true;
   }
+  
+  // Always show tiles by default when settings tab is activated
+  showTiles();
   
   function showTiles() {
     // Show tiles grid
-    tilesGrid.classList.remove('hidden');
+    if (tilesGrid) tilesGrid.classList.remove('hidden');
     // Hide back button
     if (backContainer) backContainer.classList.add('hidden');
     // Hide all sections
     document.querySelectorAll('.settings-section-content').forEach(section => {
       section.classList.add('hidden');
     });
+    // Remove active state from all tiles
+    if (tilesGrid) {
+      tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
+        tile.classList.remove('active');
+      });
+    }
   }
   
   function showSection(sectionName) {
     // Hide tiles grid
-    tilesGrid.classList.add('hidden');
+    if (tilesGrid) tilesGrid.classList.add('hidden');
     // Show back button
     if (backContainer) backContainer.classList.remove('hidden');
     // Hide all sections
@@ -1575,10 +1598,16 @@ function initSettingsTiles() {
       targetSection.classList.remove('hidden');
     }
     // Update active tile
-    tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
-      tile.classList.toggle('active', tile.dataset.section === sectionName);
-    });
+    if (tilesGrid) {
+      tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
+        tile.classList.toggle('active', tile.dataset.section === sectionName);
+      });
+    }
   }
+  
+  // Make functions available globally for debugging
+  window.showSettingsTiles = showTiles;
+  window.showSettingsSection = showSection;
 }
 
 // ============================================================
@@ -1593,12 +1622,21 @@ function initPasswordVisibilityToggles() {
     // Skip if already has a toggle
     if (input.parentElement.querySelector('.password-toggle')) return;
     
-    // Create wrapper if needed
+    // Check if already wrapped
     let wrapper = input.parentElement;
-    if (!wrapper.classList.contains('password-input-wrapper')) {
+    const isWrapped = wrapper.classList.contains('password-input-wrapper');
+    
+    if (!isWrapped) {
+      // Create wrapper
       wrapper = document.createElement('div');
       wrapper.className = 'password-input-wrapper';
+      wrapper.style.position = 'relative';
+      wrapper.style.display = 'flex';
+      wrapper.style.alignItems = 'center';
+      
+      // Insert wrapper before input
       input.parentNode.insertBefore(wrapper, input);
+      // Move input into wrapper
       wrapper.appendChild(input);
     }
     
@@ -1608,17 +1646,33 @@ function initPasswordVisibilityToggles() {
     toggle.className = 'password-toggle';
     toggle.setAttribute('aria-label', 'Toggle password visibility');
     toggle.innerHTML = '👁️';
+    toggle.style.position = 'absolute';
+    toggle.style.right = '8px';
+    toggle.style.background = 'transparent';
+    toggle.style.border = 'none';
+    toggle.style.cursor = 'pointer';
+    toggle.style.padding = '4px 8px';
+    toggle.style.fontSize = '16px';
+    toggle.style.color = 'var(--ink-muted, #a0a0a0)';
+    toggle.style.zIndex = '1';
     
     // Add click handler
-    toggle.addEventListener('click', () => {
+    toggle.addEventListener('click', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
       const isPassword = input.type === 'password';
       input.type = isPassword ? 'text' : 'password';
       toggle.innerHTML = isPassword ? '🙈' : '👁️';
       toggle.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
     });
     
-    // Insert toggle after input
+    // Insert toggle into wrapper
     wrapper.appendChild(toggle);
+    
+    // Ensure input has right padding for toggle
+    if (!input.style.paddingRight) {
+      input.style.paddingRight = '40px';
+    }
   });
 }
 
