@@ -133,21 +133,7 @@ window.activateTab = function(tabName, subSection = null) {
 };
 
 // Hash-based routing is handled by router.js
-// The router module registers its own hashchange listener in Router.init()
-
-// Initialize routing on page load
-document.addEventListener('DOMContentLoaded', () => {
-  if (window.location.hash) {
-    const hash = window.location.hash.replace('#/', '');
-    const parts = hash.split('/');
-    const tabName = parts[0] || 'content';
-    const subSection = parts[1] || null;
-    
-    if (tabName && ['content', 'calendar', 'timeline', 'bin', 'settings'].includes(tabName)) {
-      activateTab(tabName, subSection);
-    }
-  }
-});
+// The router module registers its own hashchange listener and handles initial route in Router.init()
 
 // ============================================================
 // DOCK MANAGEMENT
