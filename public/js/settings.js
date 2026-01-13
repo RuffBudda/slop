@@ -38,8 +38,10 @@ async function loadSettings() {
     if (window.AppState.user?.role === 'admin') {
       await loadUsers();
       document.getElementById('userManagementSection')?.classList.remove('hidden');
+      document.getElementById('instanceRefreshSection')?.classList.remove('hidden');
     } else {
       document.getElementById('userManagementSection')?.classList.add('hidden');
+      document.getElementById('instanceRefreshSection')?.classList.add('hidden');
     }
     
     // Re-initialize calculator when settings tab is loaded
