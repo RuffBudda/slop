@@ -7,7 +7,6 @@
 **AI-Powered LinkedIn Content Creation & Automation**
 
 [![Node.js](https://img.shields.io/badge/Node.js-18+-green.svg)](https://nodejs.org/)
-[![License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Status](https://img.shields.io/badge/Status-Active-success.svg)](https://github.com/RuffBudda/slop)
 
 ---
@@ -49,6 +48,12 @@ SLOP is an intelligent content automation platform designed to streamline Linked
 - Monitor AI usage and environmental impact
 - Calculate CO2 emissions and energy consumption
 - Track your carbon footprint
+
+📋 **Content Organization**
+- Identification field for post references
+- File import for templates and samples
+- Tile-based settings navigation
+- Password visibility toggles
 
 ---
 
@@ -194,17 +199,65 @@ slop/
 
 ## 📚 Usage Guide
 
+### Setting Up Post Types
+
+Post types are crucial for generating high-quality content. Each post type defines the **lens** through which the AI thinks about the content, not just the topic.
+
+#### Understanding Post Types
+
+**Type = LENS (Critical)**
+
+The Type field defines how the post thinks, not what it talks about. Examples:
+
+- **Founder Reality** → lived tension, trade-offs, scars, real experiences
+- **Leadership** → decisions, responsibility, restraint, leading teams
+- **Sustainability** → systems, consequences, economics, long-term impact
+- **Scaling** → sequencing, pressure points, second-order effects
+- **Operations** → friction, process, repetition, day-to-day execution
+- **Strategy** → choices, exclusion, focus, strategic thinking
+- **Economics / TCO** → cost analysis, financial models, value propositions
+
+#### Post Type Setup Guidelines
+
+1. **Be Specific**: Use descriptive types that capture the thinking mode
+   - ✅ Good: "Founder Reality", "Scaling Challenges", "Operational Efficiency"
+   - ❌ Bad: "Post", "Content", "Update"
+
+2. **Match Your Voice**: The Type should align with how you want to think about the topic
+   - If discussing a mistake → Use "Founder Reality" or "Lessons Learned"
+   - If discussing growth → Use "Scaling" or "Strategy"
+   - If discussing processes → Use "Operations"
+
+3. **Consistency**: Use the same Type names across similar posts to maintain consistency
+
+4. **Purpose Alignment**: Ensure Type and Purpose work together
+   - Type = How you think about it
+   - Purpose = Why you're writing it (Clarity, Challenge, Education, etc.)
+
 ### Creating Content
 
 1. Navigate to **Settings** → **Content Management**
 2. Click **Add New Post**
 3. Fill in:
-   - **Instruction**: Main content directive
-   - **Type**: Post category (e.g., Founder Reflection, Industry Commentary)
-   - **Template**: Structural flow (Hook → Context → Insight → Question)
-   - **Purpose**: Intent (Clarity, Challenge, Education, etc.)
-   - **Sample**: Style reference
-   - **Keywords**: Relevant keywords to include
+   - **Identification**: Optional identifier or reference for the post
+   - **Instruction**: Main content directive (what you want to create)
+   - **Type**: Post category/lens (see Post Type Setup above)
+   - **Template**: Structural flow (e.g., "Hook → Context → Insight → Question")
+   - **Purpose**: Intent (Clarity, Challenge, Education, Perspective, etc.)
+   - **Sample**: Style reference (for pacing, warmth, rhythm - not to copy)
+   - **Keywords**: Relevant keywords to include naturally
+
+#### Template Field Tips
+
+- Use arrow notation: `Hook → Story → Insight → CTA`
+- Keep it simple and clear
+- You can import templates from `.txt` files using the 📄 Import button
+
+#### Sample Field Tips
+
+- The Sample is used ONLY for pacing, warmth, and rhythm
+- Never copy structure verbatim from the sample
+- Use it as a subtle influence, not a template to mirror
 
 ### Generating Content
 
@@ -339,42 +392,25 @@ PORT=3001
 
 ---
 
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
-
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This software is **proprietary** and confidential. All rights reserved.
 
----
+**NOTICE**: This Software is NOT open source. Unauthorized copying, modification, distribution, or use of this software, via any medium, is strictly prohibited.
 
-## 🙏 Acknowledgments
+This software is owned by **Contractors Direct**. For licensing inquiries or permissions, please contact:
 
-- Built with [OpenAI GPT](https://openai.com/)
-- Image generation powered by [Stability AI](https://stability.ai/)
+- **Email**: abu@contractors.direct
+- **Website**: https://contractors.direct
 
----
-
-## 📞 Support
-
-- **Issues**: [GitHub Issues](https://github.com/RuffBudda/slop/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/RuffBudda/slop/discussions)
+See [LICENSE](LICENSE) file for full terms and conditions.
 
 ---
 
 <div align="center">
 
-**Made with ❤️ by [RuffBudda](https://github.com/RuffBudda)**
+**Proprietary Software by [Contractors Direct](https://contractors.direct)**
 
-[⭐ Star this repo](https://github.com/RuffBudda/slop) | [🐛 Report Bug](https://github.com/RuffBudda/slop/issues) | [💡 Request Feature](https://github.com/RuffBudda/slop/issues)
+For inquiries: **abu@contractors.direct**
 
 </div>
