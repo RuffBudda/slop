@@ -1782,6 +1782,13 @@ function initSettingsTiles() {
     const targetSection = document.querySelector(`.settings-section-content[data-section="${sectionName}"]`);
     if (targetSection) {
       targetSection.classList.remove('hidden');
+      
+      // Initialize calculator if environmental section is shown
+      if (sectionName === 'environmental') {
+        setTimeout(() => {
+          initCalculator();
+        }, 100);
+      }
     }
     // Update active tile
     if (tilesGrid) {
