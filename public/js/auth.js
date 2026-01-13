@@ -66,11 +66,16 @@ function showLoginPage() {
   initLoginPasswordToggles();
 }
 
-function initLoginPasswordToggles() {
+function initLoginPasswordToggles(retryCount = 0) {
+  const MAX_RETRIES = 50; // Maximum 5 seconds (50 * 100ms)
   const passwordField = document.getElementById('loginPassword');
   if (!passwordField) {
-    // Retry if password field not found yet
-    setTimeout(() => initLoginPasswordToggles(), 100);
+    // Retry if password field not found yet, but limit retries
+    if (retryCount < MAX_RETRIES) {
+      setTimeout(() => initLoginPasswordToggles(retryCount + 1), 100);
+    } else {
+      console.warn('Login password field not found after maximum retries');
+    }
     return;
   }
   

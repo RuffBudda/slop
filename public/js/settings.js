@@ -1528,14 +1528,19 @@ async function fullInstanceReset() {
 
 let tilesInitialized = false;
 
-function initSettingsTiles() {
+function initSettingsTiles(retryCount = 0) {
+  const MAX_RETRIES = 50; // Maximum 5 seconds (50 * 100ms)
   const tilesGrid = document.getElementById('settingsTilesGrid');
   const backContainer = document.getElementById('settingsBack');
   const backBtn = document.getElementById('btnSettingsBack');
   
   if (!tilesGrid) {
-    // Retry if tiles grid not found yet (page might still be loading)
-    setTimeout(() => initSettingsTiles(), 100);
+    // Retry if tiles grid not found yet (page might still be loading), but limit retries
+    if (retryCount < MAX_RETRIES) {
+      setTimeout(() => initSettingsTiles(retryCount + 1), 100);
+    } else {
+      console.warn('Settings tiles grid not found after maximum retries');
+    }
     return;
   }
   
@@ -1646,10 +1651,21 @@ function populateSettingsTileIcons() {
   
   // Retry mechanism if Icons module not loaded yet
   if (!window.Icons || !window.Icons.get) {
-    // Retry after a short delay
-    setTimeout(() => populateSettingsTileIcons(), 100);
+    // Retry after a short delay, but limit retries
+    const retryCount = populateSettingsTileIcons.retryCount || 0;
+    const MAX_RETRIES = 50; // Maximum 5 seconds (50 * 100ms)
+    if (retryCount < MAX_RETRIES) {
+      populateSettingsTileIcons.retryCount = retryCount + 1;
+      setTimeout(() => populateSettingsTileIcons(), 100);
+    } else {
+      console.warn('Icons module not available after maximum retries');
+      populateSettingsTileIcons.retryCount = 0; // Reset for next call
+    }
     return;
   }
+  
+  // Reset retry count on success
+  populateSettingsTileIcons.retryCount = 0;
   
   // Populate each tile icon
   Object.keys(iconMap).forEach(section => {
@@ -1665,8 +1681,8 @@ function populateSettingsTileIcons() {
 }
 
 function initPasswordVisibilityToggles() {
-  // Add toggle buttons to all password fields in settings
-  const passwordFields = document.querySelectorAll('input[type="password"]');
+  // Add toggle buttons to all password fields in settings (scoped to settings containers)
+  const passwordFields = document.querySelectorAll('.settings-container input[type="password"], .settings-section input[type="password"]');
   
   passwordFields.forEach(field => {
     // Skip if already has a toggle
