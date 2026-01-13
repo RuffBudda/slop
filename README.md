@@ -77,43 +77,93 @@ SLOP is an intelligent content automation platform designed to streamline Linked
 
 ## 🚀 Quick Start
 
-### Installation
+<details>
+<summary><b>📦 Installation</b> (Click to expand)</summary>
 
-1. **Clone the repository**
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/RuffBudda/slop.git
+cd slop
+```
+
+### Step 2: Install Dependencies
+
+```bash
+npm install
+```
+
+### Step 3: Configure Environment
+
+```bash
+cp env.example.txt .env
+```
+
+Edit `.env` with your settings (see [Configuration](#-configuration) below)
+
+### Step 4: Initialize Database
+
+```bash
+npm run migrate
+```
+
+### Step 5: Start the Server
+
+#### Development Mode (with auto-reload)
+
+```bash
+npm run dev
+```
+
+#### Production Mode with PM2
+
+For production deployments, use PM2 to manage the process:
+
+1. **Install PM2 globally** (if not already installed)
    ```bash
-   git clone https://github.com/RuffBudda/slop.git
-   cd slop
+   npm install -g pm2
    ```
 
-2. **Install dependencies**
+2. **Start the application with PM2**
    ```bash
-   npm install
+   pm2 start src/server.js --name slop
    ```
 
-3. **Configure environment**
+3. **Configure PM2 to start on system boot**
    ```bash
-   cp env.example.txt .env
+   pm2 startup
+   pm2 save
    ```
+
+4. **Useful PM2 commands**
+   ```bash
+   # View logs
+   pm2 logs slop
    
-   Edit `.env` with your settings (see [Configuration](#-configuration) below)
-
-4. **Initialize database**
-   ```bash
-   npm run migrate
+   # Monitor status
+   pm2 status
+   
+   # Restart application
+   pm2 restart slop
+   
+   # Stop application
+   pm2 stop slop
+   
+   # View detailed info
+   pm2 info slop
    ```
 
-5. **Start the server**
-   ```bash
-   # Development mode (with auto-reload)
-   npm run dev
-   
-   # Production mode
-   npm start
-   ```
+#### Alternative: Standard Node.js Start
 
-6. **Access the application**
-   
-   Open `http://localhost:3000` in your browser and create your admin account.
+```bash
+npm start
+```
+
+### Step 6: Access the Application
+
+Open `http://localhost:3000` in your browser and create your admin account.
+
+</details>
 
 ## ⚙️ Configuration
 
