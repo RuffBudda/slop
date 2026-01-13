@@ -11,7 +11,7 @@ const API = {
    * Base API call method
    */
   async call(endpoint, options = {}) {
-    const { method = 'GET', body, headers = {} } = options;
+    const { method = 'GET', body, headers = {}, timeout = 10000 } = options;
     
     const config = {
       method,
@@ -32,8 +32,17 @@ const API = {
     }
     // #endregion
     
+    // Add timeout to fetch request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    
     try {
-      const response = await fetch(`/api${endpoint}`, config);
+      const response = await fetch(`/api${endpoint}`, {
+        ...config,
+        signal: controller.signal
+      });
+      
+      clearTimeout(timeoutId);
       
       // #region agent log
       if (endpoint === '/auth/login') {
@@ -90,11 +99,21 @@ const API = {
       
       return data;
     } catch (error) {
+      // Always clear timeout in error cases
+      clearTimeout(timeoutId);
+      
       // #region agent log
       if (endpoint === '/auth/login') {
         fetch('http://127.0.0.1:7245/ingest/ac1d92ae-f147-4a05-bb78-414fb2d198b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.js:call-error',message:'API call error',data:{errorMessage:error.message,errorName:error.name},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
       }
       // #endregion
+      
+      // Handle timeout/abort errors
+      if (error.name === 'AbortError') {
+        console.error(`API Timeout (${endpoint}): Request took longer than ${timeout}ms`);
+        throw new Error('Request timeout. Please check your connection and try again.');
+      }
+      
       console.error(`API Error (${endpoint}):`, error);
       throw error;
     }
