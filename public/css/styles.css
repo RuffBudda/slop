@@ -1440,6 +1440,19 @@ dialog::backdrop {
   color: var(--ink);
 }
 
+.settings-group {
+  margin-bottom: 48px;
+}
+
+.settings-group-title {
+  font-size: 24px;
+  font-weight: 700;
+  margin: 0 0 24px 0;
+  color: var(--ink);
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--bd);
+}
+
 .settings-section {
   background: var(--bg-card);
   border: 1px solid var(--bd);

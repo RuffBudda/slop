@@ -146,9 +146,13 @@
         <div class="settings-container">
           <h2>Settings</h2>
           
-          <!-- Profile Section -->
-          <section class="settings-section">
-            <h3>Profile Settings</h3>
+          <!-- Account & Security Section -->
+          <div class="settings-group">
+            <h2 class="settings-group-title">Account & Security</h2>
+            
+            <!-- Profile Section -->
+            <section class="settings-section">
+              <h3>Profile Settings</h3>
             <form id="profileSettingsForm" class="settings-form">
               <div class="form-row">
                 <div class="form-group">
@@ -193,11 +197,16 @@
                 <span class="ico"></span> Change Password
               </button>
             </form>
-          </section>
+            </section>
+          </div>
           
-          <!-- API Keys Section -->
-          <section class="settings-section">
-            <h3>API Configuration</h3>
+          <!-- API & Integrations Section -->
+          <div class="settings-group">
+            <h2 class="settings-group-title">API & Integrations</h2>
+            
+            <!-- API Keys Section -->
+            <section class="settings-section">
+              <h3>API Configuration</h3>
             <form id="apiSettingsForm" class="settings-form">
               <div class="form-group">
                 <label for="openaiKey">OpenAI API Key</label>
@@ -242,11 +251,16 @@
                 <span class="ico"></span> Save API Settings
               </button>
             </form>
-          </section>
-
-          <!-- Prompts Section -->
-          <section class="settings-section">
-            <h3>AI Prompts Configuration</h3>
+            </section>
+          </div>
+          
+          <!-- AI Configuration Section -->
+          <div class="settings-group">
+            <h2 class="settings-group-title">AI Configuration</h2>
+            
+            <!-- Prompts Section -->
+            <section class="settings-section">
+              <h3>AI Prompts Configuration</h3>
             <p class="section-description">
               Customize the AI prompts used for content generation. These prompts are pre-configured based on the SLOP workflow for optimal LinkedIn content creation.
             </p>
@@ -255,7 +269,7 @@
                 <label for="systemPrompt">System Prompt (OpenAI GPT)</label>
                 <p class="field-description">
                   The comprehensive prompt that defines AI behavior, voice, content structure, and image prompt generation. 
-                  Pre-configured with Adam Ridgway's voice and ONE MOTO branding guidelines.
+                  Customize this to match your brand voice and content requirements.
                 </p>
                 <textarea id="systemPrompt" name="system_prompt" class="prompt-textarea" rows="16" placeholder="Loading system prompt..."></textarea>
               </div>
@@ -289,11 +303,11 @@
                 </button>
               </div>
             </form>
-          </section>
+            </section>
 
-          <!-- Stability AI Image Options Section -->
-          <section class="settings-section">
-            <h3>Stability AI Image Generation Options</h3>
+            <!-- Stability AI Image Options Section -->
+            <section class="settings-section">
+              <h3>Stability AI Image Generation Options</h3>
             <p class="section-description">
               Configure all options for Stability AI image generation. These settings control how images are created.
             </p>
@@ -354,11 +368,11 @@
                 <span class="ico">💾</span> Save Stability AI Settings
               </button>
             </form>
-          </section>
+            </section>
 
-          <!-- Google Drive Integration Section -->
-          <section class="settings-section">
-            <h3>Google Drive Integration</h3>
+            <!-- Google Drive Integration Section -->
+            <section class="settings-section">
+              <h3>Google Drive Integration</h3>
             <p class="section-description">
               Connect your Google Drive account to browse and upload images directly from your Drive.
               You can use either OAuth (requires verification) or a Service Account key (no verification needed).
@@ -457,11 +471,11 @@
                 </div>
               </dialog>
             </div>
-          </section>
+            </section>
 
-          <!-- LinkedIn Integration Section -->
-          <section class="settings-section">
-            <h3>LinkedIn API Integration</h3>
+            <!-- LinkedIn Integration Section -->
+            <section class="settings-section">
+              <h3>LinkedIn API Integration</h3>
             <p class="section-description">
               Connect your LinkedIn account to automatically post approved and scheduled content.
               You'll need to create a LinkedIn app and get OAuth credentials.
@@ -522,11 +536,16 @@
                 <span class="ico">💾</span> Save LinkedIn Settings
               </button>
             </form>
-          </section>
-
-          <!-- Sheet Management Section -->
-          <section class="settings-section">
-            <h3>Content Management</h3>
+            </section>
+          </div>
+          
+          <!-- Content Management Section -->
+          <div class="settings-group">
+            <h2 class="settings-group-title">Content Management</h2>
+            
+            <!-- Sheet Management Section -->
+            <section class="settings-section">
+              <h3>Content Ideas</h3>
             <p class="section-description">Add and manage content ideas. These will be processed during content generation.</p>
             
             <div class="sheet-toolbar">
@@ -546,6 +565,7 @@
                 <thead>
                   <tr>
                     <th class="col-id">ID</th>
+                    <th class="col-identification">Identification</th>
                     <th class="col-instruction">Instruction</th>
                     <th class="col-type">Type</th>
                     <th class="col-template">Template</th>
@@ -672,11 +692,16 @@
                 </p>
               </div>
             </div>
-          </section>
-
-          <!-- User Management Section (Admin only) -->
-          <section class="settings-section" id="userManagementSection">
-            <h3>User Management</h3>
+            </section>
+          </div>
+          
+          <!-- Administration Section -->
+          <div class="settings-group">
+            <h2 class="settings-group-title">Administration</h2>
+            
+            <!-- User Management Section (Admin only) -->
+            <section class="settings-section" id="userManagementSection">
+              <h3>User Management</h3>
             <button class="btn approve" id="btnAddUser">
               <span class="ico"></span> Add New User
             </button>
@@ -757,6 +782,10 @@
     <form id="postEditForm">
       <input type="hidden" id="postEditId">
       <div class="form-group">
+        <label for="postIdentification">Identification</label>
+        <input type="text" id="postIdentification" name="identification" placeholder="e.g., Post identifier or reference">
+      </div>
+      <div class="form-group">
         <label for="postInstruction">Instruction *</label>
         <textarea id="postInstruction" name="instruction" rows="3" required placeholder="Describe what content you want to create..."></textarea>
       </div>
@@ -767,7 +796,11 @@
         </div>
         <div class="form-group">
           <label for="postTemplate">Template</label>
-          <input type="text" id="postTemplate" name="template" placeholder="e.g., Hook → Story → CTA">
+          <div style="display: flex; gap: 8px; align-items: flex-start;">
+            <input type="text" id="postTemplate" name="template" placeholder="e.g., Hook → Story → CTA" style="flex: 1;">
+            <button type="button" class="btn clear btn-sm" id="btnImportTemplate" title="Import from .txt file" style="white-space: nowrap;">📄 Import</button>
+            <input type="file" id="templateFileInput" accept=".txt" style="display: none;">
+          </div>
         </div>
       </div>
       <div class="form-group">
@@ -776,7 +809,11 @@
       </div>
       <div class="form-group">
         <label for="postSample">Sample</label>
-        <textarea id="postSample" name="sample" rows="2" placeholder="Reference text or example..."></textarea>
+        <div style="display: flex; gap: 8px; align-items: flex-start;">
+          <textarea id="postSample" name="sample" rows="2" placeholder="Reference text or example..." style="flex: 1;"></textarea>
+          <button type="button" class="btn clear btn-sm" id="btnImportSample" title="Import from .txt file" style="white-space: nowrap; align-self: flex-start;">📄 Import</button>
+          <input type="file" id="sampleFileInput" accept=".txt" style="display: none;">
+        </div>
       </div>
       <div class="form-group">
         <label for="postKeywords">Keywords</label>

@@ -1025,21 +1025,22 @@ async function loadSheetData() {
     renderSheetRows(posts);
   } catch (error) {
     console.error('Failed to load sheet data:', error);
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">Failed to load data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px;">Failed to load data</td></tr>';
   }
 }
 
 function renderSheetRows(posts) {
   const tbody = document.getElementById('sheetBody');
   
-  if (posts.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #666;">No posts yet. Click "Add New Post" to create one.</td></tr>';
+    if (posts.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">No posts yet. Click "Add New Post" to create one.</td></tr>';
     return;
   }
   
   tbody.innerHTML = posts.map(post => `
     <tr data-post-id="${post.id}">
       <td class="col-id">${escapeHtml(post.post_id)}</td>
+      <td class="col-identification">${escapeHtml(post.identification || '-')}</td>
       <td class="col-instruction" title="${escapeHtml(post.instruction || '')}">${escapeHtml(post.instruction || '-')}</td>
       <td class="col-type">${escapeHtml(post.type || '-')}</td>
       <td class="col-template">${escapeHtml(post.template || '-')}</td>
@@ -1097,6 +1098,56 @@ function initPostEditModal() {
   // Form submit
   form?.addEventListener('submit', handlePostFormSubmit);
   
+  // File import handlers
+  const templateImportBtn = document.getElementById('btnImportTemplate');
+  const templateFileInput = document.getElementById('templateFileInput');
+  const sampleImportBtn = document.getElementById('btnImportSample');
+  const sampleFileInput = document.getElementById('sampleFileInput');
+  
+  if (templateImportBtn && templateFileInput) {
+    templateImportBtn.addEventListener('click', () => {
+      templateFileInput.click();
+    });
+    
+    templateFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (file && file.type === 'text/plain' || file.name.endsWith('.txt')) {
+        try {
+          const text = await file.text();
+          document.getElementById('postTemplate').value = text.trim();
+          showToast('Template imported successfully', 'ok');
+        } catch (error) {
+          showToast('Failed to read template file', 'bad');
+        }
+      } else {
+        showToast('Please select a .txt file', 'bad');
+      }
+      e.target.value = ''; // Reset file input
+    });
+  }
+  
+  if (sampleImportBtn && sampleFileInput) {
+    sampleImportBtn.addEventListener('click', () => {
+      sampleFileInput.click();
+    });
+    
+    sampleFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (file && file.type === 'text/plain' || file.name.endsWith('.txt')) {
+        try {
+          const text = await file.text();
+          document.getElementById('postSample').value = text.trim();
+          showToast('Sample imported successfully', 'ok');
+        } catch (error) {
+          showToast('Failed to read sample file', 'bad');
+        }
+      } else {
+        showToast('Please select a .txt file', 'bad');
+      }
+      e.target.value = ''; // Reset file input
+    });
+  }
+  
   // Add post button
   document.getElementById('btnAddPost')?.addEventListener('click', () => {
     openPostEditModal(null);
@@ -1111,6 +1162,10 @@ function openPostEditModal(postId) {
   form.reset();
   document.getElementById('postEditId').value = postId || '';
   
+  // Reset file inputs
+  document.getElementById('templateFileInput').value = '';
+  document.getElementById('sampleFileInput').value = '';
+  
   if (postId) {
     title.textContent = 'Edit Post';
     
@@ -1118,6 +1173,7 @@ function openPostEditModal(postId) {
     API.posts.get(postId).then(data => {
       const post = data.post;
       if (post) {
+        form.identification.value = post.identification || '';
         form.instruction.value = post.instruction || '';
         form.type.value = post.type || '';
         form.template.value = post.template || '';
@@ -1142,6 +1198,7 @@ async function handlePostFormSubmit(e) {
   const postId = document.getElementById('postEditId').value;
   
   const data = {
+    identification: form.identification.value.trim() || null,
     instruction: form.instruction.value.trim(),
     type: form.type.value.trim() || null,
     template: form.template.value.trim() || null,
@@ -1448,10 +1505,28 @@ const CALC_CONSTANTS = {
 
 async function loadCalculatorStats() {
   try {
-    const result = await API.workflow.stats();
-    const stats = result.stats || { totalGenerations: 0, totalImages: 0 };
+    // Get scheduled posts count
+    const scheduledResult = await API.posts.getScheduled();
+    const scheduledCount = scheduledResult.posts?.length || 0;
     
-    updateCalculatorDisplay(stats.totalGenerations || 0, stats.totalImages || 0);
+    // Get workflow stats for actual generations
+    let totalGenerations = 0;
+    let totalImages = 0;
+    try {
+      const workflowResult = await API.workflow.stats();
+      const stats = workflowResult.stats || {};
+      totalGenerations = stats.totalGenerations || 0;
+      totalImages = stats.totalImages || 0;
+    } catch (workflowError) {
+      console.warn('Could not load workflow stats:', workflowError);
+    }
+    
+    // Use scheduled posts count if available, otherwise use workflow stats
+    // Scheduled posts represent planned content generation
+    const gptCount = scheduledCount > 0 ? scheduledCount : totalGenerations;
+    const imageCount = scheduledCount > 0 ? scheduledCount * 3 : totalImages; // Assume 3 images per post
+    
+    updateCalculatorDisplay(gptCount, imageCount);
   } catch (error) {
     console.error('Failed to load calculator stats:', error);
     updateCalculatorDisplay(0, 0);

@@ -225,14 +225,14 @@ router.get('/:id', (req, res) => {
  */
 router.post('/', (req, res) => {
   try {
-    const { instruction, type, template, purpose, sample, keywords } = req.body;
+    const { instruction, type, template, purpose, sample, keywords, identification } = req.body;
 
     const postId = `POST-${uuidv4().substring(0, 8).toUpperCase()}`;
 
     const result = db.prepare(`
-      INSERT INTO posts (post_id, instruction, type, template, purpose, sample, keywords)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `).run(postId, instruction, type, template, purpose, sample, keywords);
+      INSERT INTO posts (post_id, instruction, type, template, purpose, sample, keywords, identification)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(postId, instruction, type, template, purpose, sample, keywords, identification);
 
     const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(result.lastInsertRowid);
 
@@ -264,8 +264,8 @@ router.post('/bulk', (req, res) => {
     }
 
     const insertPost = db.prepare(`
-      INSERT INTO posts (post_id, instruction, type, template, purpose, sample, keywords)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO posts (post_id, instruction, type, template, purpose, sample, keywords, identification)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `);
 
     const insertMany = db.transaction((postsToInsert) => {
@@ -279,7 +279,8 @@ router.post('/bulk', (req, res) => {
           post.template,
           post.purpose,
           post.sample,
-          post.keywords
+          post.keywords,
+          post.identification || null
         );
         results.push({ id: result.lastInsertRowid, post_id: postId });
       }
@@ -312,7 +313,7 @@ router.put('/:id', (req, res) => {
     }
 
     const allowedFields = [
-      'instruction', 'type', 'template', 'purpose', 'sample', 'keywords',
+      'instruction', 'type', 'template', 'purpose', 'sample', 'keywords', 'identification',
       'status', 'variant_1', 'variant_2', 'variant_3', 'choice',
       'image_prompt_1', 'image_prompt_2', 'image_prompt_3',
       'image_url_1', 'image_url_2', 'image_url_3',
@@ -635,7 +636,7 @@ router.post('/bulk-update', (req, res) => {
       return res.status(400).json({ error: 'Posts array is required' });
     }
 
-    const allowedFields = ['instruction', 'type', 'template', 'purpose', 'sample', 'keywords'];
+    const allowedFields = ['instruction', 'type', 'template', 'purpose', 'sample', 'keywords', 'identification'];
 
     const updatePost = db.transaction((postsToUpdate) => {
       let updated = 0;
@@ -682,7 +683,7 @@ router.post('/bulk-update', (req, res) => {
 router.get('/sheet/data', (req, res) => {
   try {
     const posts = db.prepare(`
-      SELECT id, post_id, instruction, type, template, purpose, sample, keywords, status, created_at
+      SELECT id, post_id, instruction, type, template, purpose, sample, keywords, identification, status, created_at
       FROM posts
       ORDER BY created_at DESC
     `).all();
@@ -697,6 +698,7 @@ router.get('/sheet/data', (req, res) => {
         purpose: p.purpose || '',
         sample: p.sample || '',
         keywords: p.keywords || '',
+        identification: p.identification || '',
         status: p.status || '',
         created_at: p.created_at
       }))

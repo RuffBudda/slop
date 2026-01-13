@@ -104,13 +104,19 @@ db.exec(schema);
 
 // Migrations: Add new columns to existing tables
 try {
-  // Check if linkedin_post_url column exists, if not add it
   const columns = db.prepare("PRAGMA table_info(posts)").all();
-  const hasLinkedInUrl = columns.some(col => col.name === 'linkedin_post_url');
+  const columnNames = columns.map(col => col.name);
   
-  if (!hasLinkedInUrl) {
+  // Check if linkedin_post_url column exists, if not add it
+  if (!columnNames.includes('linkedin_post_url')) {
     db.exec('ALTER TABLE posts ADD COLUMN linkedin_post_url TEXT');
     console.log('✓ Added linkedin_post_url column to posts table');
+  }
+  
+  // Check if identification column exists, if not add it
+  if (!columnNames.includes('identification')) {
+    db.exec('ALTER TABLE posts ADD COLUMN identification TEXT');
+    console.log('✓ Added identification column to posts table');
   }
 } catch (error) {
   console.error('Migration error:', error);

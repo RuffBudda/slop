@@ -79,21 +79,31 @@ su - slop -c "pm2 save"
 env PATH=$PATH:/usr/bin pm2 startup systemd -u slop --hp /home/slop
 
 echo -e "${YELLOW}Configuring Nginx...${NC}"
-cat > /etc/nginx/sites-available/slop << 'EOF'
+cat > /etc/nginx/sites-available/slop << EOF
 server {
     listen 80;
     server_name _;
 
+    # Serve static files directly from Nginx for better performance
+    location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map)$ {
+        root /home/slop/app/public;
+        expires 1d;
+        add_header Cache-Control "public, immutable";
+        access_log off;
+        try_files \$uri =404;
+    }
+
+    # Proxy all other requests to Node.js
     location / {
         proxy_pass http://127.0.0.1:3000;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
-        proxy_cache_bypass $http_upgrade;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_cache_bypass \$http_upgrade;
         proxy_connect_timeout 300;
         proxy_send_timeout 300;
         proxy_read_timeout 300;

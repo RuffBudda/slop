@@ -67,8 +67,13 @@ app.use(session({
   }
 }));
 
-// Static files
-app.use(express.static(path.join(__dirname, '../public')));
+// Static files - serve before other routes
+const publicPath = path.join(__dirname, '../public');
+app.use(express.static(publicPath, {
+  maxAge: '1d', // Cache static files for 1 day
+  etag: true,
+  lastModified: true
+}));
 
 // API Routes
 app.use('/api/auth', authRoutes);
@@ -83,8 +88,35 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+// Test endpoint to verify static file path
+app.get('/api/test-static', (req, res) => {
+  const fs = require('fs');
+  const cssPath = path.join(__dirname, '../public/css/styles.css');
+  const exists = fs.existsSync(cssPath);
+  res.json({ 
+    exists, 
+    path: cssPath,
+    publicPath: publicPath,
+    fileSize: exists ? fs.statSync(cssPath).size : 0
+  });
+});
+
 // Serve index.html for all other routes (SPA support)
-app.get('*', (req, res) => {
+// Note: This should only catch routes that weren't handled by static files or API routes
+app.get('*', (req, res, next) => {
+  // Skip static file paths - these should be handled by express.static above
+  // If we reach here for a static file, it means it wasn't found
+  const staticPaths = ['/css/', '/js/', '/images/', '/fonts/'];
+  const staticFileExtensions = ['.css', '.js', '.png', '.jpg', '.jpeg', '.gif', '.svg', '.ico', '.woff', '.woff2', '.ttf', '.eot', '.map'];
+  
+  const isStaticPath = staticPaths.some(p => req.path.startsWith(p));
+  const isStaticFile = staticFileExtensions.some(ext => req.path.toLowerCase().endsWith(ext));
+  
+  if (isStaticPath || isStaticFile) {
+    // Static file not found - return 404
+    return res.status(404).send('File not found');
+  }
+  
   // Check if user is authenticated for protected routes
   if (!req.session.userId && !req.path.startsWith('/login') && !req.path.startsWith('/register') && !req.path.startsWith('/setup')) {
     // If no users exist, redirect to setup
