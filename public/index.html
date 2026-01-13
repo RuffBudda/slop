@@ -35,11 +35,14 @@
         </div>
         <div class="form-group">
           <label for="loginPassword">Password</label>
-          <input type="password" id="loginPassword" name="password" required autocomplete="current-password">
+          <div class="password-input-wrapper">
+            <input type="password" id="loginPassword" name="password" required autocomplete="current-password">
+            <button type="button" class="password-toggle" aria-label="Toggle password visibility">👁️</button>
+          </div>
         </div>
         <div class="form-group" style="display: flex; align-items: center; gap: 8px; margin-bottom: 16px;">
-          <input type="checkbox" id="rememberMe" name="rememberMe" style="width: auto; margin: 0;">
-          <label for="rememberMe" style="margin: 0; font-weight: normal; cursor: pointer;">Remember me</label>
+          <input type="checkbox" id="rememberMe" name="rememberMe" style="width: auto; margin: 0; cursor: pointer;">
+          <label for="rememberMe" style="margin: 0; font-weight: normal; cursor: pointer; user-select: none;">Remember me</label>
         </div>
         <button type="submit" class="btn approve btn-full">
           <span class="ico"></span> Sign In
@@ -257,17 +260,26 @@
             <form id="passwordForm" class="settings-form">
               <div class="form-group">
                 <label for="currentPassword">Current Password</label>
-                <input type="password" id="currentPassword" name="currentPassword" required autocomplete="current-password">
+                <div class="password-input-wrapper">
+                  <input type="password" id="currentPassword" name="currentPassword" required autocomplete="current-password">
+                  <button type="button" class="password-toggle" aria-label="Toggle password visibility">👁️</button>
+                </div>
               </div>
               <div class="form-row">
                 <div class="form-group">
                   <label for="newPassword">New Password</label>
-                  <input type="password" id="newPassword" name="newPassword" required minlength="6" autocomplete="new-password">
+                  <div class="password-input-wrapper">
+                    <input type="password" id="newPassword" name="newPassword" required minlength="6" autocomplete="new-password">
+                    <button type="button" class="password-toggle" aria-label="Toggle password visibility">👁️</button>
+                  </div>
                   <small>Minimum 6 characters</small>
                 </div>
                 <div class="form-group">
                   <label for="confirmPassword">Confirm New Password</label>
-                  <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6" autocomplete="new-password">
+                  <div class="password-input-wrapper">
+                    <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6" autocomplete="new-password">
+                    <button type="button" class="password-toggle" aria-label="Toggle password visibility">👁️</button>
+                  </div>
                 </div>
               </div>
               <button type="submit" class="btn approve">
@@ -565,29 +577,6 @@
               </p>
               
               <div class="calculator-container" id="calculatorContainer">
-                <div class="calc-stats-grid">
-                  <div class="calc-stat-card">
-                    <div class="calc-stat-icon">📝</div>
-                    <div class="calc-stat-value" id="calcTotalGenerations">0</div>
-                    <div class="calc-stat-label">Total Generations</div>
-                  </div>
-                  <div class="calc-stat-card">
-                    <div class="calc-stat-icon">⚡</div>
-                    <div class="calc-stat-value" id="calcEnergyUsed">0 Wh</div>
-                    <div class="calc-stat-label">Energy Used</div>
-                  </div>
-                  <div class="calc-stat-card">
-                    <div class="calc-stat-icon">🌿</div>
-                    <div class="calc-stat-value" id="calcCO2Saved">0 kg</div>
-                    <div class="calc-stat-label">CO₂ Equivalent</div>
-                  </div>
-                  <div class="calc-stat-card">
-                    <div class="calc-stat-icon">🌳</div>
-                    <div class="calc-stat-value" id="calcTreesEquiv">0</div>
-                    <div class="calc-stat-label">Trees to Offset</div>
-                  </div>
-                </div>
-                
                 <div class="calc-breakdown">
                   <h4>Usage Breakdown</h4>
                   <div class="calc-breakdown-row">
@@ -920,15 +909,21 @@
             <!-- User Management Section (Admin only) -->
             <section class="settings-section" id="userManagementSection">
               <h3>User Management</h3>
-            <button class="btn approve" id="btnAddUser">
-              <span class="ico"></span> Add New User
-            </button>
-            <div id="usersList" class="users-list"></div>
-          </section>
-          
-          <!-- Instance Refresh Section (Admin only) -->
-          <section class="settings-section" id="instanceRefreshSection">
+              <p class="section-description">
+                Manage user accounts, roles, and permissions. Only administrators can access this section.
+              </p>
+              <button class="btn approve" id="btnAddUser">
+                <span class="ico">+</span> Add New User
+              </button>
+              <div id="usersList" class="users-list" style="margin-top: 20px;"></div>
+            </section>
+            
+            <!-- Instance Refresh Section (Admin only) -->
+            <section class="settings-section" id="instanceRefreshSection">
             <h3>Instance Refresh</h3>
+            <p class="section-description">
+              Reset the entire instance to a clean state. This action is irreversible and will delete all data.
+            </p>
             <div class="warning-box" style="background: #fee2e2; border: 2px solid #dc2626; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
               <div style="display: flex; align-items: start; gap: 12px;">
                 <span style="font-size: 24px; line-height: 1;">⚠️</span>

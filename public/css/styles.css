@@ -2128,8 +2128,11 @@ dialog::backdrop {
   left: auto;
   transform: none;
   width: 100%;
-  max-width: 400px;
+  max-width: 300px;
   justify-self: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .search-input {
@@ -2141,10 +2144,12 @@ dialog::backdrop {
   color: #fff;
   font-size: 14px;
   font-family: inherit;
+  text-align: center;
 }
 
 .search-input::placeholder {
   color: #666;
+  text-align: center;
 }
 
 .search-input:focus {

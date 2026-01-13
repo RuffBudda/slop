@@ -99,9 +99,16 @@ window.AppState = {
 // TAB MANAGEMENT
 // ============================================================
 
-window.activateTab = function(tabName) {
+window.activateTab = function(tabName, subSection = null) {
   // Update state
   window.AppState.currentTab = tabName;
+  
+  // Update URL hash for routing
+  if (subSection) {
+    window.location.hash = `#/${tabName}/${subSection}`;
+  } else {
+    window.location.hash = `#/${tabName}`;
+  }
   
   // Update navigation buttons
   document.querySelectorAll('.navBtn').forEach(btn => {
@@ -112,6 +119,12 @@ window.activateTab = function(tabName) {
   document.querySelectorAll('.tab-view').forEach(view => {
     view.classList.add('hidden');
   });
+  
+  // Hide admin section on all pages except settings
+  const adminSection = document.getElementById('settingsSectionAdmin');
+  if (adminSection && tabName !== 'settings') {
+    adminSection.classList.add('hidden');
+  }
   
   const viewMap = {
     content: 'contentView',
@@ -124,6 +137,23 @@ window.activateTab = function(tabName) {
   const targetView = document.getElementById(viewMap[tabName]);
   if (targetView) {
     targetView.classList.remove('hidden');
+  }
+  
+  // Handle settings sub-sections
+  if (tabName === 'settings' && subSection) {
+    // Show the specific settings section
+    if (typeof window.showSettingsSection === 'function') {
+      window.showSettingsSection(subSection);
+    }
+  } else if (tabName === 'settings') {
+    // Show settings tiles
+    const tilesGrid = document.getElementById('settingsTilesGrid');
+    const backContainer = document.getElementById('settingsBack');
+    if (tilesGrid) tilesGrid.classList.remove('hidden');
+    if (backContainer) backContainer.classList.add('hidden');
+    document.querySelectorAll('.settings-section-content').forEach(section => {
+      section.classList.add('hidden');
+    });
   }
   
   // Trigger tab-specific loading
@@ -148,6 +178,32 @@ window.activateTab = function(tabName) {
   // Update dock
   window.updateDock();
 };
+
+// Handle hash-based routing
+window.addEventListener('hashchange', () => {
+  const hash = window.location.hash.replace('#/', '');
+  const parts = hash.split('/');
+  const tabName = parts[0] || 'content';
+  const subSection = parts[1] || null;
+  
+  if (tabName && ['content', 'calendar', 'timeline', 'bin', 'settings'].includes(tabName)) {
+    activateTab(tabName, subSection);
+  }
+});
+
+// Initialize routing on page load
+document.addEventListener('DOMContentLoaded', () => {
+  if (window.location.hash) {
+    const hash = window.location.hash.replace('#/', '');
+    const parts = hash.split('/');
+    const tabName = parts[0] || 'content';
+    const subSection = parts[1] || null;
+    
+    if (tabName && ['content', 'calendar', 'timeline', 'bin', 'settings'].includes(tabName)) {
+      activateTab(tabName, subSection);
+    }
+  }
+});
 
 // ============================================================
 // DOCK MANAGEMENT

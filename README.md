@@ -52,8 +52,9 @@ SLOP is an intelligent content automation platform designed to streamline Linked
 📋 **Content Organization**
 - Identification field for post references
 - File import for templates and samples
-- Tile-based settings navigation
+- Tile-based settings navigation with URL routing
 - Password visibility toggles
+- Hash-based routing for separate page navigation
 
 ---
 

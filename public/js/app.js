@@ -56,9 +56,55 @@ function initDock() {
   
   if (!fab) return;
   
-  // Toggle dock on mobile
-  fab.addEventListener('click', () => {
-    dock.classList.toggle('open');
+  // Check if APIs are configured and show/hide FAB accordingly
+  async function updateFabVisibility() {
+    try {
+      const settings = await API.settings.get();
+      const hasOpenAI = settings.settings?.openai_api_key || false;
+      const hasStability = settings.settings?.stability_api_key || false;
+      
+      if (hasOpenAI && hasStability) {
+        fab.style.display = '';
+        fab.title = 'Generate More Posts';
+      } else {
+        fab.style.display = 'none';
+      }
+    } catch (error) {
+      console.error('Failed to check API settings:', error);
+      fab.style.display = 'none';
+    }
+  }
+  
+  // Update visibility on load and when settings change
+  updateFabVisibility();
+  window.addEventListener('settingsUpdated', updateFabVisibility);
+  
+  // Generate posts on FAB click
+  fab.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    
+    // Check APIs again before generating
+    try {
+      const settings = await API.settings.get();
+      const hasOpenAI = settings.settings?.openai_api_key || false;
+      const hasStability = settings.settings?.stability_api_key || false;
+      
+      if (!hasOpenAI || !hasStability) {
+        showToast('Please configure OpenAI and Stability AI APIs in Settings', 'bad');
+        activateTab('settings');
+        return;
+      }
+      
+      // Trigger generation
+      if (typeof triggerGeneration === 'function') {
+        await triggerGeneration();
+      } else {
+        showToast('Generation function not available', 'bad');
+      }
+    } catch (error) {
+      showToast('Failed to start generation', 'bad');
+      console.error('Generation error:', error);
+    }
   });
   
   // Close dock when clicking outside

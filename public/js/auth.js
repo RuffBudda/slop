@@ -51,6 +51,47 @@ function showLoginPage() {
       rememberMeCheckbox.checked = true;
     }
   }
+  
+  // Initialize password visibility toggles
+  initLoginPasswordToggles();
+}
+
+function initLoginPasswordToggles() {
+  const passwordField = document.getElementById('loginPassword');
+  if (!passwordField) return;
+  
+  // Check if already has toggle
+  if (passwordField.parentElement.classList.contains('password-input-wrapper')) {
+    const toggle = passwordField.parentElement.querySelector('.password-toggle');
+    if (toggle) {
+      toggle.addEventListener('click', () => {
+        const isPassword = passwordField.type === 'password';
+        passwordField.type = isPassword ? 'text' : 'password';
+        toggle.innerHTML = isPassword ? '🙈' : '👁️';
+      });
+    }
+    return;
+  }
+  
+  // Create wrapper and toggle if needed
+  const wrapper = document.createElement('div');
+  wrapper.className = 'password-input-wrapper';
+  
+  const toggle = document.createElement('button');
+  toggle.type = 'button';
+  toggle.className = 'password-toggle';
+  toggle.setAttribute('aria-label', 'Toggle password visibility');
+  toggle.innerHTML = '👁️';
+  
+  passwordField.parentNode.insertBefore(wrapper, passwordField);
+  wrapper.appendChild(passwordField);
+  wrapper.appendChild(toggle);
+  
+  toggle.addEventListener('click', () => {
+    const isPassword = passwordField.type === 'password';
+    passwordField.type = isPassword ? 'text' : 'password';
+    toggle.innerHTML = isPassword ? '🙈' : '👁️';
+  });
 }
 
 function showSetupPage() {

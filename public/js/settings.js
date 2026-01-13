@@ -63,8 +63,21 @@ async function loadProfileSettings() {
     if (usernameField) usernameField.value = profile.username || '';
     if (emailField) emailField.value = profile.email || '';
     if (displayNameField) displayNameField.value = profile.display_name || '';
+    
+    // Also update form name attributes if they exist
+    const form = document.getElementById('profileSettingsForm');
+    if (form) {
+      const formUsername = form.querySelector('[name="username"]');
+      const formEmail = form.querySelector('[name="email"]');
+      const formDisplayName = form.querySelector('[name="displayName"]');
+      
+      if (formUsername) formUsername.value = profile.username || '';
+      if (formEmail) formEmail.value = profile.email || '';
+      if (formDisplayName) formDisplayName.value = profile.display_name || '';
+    }
   } catch (error) {
     console.error('Failed to load profile:', error);
+    showToast('Failed to load profile settings', 'bad');
   }
 }
 
@@ -1316,29 +1329,20 @@ function updateCalculatorDisplay(gptCount, imageCount) {
   // Calculate trees needed to offset
   const treesNeeded = co2Kg / CALC_CONSTANTS.TREE_ABSORPTION;
   
-  // Get display elements
-  const totalGen = document.getElementById('calcTotalGenerations');
-  const energyUsed = document.getElementById('calcEnergyUsed');
-  const co2Saved = document.getElementById('calcCO2Saved');
-  const treesEquiv = document.getElementById('calcTreesEquiv');
+  // Get display elements (calc-stats-grid removed, only use breakdown elements)
   const gptCountEl = document.getElementById('calcGptCount');
   const imageCountEl = document.getElementById('calcImageCount');
   const gptEnergyEl = document.getElementById('calcGptEnergy');
   const imageEnergyEl = document.getElementById('calcImageEnergy');
   
   // Store actual values as data attributes for manual calculator to use
-  if (totalGen) {
-    totalGen.dataset.actualGpt = gptCount;
-    totalGen.dataset.actualImages = imageCount;
-  }
-  if (energyUsed) {
-    energyUsed.dataset.actualEnergy = totalEnergy;
-  }
-  if (co2Saved) {
-    co2Saved.dataset.actualCO2 = co2Kg;
-  }
-  if (treesEquiv) {
-    treesEquiv.dataset.actualTrees = treesNeeded;
+  // Use breakdown elements to store data
+  if (gptCountEl) {
+    gptCountEl.dataset.actualGpt = gptCount;
+    gptCountEl.dataset.actualImages = imageCount;
+    gptCountEl.dataset.actualEnergy = totalEnergy;
+    gptCountEl.dataset.actualCO2 = co2Kg;
+    gptCountEl.dataset.actualTrees = treesNeeded;
   }
   
   // Don't update display here - let calculateManualImpact handle it
@@ -1432,12 +1436,6 @@ function calculateManualImpact() {
   const gptEnergyEl = document.getElementById('calcGptEnergy');
   const imageEnergyEl = document.getElementById('calcImageEnergy');
   
-  // Update main stats
-  const totalGenEl = document.getElementById('calcTotalGenerations');
-  const energyUsedEl = document.getElementById('calcEnergyUsed');
-  const co2SavedEl = document.getElementById('calcCO2Saved');
-  const treesEquivEl = document.getElementById('calcTreesEquiv');
-  
   // Update result display
   const resultEl = document.getElementById('calcManualResult');
   const requestsEl = document.getElementById('calcResultRequests');
@@ -1446,11 +1444,12 @@ function calculateManualImpact() {
   const equivEl = document.getElementById('calcResultEquiv');
   
   // Get actual stats from data attributes (set by updateCalculatorDisplay)
-  const actualGpt = parseInt(totalGenEl?.dataset.actualGpt || '0');
-  const actualImages = parseInt(totalGenEl?.dataset.actualImages || '0');
-  const actualEnergy = parseFloat(energyUsedEl?.dataset.actualEnergy || '0');
-  const actualCO2 = parseFloat(co2SavedEl?.dataset.actualCO2 || '0');
-  const actualTrees = parseFloat(treesEquivEl?.dataset.actualTrees || '0');
+  // Use gptCountEl to get stored values since calc-stats-grid was removed
+  const actualGpt = parseInt(gptCountEl?.dataset.actualGpt || '0');
+  const actualImages = parseInt(gptCountEl?.dataset.actualImages || '0');
+  const actualEnergy = parseFloat(gptCountEl?.dataset.actualEnergy || '0');
+  const actualCO2 = parseFloat(gptCountEl?.dataset.actualCO2 || '0');
+  const actualTrees = parseFloat(gptCountEl?.dataset.actualTrees || '0');
   
   // Calculate combined totals (actual + manual)
   const combinedGpt = actualGpt + totalGptRequests;
@@ -1467,24 +1466,15 @@ function calculateManualImpact() {
   const combinedImageEnergy = actualImageEnergy + imageEnergy;
   
   // Update usage breakdown (show combined actual + manual)
-  if (gptCountEl) gptCountEl.textContent = combinedGpt;
-  if (imageCountEl) imageCountEl.textContent = combinedImages;
-  if (gptEnergyEl) gptEnergyEl.textContent = formatEnergy(combinedGptEnergy);
-  if (imageEnergyEl) imageEnergyEl.textContent = formatEnergy(combinedImageEnergy);
+  const breakdownGptCountEl = document.getElementById('calcGptCount');
+  const breakdownImageCountEl = document.getElementById('calcImageCount');
+  const breakdownGptEnergyEl = document.getElementById('calcGptEnergy');
+  const breakdownImageEnergyEl = document.getElementById('calcImageEnergy');
   
-  // Update main stats (show combined actual + manual)
-  if (totalGenEl) {
-    totalGenEl.textContent = combinedTotalGen;
-  }
-  if (energyUsedEl) {
-    energyUsedEl.textContent = formatEnergy(combinedEnergy);
-  }
-  if (co2SavedEl) {
-    co2SavedEl.textContent = combinedCO2.toFixed(4) + ' kg';
-  }
-  if (treesEquivEl) {
-    treesEquivEl.textContent = (Math.ceil(combinedTrees * 100) / 100).toFixed(2);
-  }
+  if (breakdownGptCountEl) breakdownGptCountEl.textContent = combinedGpt;
+  if (breakdownImageCountEl) breakdownImageCountEl.textContent = combinedImages;
+  if (breakdownGptEnergyEl) breakdownGptEnergyEl.textContent = formatEnergy(combinedGptEnergy);
+  if (breakdownImageEnergyEl) breakdownImageEnergyEl.textContent = formatEnergy(combinedImageEnergy);
   
   // Update manual calculator result
   if (resultEl) {
@@ -1591,6 +1581,9 @@ function initSettingsTiles() {
     if (targetSection) {
       targetSection.classList.remove('hidden');
       
+      // Update URL hash
+      window.location.hash = `#/settings/${sectionName}`;
+      
       // Initialize calculator if environmental section is shown
       if (sectionName === 'environmental') {
         setTimeout(() => {
@@ -1627,8 +1620,70 @@ function initSettingsTiles() {
     }
   }
   
+  function showTiles() {
+    // Show tiles grid
+    if (tilesGrid) tilesGrid.classList.remove('hidden');
+    // Hide back button
+    if (backContainer) backContainer.classList.add('hidden');
+    // Hide all sections
+    document.querySelectorAll('.settings-section-content').forEach(section => {
+      section.classList.add('hidden');
+    });
+    // Remove active state from all tiles
+    if (tilesGrid) {
+      tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
+        tile.classList.remove('active');
+      });
+    }
+    // Update URL hash
+    window.location.hash = '#/settings';
+  }
+  
   // Make showSection available globally for other code
   window.showSettingsSection = showSection;
+}
+
+function initPasswordVisibilityToggles() {
+  // Add toggle buttons to all password fields in settings
+  const passwordFields = document.querySelectorAll('#settingsView input[type="password"]');
+  
+  passwordFields.forEach(field => {
+    // Skip if already has a toggle
+    if (field.parentElement.classList.contains('password-input-wrapper')) {
+      const toggle = field.parentElement.querySelector('.password-toggle');
+      if (toggle) {
+        toggle.addEventListener('click', () => {
+          const isPassword = field.type === 'password';
+          field.type = isPassword ? 'text' : 'password';
+          toggle.innerHTML = isPassword ? '🙈' : '👁️';
+        });
+      }
+      return;
+    }
+    
+    // Create wrapper
+    const wrapper = document.createElement('div');
+    wrapper.className = 'password-input-wrapper';
+    
+    // Create toggle button
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'password-toggle';
+    toggle.setAttribute('aria-label', 'Toggle password visibility');
+    toggle.innerHTML = '👁️';
+    
+    // Wrap the field
+    field.parentNode.insertBefore(wrapper, field);
+    wrapper.appendChild(field);
+    wrapper.appendChild(toggle);
+    
+    // Add click handler
+    toggle.addEventListener('click', () => {
+      const isPassword = field.type === 'password';
+      field.type = isPassword ? 'text' : 'password';
+      toggle.innerHTML = isPassword ? '🙈' : '👁️';
+    });
+  });
 }
 
 function initSettingsModule() {
