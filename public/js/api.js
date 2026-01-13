@@ -34,7 +34,7 @@ const API = {
     
     // Add timeout to fetch request
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    let timeoutId = setTimeout(() => controller.abort(), timeout);
     
     try {
       const response = await fetch(`/api${endpoint}`, {
@@ -42,15 +42,18 @@ const API = {
         signal: controller.signal
       });
       
-      clearTimeout(timeoutId);
-      
       // #region agent log
       if (endpoint === '/auth/login') {
         fetch('http://127.0.0.1:7245/ingest/ac1d92ae-f147-4a05-bb78-414fb2d198b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'api.js:call-response',message:'Received response',data:{status:response.status,statusText:response.statusText,ok:response.ok,contentType:response.headers.get('content-type')},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
       }
       // #endregion
       
+      // Parse response body - this is also an async operation that needs timeout protection
       const data = await response.json();
+      
+      // Clear timeout only after all async operations complete (fetch + json parsing)
+      clearTimeout(timeoutId);
+      timeoutId = null;
       
       // #region agent log
       if (endpoint === '/auth/login') {
@@ -100,7 +103,10 @@ const API = {
       return data;
     } catch (error) {
       // Always clear timeout in error cases
-      clearTimeout(timeoutId);
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+        timeoutId = null;
+      }
       
       // #region agent log
       if (endpoint === '/auth/login') {
