@@ -33,6 +33,7 @@ const FLATICON_ICONS = {
   storage: 'fi fi-rr-database',
   ai: 'fi fi-rr-robot',
   contentManagement: 'fi fi-rr-file-edit',
+  calculator: 'fi fi-rr-calculator',
   admin: 'fi fi-rr-shield-check',
   
   // Status
