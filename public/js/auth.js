@@ -8,8 +8,16 @@
 // ============================================================
 
 async function checkAuthStatus() {
+  // Add timeout to prevent infinite loading
+  const timeoutPromise = new Promise((_, reject) => {
+    setTimeout(() => reject(new Error('Auth check timeout')), 10000); // 10 second timeout
+  });
+  
   try {
-    const result = await API.auth.status();
+    const result = await Promise.race([
+      API.auth.status(),
+      timeoutPromise
+    ]);
     
     if (result.setupRequired) {
       showSetupPage();
@@ -25,6 +33,8 @@ async function checkAuthStatus() {
     return false;
   } catch (error) {
     console.error('Auth check failed:', error);
+    // Always hide loader on error
+    hideAppLoader();
     showLoginPage();
     return false;
   }

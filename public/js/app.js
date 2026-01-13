@@ -44,24 +44,6 @@ function initNavigation() {
       activateTab(btn.dataset.tab);
     });
   });
-  
-  // Populate navigation icons
-  if (window.Icons) {
-    const iconMap = {
-      'navIconContent': 'content',
-      'navIconCalendar': 'calendar',
-      'navIconList': 'list',
-      'navIconBin': 'bin',
-      'navIconSettings': 'settings'
-    };
-    
-    Object.entries(iconMap).forEach(([id, iconName]) => {
-      const el = document.getElementById(id);
-      if (el) {
-        el.innerHTML = window.Icons.get(iconName, 'nav-icon-svg');
-      }
-    });
-  }
 }
 
 // ============================================================
@@ -74,55 +56,9 @@ function initDock() {
   
   if (!fab) return;
   
-  // Check if APIs are configured and show/hide FAB accordingly
-  async function updateFabVisibility() {
-    try {
-      const settings = await API.settings.get();
-      const hasOpenAI = settings.settings?.openai_api_key || false;
-      const hasStability = settings.settings?.stability_api_key || false;
-      
-      if (hasOpenAI && hasStability) {
-        fab.style.display = '';
-        fab.title = 'Generate More Posts';
-      } else {
-        fab.style.display = 'none';
-      }
-    } catch (error) {
-      console.error('Failed to check API settings:', error);
-      fab.style.display = 'none';
-    }
-  }
-  
-  // Update visibility on load and when settings change
-  updateFabVisibility();
-  window.addEventListener('settingsUpdated', updateFabVisibility);
-  
-  // Generate posts on FAB click
-  fab.addEventListener('click', async (e) => {
-    e.stopPropagation();
-    
-    // Check APIs again before generating
-    try {
-      const settings = await API.settings.get();
-      const hasOpenAI = settings.settings?.openai_api_key || false;
-      const hasStability = settings.settings?.stability_api_key || false;
-      
-      if (!hasOpenAI || !hasStability) {
-        showToast('Please configure OpenAI and Stability AI APIs in Settings', 'bad');
-        activateTab('settings');
-        return;
-      }
-      
-      // Trigger generation
-      if (typeof triggerGeneration === 'function') {
-        await triggerGeneration();
-      } else {
-        showToast('Generation function not available', 'bad');
-      }
-    } catch (error) {
-      showToast('Failed to start generation', 'bad');
-      console.error('Generation error:', error);
-    }
+  // Toggle dock on mobile
+  fab.addEventListener('click', () => {
+    dock.classList.toggle('open');
   });
   
   // Close dock when clicking outside
@@ -234,64 +170,35 @@ window.toggleBulkSelect = function(postId) {
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('DOM ready, checking auth status...');
   
-  // Initialize icons first
-  initIcons();
+  // Safety timeout: hide loader after 15 seconds no matter what
+  const safetyTimeout = setTimeout(() => {
+    console.warn('Safety timeout: hiding app loader');
+    hideAppLoader();
+    if (typeof showLoginPage === 'function') {
+      showLoginPage();
+    }
+  }, 15000);
   
-  const isAuthenticated = await checkAuthStatus();
-  
-  if (isAuthenticated) {
-    showMainApp();
-    initApp();
+  try {
+    const isAuthenticated = await checkAuthStatus();
+    
+    clearTimeout(safetyTimeout);
+    
+    if (isAuthenticated) {
+      showMainApp();
+      initApp();
+    }
+  } catch (error) {
+    clearTimeout(safetyTimeout);
+    console.error('Failed to initialize app:', error);
+    // Ensure loader is hidden even if checkAuthStatus fails
+    hideAppLoader();
+    // Show login page as fallback
+    if (typeof showLoginPage === 'function') {
+      showLoginPage();
+    }
   }
 });
-
-function initIcons() {
-  if (!window.Icons) return;
-  
-  // Back icon (left arrow)
-  const backArrow = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-    <polyline points="15 18 9 12 15 6"></polyline>
-  </svg>`;
-  document.querySelectorAll('.back-icon').forEach(el => {
-    el.innerHTML = backArrow;
-  });
-  
-  // Close icons
-  document.querySelectorAll('.close-icon').forEach(el => {
-    el.innerHTML = window.Icons.get('close');
-  });
-  
-  // Disconnect icon
-  document.querySelectorAll('.disconnect-icon').forEach(el => {
-    el.innerHTML = window.Icons.get('close');
-  });
-  
-  // Clear icon
-  document.querySelectorAll('.clear-icon').forEach(el => {
-    el.innerHTML = window.Icons.get('close');
-  });
-  
-  // Warning icons
-  document.querySelectorAll('.warning-icon-large').forEach(el => {
-    el.innerHTML = window.Icons.get('warning', '', { size: '24px' });
-  });
-  document.querySelectorAll('.warning-icon-inline').forEach(el => {
-    el.innerHTML = window.Icons.get('warning', '', { size: '16px' });
-  });
-  
-  // Copy icons
-  document.querySelectorAll('.copy-icon-small').forEach(el => {
-    el.innerHTML = window.Icons.get('copy', '', { size: '14px' });
-  });
-  document.querySelectorAll('.copy-icon-inline').forEach(el => {
-    el.innerHTML = window.Icons.get('copy', '', { size: '16px' });
-  });
-  
-  // FAB icon
-  document.querySelectorAll('.fab-icon').forEach(el => {
-    el.innerHTML = window.Icons.get('lightning', '', { size: '20px' });
-  });
-}
 
 // ============================================================
 // GLOBAL ERROR HANDLING
