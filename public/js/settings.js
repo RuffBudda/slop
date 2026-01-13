@@ -1695,11 +1695,40 @@ function initCalculatorForm() {
   const form = document.getElementById('calculatorForm');
   const calculateBtn = document.getElementById('btnCalculateImpact');
   
+  // Initialize slider value displays
+  const postsSlider = document.getElementById('calcPosts');
+  const variantsSlider = document.getElementById('calcVariants');
+  const imagesSlider = document.getElementById('calcImages');
+  const postsValue = document.getElementById('calcPostsValue');
+  const variantsValue = document.getElementById('calcVariantsValue');
+  const imagesValue = document.getElementById('calcImagesValue');
+  
+  if (postsSlider && postsValue) {
+    postsValue.textContent = postsSlider.value;
+    postsSlider.addEventListener('input', () => {
+      postsValue.textContent = postsSlider.value;
+    });
+  }
+  
+  if (variantsSlider && variantsValue) {
+    variantsValue.textContent = variantsSlider.value;
+    variantsSlider.addEventListener('input', () => {
+      variantsValue.textContent = variantsSlider.value;
+    });
+  }
+  
+  if (imagesSlider && imagesValue) {
+    imagesValue.textContent = imagesSlider.value;
+    imagesSlider.addEventListener('input', () => {
+      imagesValue.textContent = imagesSlider.value;
+    });
+  }
+  
   if (calculateBtn) {
     calculateBtn.addEventListener('click', () => {
-      const posts = parseInt(document.getElementById('calcPosts').value) || 0;
-      const variants = parseInt(document.getElementById('calcVariants').value) || 1;
-      const images = parseInt(document.getElementById('calcImages').value) || 0;
+      const posts = parseInt(postsSlider?.value || 0) || 0;
+      const variants = parseInt(variantsSlider?.value || 1) || 1;
+      const images = parseInt(imagesSlider?.value || 0) || 0;
       
       calculateManualImpact(posts, variants, images);
     });

@@ -119,9 +119,16 @@ const Router = {
       
       mainContent.innerHTML = html;
       
-      // Initialize icons after page loads
+      // Initialize icons after page loads - with retry
       if (window.Icons && window.Icons.init) {
+        // Call immediately
         window.Icons.init();
+        // Also retry after a short delay to ensure DOM is ready
+        setTimeout(() => {
+          if (window.Icons && window.Icons.init) {
+            window.Icons.init();
+          }
+        }, 100);
       }
       
       // Initialize page-specific scripts
