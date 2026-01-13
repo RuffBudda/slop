@@ -9,11 +9,6 @@
 
 async function loadSettings() {
   try {
-    // Reset to tiles view when settings tab is opened
-    if (typeof window.showSettingsTiles === 'function') {
-      window.showSettingsTiles();
-    }
-    
     // Load profile settings
     await loadProfileSettings();
     
@@ -39,10 +34,8 @@ async function loadSettings() {
     if (window.AppState.user?.role === 'admin') {
       await loadUsers();
       document.getElementById('userManagementSection')?.classList.remove('hidden');
-      document.getElementById('instanceRefreshSection')?.classList.remove('hidden');
     } else {
       document.getElementById('userManagementSection')?.classList.add('hidden');
-      document.getElementById('instanceRefreshSection')?.classList.add('hidden');
     }
     
     // Re-initialize calculator when settings tab is loaded
@@ -376,20 +369,36 @@ async function loadGoogleDriveStatus() {
     
     // Load OAuth credentials if they exist
     try {
-      const settings = await API.settings.get(['google_drive_client_id', 'google_drive_client_secret', 'google_drive_redirect_uri']);
+      const result = await API.settings.get(['google_drive_client_id', 'google_drive_client_secret', 'google_drive_redirect_uri']);
+      const settings = result.settings || {};
       
       const clientIdInput = document.getElementById('googleDriveClientId');
       const clientSecretInput = document.getElementById('googleDriveClientSecret');
       const redirectUriInput = document.getElementById('googleDriveRedirectUri');
       
+      // Client ID and Secret are encrypted, so they return { isSet, masked }
+      // We can't show the actual values, but we can indicate they're set
       if (clientIdInput && settings.google_drive_client_id) {
-        clientIdInput.value = settings.google_drive_client_id.value || '';
+        if (settings.google_drive_client_id.isSet) {
+          // Show placeholder to indicate it's set (can't show actual value for security)
+          clientIdInput.placeholder = '•••••••••••••••• (already configured)';
+        }
       }
       if (clientSecretInput && settings.google_drive_client_secret) {
-        clientSecretInput.value = settings.google_drive_client_secret.value || '';
+        if (settings.google_drive_client_secret.isSet) {
+          // Show placeholder to indicate it's set (can't show actual value for security)
+          clientSecretInput.placeholder = '•••••••••••••••• (already configured)';
+        }
       }
+      // Redirect URI is not encrypted, so it returns the actual value
       if (redirectUriInput && settings.google_drive_redirect_uri) {
-        redirectUriInput.value = settings.google_drive_redirect_uri.value || redirectUriInput.value;
+        // Redirect URI is not encrypted, so it's a string value
+        const redirectUri = typeof settings.google_drive_redirect_uri === 'string' 
+          ? settings.google_drive_redirect_uri 
+          : '';
+        if (redirectUri) {
+          redirectUriInput.value = redirectUri;
+        }
       }
     } catch (error) {
       // OAuth credentials not set yet, that's okay
@@ -637,60 +646,8 @@ function selectFolderInBrowser(folderId, folderName) {
 function initGoogleDrive() {
   const connectBtn = document.getElementById('btnConnectGoogleDrive');
   const disconnectBtn = document.getElementById('btnDisconnectGoogleDrive');
-  const oauthForm = document.getElementById('googleDriveOAuthForm');
   const serviceAccountForm = document.getElementById('serviceAccountForm');
   const folderForm = document.getElementById('googleDriveFolderForm');
-  
-  // Update redirect URI display based on current window location
-  const redirectUriDisplay = document.getElementById('redirectUriDisplay');
-  const redirectUriInput = document.getElementById('googleDriveRedirectUri');
-  if (redirectUriDisplay && redirectUriInput) {
-    const currentOrigin = window.location.origin;
-    const defaultRedirectUri = `${currentOrigin}/api/google-drive/callback`;
-    redirectUriDisplay.textContent = defaultRedirectUri;
-    if (!redirectUriInput.value || redirectUriInput.value.includes('localhost')) {
-      redirectUriInput.value = defaultRedirectUri;
-    }
-  }
-  
-  // OAuth credentials form
-  if (oauthForm) {
-    oauthForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const clientId = document.getElementById('googleDriveClientId').value.trim();
-      const clientSecret = document.getElementById('googleDriveClientSecret').value.trim();
-      const redirectUri = document.getElementById('googleDriveRedirectUri').value.trim();
-      
-      if (!clientId || !clientSecret) {
-        showToast('Please enter both Client ID and Client Secret', 'bad');
-        return;
-      }
-      
-      if (!redirectUri) {
-        showToast('Please enter a Redirect URI', 'bad');
-        return;
-      }
-      
-      try {
-        showLoader();
-        
-        // Save OAuth credentials
-        await API.settings.set('google_drive_client_id', clientId);
-        await API.settings.set('google_drive_client_secret', clientSecret);
-        await API.settings.set('google_drive_redirect_uri', redirectUri);
-        
-        showToast('OAuth credentials saved successfully', 'ok');
-        
-        // Reload status to update connection button
-        await loadGoogleDriveStatus();
-      } catch (error) {
-        showToast(error.message || 'Failed to save OAuth credentials', 'bad');
-      } finally {
-        hideLoader();
-      }
-    });
-  }
   const browseBtn = document.getElementById('btnBrowseFolders');
   const clearFolderBtn = document.getElementById('btnClearFolder');
   const folderBrowserModal = document.getElementById('folderBrowserModal');
@@ -1027,72 +984,6 @@ function initPostEditModal() {
   document.getElementById('btnAddPost')?.addEventListener('click', () => {
     openPostEditModal(null);
   });
-  
-  // File import handlers
-  const btnImportTemplate = document.getElementById('btnImportTemplate');
-  const templateFileInput = document.getElementById('templateFileInput');
-  const btnImportSample = document.getElementById('btnImportSample');
-  const sampleFileInput = document.getElementById('sampleFileInput');
-  
-  if (btnImportTemplate && templateFileInput) {
-    btnImportTemplate.addEventListener('click', () => {
-      templateFileInput.click();
-    });
-    
-    templateFileInput.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      
-      // Validate file type with proper parentheses to avoid operator precedence issues
-      if (file && (file.type === 'text/plain' || file.name.endsWith('.txt'))) {
-        try {
-          const text = await file.text();
-          const templateField = document.getElementById('postTemplate');
-          if (templateField) {
-            templateField.value = text.trim();
-          }
-          showToast('Template imported successfully', 'ok');
-        } catch (error) {
-          showToast('Failed to read file', 'bad');
-        }
-      } else {
-        showToast('Please select a .txt file', 'bad');
-      }
-      
-      // Reset input
-      e.target.value = '';
-    });
-  }
-  
-  if (btnImportSample && sampleFileInput) {
-    btnImportSample.addEventListener('click', () => {
-      sampleFileInput.click();
-    });
-    
-    sampleFileInput.addEventListener('change', async (e) => {
-      const file = e.target.files[0];
-      if (!file) return;
-      
-      // Validate file type with proper parentheses to avoid operator precedence issues
-      if (file && (file.type === 'text/plain' || file.name.endsWith('.txt'))) {
-        try {
-          const text = await file.text();
-          const sampleField = document.getElementById('postSample');
-          if (sampleField) {
-            sampleField.value = text.trim();
-          }
-          showToast('Sample imported successfully', 'ok');
-        } catch (error) {
-          showToast('Failed to read file', 'bad');
-        }
-      } else {
-        showToast('Please select a .txt file', 'bad');
-      }
-      
-      // Reset input
-      e.target.value = '';
-    });
-  }
 }
 
 function openPostEditModal(postId) {
@@ -1669,178 +1560,7 @@ function getEnergyComparison(wh) {
 // INITIALIZATION
 // ============================================================
 
-function initInstanceRefresh() {
-  const form = document.getElementById('instanceRefreshForm');
-  const copyBtn = document.getElementById('btnCopyConfirmation');
-  
-  if (!form) return;
-  
-  // Copy confirmation text button
-  if (copyBtn) {
-    copyBtn.addEventListener('click', () => {
-      const confirmationText = "Humpty Dumpty sat on a wall. Humpty Dumpty had a great fall. All the king's horses and all the king's men couldn't put Humpty together again.";
-      navigator.clipboard.writeText(confirmationText).then(() => {
-        showToast('Confirmation text copied to clipboard', 'ok');
-        copyBtn.textContent = '✓ Copied!';
-        setTimeout(() => {
-          copyBtn.textContent = '📋 Copy Confirmation Text';
-        }, 2000);
-      }).catch(() => {
-        showToast('Failed to copy text', 'bad');
-      });
-    });
-  }
-  
-  // Form submission
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const adminUsername = form.refreshAdminUsername.value.trim();
-    const adminPassword = form.refreshAdminPassword.value;
-    const confirmationText = form.refreshConfirmationText.value.trim();
-    
-    // Validate inputs
-    if (!adminUsername || !adminPassword || !confirmationText) {
-      showToast('All fields are required', 'bad');
-      return;
-    }
-    
-    // Final confirmation dialog
-    const confirmed = confirm(
-      '⚠️ FINAL WARNING ⚠️\n\n' +
-      'You are about to PERMANENTLY DELETE ALL DATA from this instance.\n\n' +
-      'This includes:\n' +
-      '• All posts and content\n' +
-      '• All settings and API keys\n' +
-      '• All workflow sessions\n' +
-      '• All users (except your admin account)\n\n' +
-      'This action is IRREVERSIBLE.\n\n' +
-      'Are you absolutely sure you want to proceed?'
-    );
-    
-    if (!confirmed) {
-      return;
-    }
-    
-    try {
-      showLoader();
-      
-      const response = await fetch('/api/settings/reset-instance', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        credentials: 'include',
-        body: JSON.stringify({
-          adminUsername,
-          adminPassword,
-          confirmationText
-        })
-      });
-      
-      const result = await response.json();
-      
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to reset instance');
-      }
-      
-      if (result.reset) {
-        // Show success message and redirect to login
-        showToast('Instance has been reset. Redirecting to login...', 'ok');
-        
-        setTimeout(() => {
-          // Clear session and redirect
-          window.location.href = '/login';
-        }, 2000);
-      }
-      
-    } catch (error) {
-      console.error('Reset instance error:', error);
-      showToast(error.message || 'Failed to reset instance', 'bad');
-    } finally {
-      hideLoader();
-    }
-  });
-}
-
-function initSettingsTiles() {
-  const tiles = document.querySelectorAll('.settings-tile');
-  const sections = document.querySelectorAll('.settings-section-content');
-  const tilesGrid = document.getElementById('settingsTilesGrid');
-  const backButton = document.getElementById('settingsBack');
-  const btnBack = document.getElementById('btnSettingsBack');
-  
-  // Show tiles view by default (hide all sections)
-  showTiles();
-  
-  // Handle tile clicks
-  tiles.forEach(tile => {
-    tile.addEventListener('click', () => {
-      const section = tile.dataset.section;
-      if (section) {
-        showSection(section);
-      }
-    });
-  });
-  
-  // Handle back button
-  if (btnBack) {
-    btnBack.addEventListener('click', () => {
-      showTiles();
-    });
-  }
-  
-  function showSection(sectionName) {
-    // Hide all sections
-    sections.forEach(section => {
-      section.classList.add('hidden');
-    });
-    
-    // Show selected section
-    const targetSection = document.getElementById(`settingsSection${sectionName.charAt(0).toUpperCase() + sectionName.slice(1)}`);
-    if (targetSection) {
-      targetSection.classList.remove('hidden');
-    }
-    
-    // Hide tiles, show back button
-    if (tilesGrid) tilesGrid.classList.add('hidden');
-    if (backButton) backButton.classList.remove('hidden');
-    
-    // Update active tile
-    tiles.forEach(tile => {
-      tile.classList.toggle('active', tile.dataset.section === sectionName);
-    });
-    
-    // Scroll to top of settings container
-    const container = document.querySelector('.settings-container');
-    if (container) {
-      container.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  }
-  
-  function showTiles() {
-    // Hide all sections
-    sections.forEach(section => {
-      section.classList.add('hidden');
-    });
-    
-    // Show tiles, hide back button
-    if (tilesGrid) tilesGrid.classList.remove('hidden');
-    if (backButton) backButton.classList.add('hidden');
-    
-    // Remove active state from tiles
-    tiles.forEach(tile => {
-      tile.classList.remove('active');
-    });
-  }
-  
-  // Make functions available globally for potential external use
-  window.showSettingsSection = showSection;
-  window.showSettingsTiles = showTiles;
-}
-
 function initSettingsModule() {
-  initSettingsTiles();
   initProfileSettingsForm();
   initPasswordForm();
   initApiSettingsForm();
@@ -1851,7 +1571,6 @@ function initSettingsModule() {
   initCsvButtons();
   initUserEditModal();
   initCalculator();
-  initInstanceRefresh();
 }
 
 // Initialize on DOM ready
