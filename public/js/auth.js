@@ -35,6 +35,20 @@ function showLoginPage() {
   document.getElementById('setupPage').classList.add('hidden');
   document.getElementById('mainApp').classList.add('hidden');
   hideAppLoader();
+  
+  // Load saved username if "Remember me" was checked
+  const savedUsername = localStorage.getItem('slop_remembered_username');
+  const rememberMe = localStorage.getItem('slop_remember_me') === 'true';
+  if (savedUsername && rememberMe) {
+    const usernameInput = document.getElementById('loginUsername');
+    if (usernameInput) {
+      usernameInput.value = savedUsername;
+    }
+    const rememberMeCheckbox = document.getElementById('rememberMe');
+    if (rememberMeCheckbox) {
+      rememberMeCheckbox.checked = true;
+    }
+  }
 }
 
 function showSetupPage() {
@@ -81,6 +95,7 @@ async function handleLogin(e) {
   const form = e.target;
   const username = form.username.value.trim();
   const password = form.password.value;
+  const rememberMe = form.rememberMe?.checked || false;
   
   // #region agent log
   fetch('http://127.0.0.1:7245/ingest/ac1d92ae-f147-4a05-bb78-414fb2d198b3',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({location:'auth.js:handleLogin-entry',message:'Login form submitted',data:{usernameLength:username?.length||0,passwordLength:password?.length||0,usernameValue:username,hasUsername:!!username,hasPassword:!!password},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'E'})}).catch(()=>{});
@@ -105,6 +120,15 @@ async function handleLogin(e) {
     // #endregion
     
     if (result.user) {
+      // Save username if "Remember me" is checked
+      if (rememberMe) {
+        localStorage.setItem('slop_remembered_username', username);
+        localStorage.setItem('slop_remember_me', 'true');
+      } else {
+        localStorage.removeItem('slop_remembered_username');
+        localStorage.removeItem('slop_remember_me');
+      }
+      
       window.AppState.user = result.user;
       showToast('Welcome back!', 'ok');
       showMainApp();
