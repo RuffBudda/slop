@@ -55,12 +55,14 @@ async function loadProfileSettings() {
     const result = await API.settings.getProfile();
     const profile = result.profile || {};
     
-    const form = document.getElementById('profileSettingsForm');
-    if (!form) return;
+    // Use getElementById for more reliable field access
+    const usernameField = document.getElementById('profileUsername');
+    const emailField = document.getElementById('profileEmail');
+    const displayNameField = document.getElementById('profileDisplayName');
     
-    form.username.value = profile.username || '';
-    form.email.value = profile.email || '';
-    form.displayName.value = profile.display_name || '';
+    if (usernameField) usernameField.value = profile.username || '';
+    if (emailField) emailField.value = profile.email || '';
+    if (displayNameField) displayNameField.value = profile.display_name || '';
   } catch (error) {
     console.error('Failed to load profile:', error);
   }
@@ -1594,6 +1596,11 @@ function initSettingsTiles() {
         setTimeout(() => {
           initCalculator();
         }, 100);
+      }
+      
+      // Load profile settings if account section is shown
+      if (sectionName === 'account') {
+        loadProfileSettings();
       }
       
       // Load users if admin section is shown
