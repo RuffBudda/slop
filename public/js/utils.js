@@ -69,12 +69,25 @@ window.hideLoader = function() {
 
 window.showAppLoader = function() {
   const loader = document.getElementById('appLoader');
-  if (loader) loader.classList.remove('hidden');
+  if (loader) {
+    loader.style.display = 'flex'; // Restore display before removing hidden class
+    // Force reflow to ensure display is applied
+    loader.offsetHeight;
+    loader.classList.remove('hidden');
+  }
 };
 
 window.hideAppLoader = function() {
   const loader = document.getElementById('appLoader');
-  if (loader) loader.classList.add('hidden');
+  if (loader) {
+    loader.classList.add('hidden');
+    // After transition completes, remove from render tree
+    setTimeout(() => {
+      if (loader.classList.contains('hidden')) {
+        loader.style.display = 'none';
+      }
+    }, 300); // Match transition duration (0.3s)
+  }
 };
 
 // ============================================================
