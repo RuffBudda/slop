@@ -117,18 +117,11 @@ window.activateTab = function(tabName, subSection = null) {
   window.AppState.currentTab = tabName;
   
   // Use router for navigation
-  if (window.Router) {
+  if (window.Router && window.Router.navigate) {
     if (tabName === 'settings' && subSection) {
-      window.Router.navigate(`/settings/${subSection}`);
+      window.Router.navigate(`settings/${subSection}`);
     } else if (tabName === 'settings') {
-      window.Router.navigate('/settings');
-    } else {
-      window.Router.navigate(`/${tabName}`);
-    }
-  } else {
-    // Fallback to hash navigation
-    if (subSection) {
-      window.Router.navigate(`${tabName}/${subSection}`);
+      window.Router.navigate('settings');
     } else {
       window.Router.navigate(tabName);
     }
