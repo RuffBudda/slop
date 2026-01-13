@@ -510,8 +510,10 @@ See [LICENSE](LICENSE) file for full terms and conditions.
 For inquiries: **abu@contractors.direct / abubakr@21sixty.media**
 
 <div style="display: flex; justify-content: center; align-items: center; gap: 30px; margin-top: 20px; flex-wrap: wrap;">
-  <img src="https://via.placeholder.com/200x80/000000/FFFFFF?text=Contractors+Direct" alt="Contractors Direct Logo" style="height: 80px; max-width: 200px;">
-  <img src="https://via.placeholder.com/200x80/000000/FFFFFF?text=21+SIXTY+Media" alt="21 SIXTY Media Logo" style="height: 80px; max-width: 200px;">
+  <img src="https://media.licdn.com/dms/image/v2/D4D0BAQGfPxXn-pLAcg/company-logo_200_200/company-logo_200_200/0/1726056386285/contractors_direct_gcc_logo?e=1769644800&v=beta&t=jtAE6LdXgxj4tPOV-3IvKunBbOkIHEXhQS4mDGxzulo" alt="Contractors Direct Logo" style="height: 80px; max-width: 200px;">
+  <img src="https://media.licdn.com/dms/image/v2/D4D0BAQEjOVEvV2hV2Q/img-crop_100/img-crop_100/0/1721982069855?e=1769644800&v=beta&t=GM-hdXlGgJ3QT67sopW9_El3Zq_9MW5jyBUr_I21Npw" alt="21 SIXTY Media Logo" style="height: 80px; max-width: 200px;">
 </div>
 
 </div>
+
+
