@@ -78,13 +78,29 @@ a {
 .top-inner {
   max-width: var(--maxw);
   margin: 0 auto;
-  display: flex;
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
   align-items: center;
-  justify-content: space-between;
   height: 58px;
   padding: 0 var(--g);
   gap: 16px;
   position: relative;
+}
+
+.brand {
+  grid-column: 1;
+}
+
+.navBtns {
+  grid-column: 2;
+}
+
+.search-container {
+  grid-column: 3;
+}
+
+.user-menu {
+  grid-column: 4;
 }
 
 .brand {
@@ -2108,11 +2124,12 @@ dialog::backdrop {
    GLOBAL SEARCH
    ============================================================ */
 .search-container {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  width: 400px;
-  max-width: 100%;
+  position: relative;
+  left: auto;
+  transform: none;
+  width: 100%;
+  max-width: 400px;
+  justify-self: center;
 }
 
 .search-input {
@@ -2356,6 +2373,7 @@ dialog::backdrop {
    ============================================================ */
 @media (max-width: 768px) {
   .top-inner {
+    display: flex;
     flex-wrap: wrap;
     height: auto;
     padding: 10px var(--g);

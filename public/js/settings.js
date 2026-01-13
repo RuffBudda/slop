@@ -9,10 +9,6 @@
 
 async function loadSettings() {
   try {
-    // Initialize tiles and password toggles when settings tab is activated
-    initSettingsTiles();
-    initPasswordVisibilityToggles();
-    
     // Load profile settings
     await loadProfileSettings();
     
@@ -34,20 +30,16 @@ async function loadSettings() {
     // Load posts for sheet view
     await loadSheetData();
     
-    // Load users (admin only)
+    // Load users (admin only) - but don't show sections here, let showSection handle it
     if (window.AppState.user?.role === 'admin') {
       await loadUsers();
-      document.getElementById('userManagementSection')?.classList.remove('hidden');
-      document.getElementById('instanceRefreshSection')?.classList.remove('hidden');
-    } else {
-      document.getElementById('userManagementSection')?.classList.add('hidden');
-      document.getElementById('instanceRefreshSection')?.classList.add('hidden');
     }
     
-    // Re-initialize password toggles after content loads (in case of dynamic content)
-    setTimeout(() => {
-      initPasswordVisibilityToggles();
-    }, 100);
+    // Initialize tiles and password toggles when settings tab is activated
+    initSettingsTiles();
+    initPasswordVisibilityToggles();
+    
+    // Calculator should NOT be initialized here - only when environmental tile is clicked
   } catch (error) {
     console.error('Failed to load settings:', error);
     showToast('Failed to load settings', 'bad');
@@ -195,120 +187,63 @@ async function loadApiSettings() {
   }
 }
 
-// Initialize OpenAI settings form
-function initOpenaiSettingsForm() {
-  const form = document.getElementById('openaiSettingsForm');
-  if (!form) return;
-  
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const formData = new FormData(form);
-    const settings = [];
-    
-    for (const [key, value] of formData.entries()) {
-      if (value.trim()) {
-        settings.push({ key, value: value.trim() });
-      }
-    }
-    
-    if (settings.length === 0) {
-      showToast('No settings to save', 'neutral');
-      return;
-    }
-    
-    try {
-      showLoader();
-      await API.settings.setBulk(settings);
-      showToast('OpenAI settings saved successfully', 'ok');
-      await loadApiSettings();
-    } catch (error) {
-      showToast('Failed to save settings', 'bad');
-    } finally {
-      hideLoader();
-    }
-  });
-  
-  // Test button
-  const testBtn = form.querySelector('[data-test="openai"]');
-  if (testBtn) {
-    testBtn.addEventListener('click', async () => {
-      try {
-        showLoader();
-        const result = await API.settings.test('openai');
-        if (result.success) {
-          showToast('OpenAI connection successful', 'ok');
-        } else {
-          showToast(`OpenAI test failed: ${result.error}`, 'bad');
-        }
-      } catch (error) {
-        showToast(`OpenAI test failed: ${error.message}`, 'bad');
-      } finally {
-        hideLoader();
-      }
-    });
-  }
-}
-
-// Initialize Storage settings form
-function initStorageSettingsForm() {
-  const form = document.getElementById('storageSettingsForm');
-  if (!form) return;
-  
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const formData = new FormData(form);
-    const settings = [];
-    
-    for (const [key, value] of formData.entries()) {
-      if (value.trim()) {
-        settings.push({ key, value: value.trim() });
-      }
-    }
-    
-    if (settings.length === 0) {
-      showToast('No settings to save', 'neutral');
-      return;
-    }
-    
-    try {
-      showLoader();
-      await API.settings.setBulk(settings);
-      showToast('Storage settings saved successfully', 'ok');
-      await loadApiSettings();
-    } catch (error) {
-      showToast('Failed to save settings', 'bad');
-    } finally {
-      hideLoader();
-    }
-  });
-  
-  // Test button
-  const testBtn = form.querySelector('[data-test="spaces"]');
-  if (testBtn) {
-    testBtn.addEventListener('click', async () => {
-      try {
-        showLoader();
-        const result = await API.settings.test('spaces');
-        if (result.success) {
-          showToast('Storage connection successful', 'ok');
-        } else {
-          showToast(`Storage test failed: ${result.error}`, 'bad');
-        }
-      } catch (error) {
-        showToast(`Storage test failed: ${error.message}`, 'bad');
-      } finally {
-        hideLoader();
-      }
-    });
-  }
-}
-
-// Legacy function for backward compatibility
 function initApiSettingsForm() {
-  initOpenaiSettingsForm();
-  initStorageSettingsForm();
+  const form = document.getElementById('apiSettingsForm');
+  if (!form) return;
+  
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    const settings = [];
+    
+    // Only include non-empty values (don't override with empty)
+    for (const [key, value] of formData.entries()) {
+      if (value.trim()) {
+        settings.push({ key, value: value.trim() });
+      }
+    }
+    
+    if (settings.length === 0) {
+      showToast('No settings to save', 'neutral');
+      return;
+    }
+    
+    try {
+      showLoader();
+      await API.settings.setBulk(settings);
+      showToast('Settings saved successfully', 'ok');
+      
+      // Reload to show updated placeholders
+      loadApiSettings();
+    } catch (error) {
+      showToast('Failed to save settings', 'bad');
+    } finally {
+      hideLoader();
+    }
+  });
+  
+  // Test buttons
+  form.querySelectorAll('[data-test]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const service = e.currentTarget.dataset.test;
+      
+      try {
+        showLoader();
+        const result = await API.settings.test(service);
+        
+        if (result.success) {
+          showToast(`${service} connection successful`, 'ok');
+        } else {
+          showToast(`${service} test failed: ${result.error}`, 'bad');
+        }
+      } catch (error) {
+        showToast(`${service} test failed: ${error.message}`, 'bad');
+      } finally {
+        hideLoader();
+      }
+    });
+  });
 }
 
 // ============================================================
@@ -669,40 +604,10 @@ function selectFolderInBrowser(folderId, folderName) {
   }
 }
 
-// Update redirect URI placeholders with actual domain
-function updateRedirectUris() {
-  const domain = window.location.origin;
-  const protocol = window.location.protocol;
-  const host = window.location.host;
-  
-  // Update Google Drive redirect URI
-  const googleRedirectDisplay = document.getElementById('redirectUriDisplay');
-  const googleRedirectInput = document.getElementById('googleDriveRedirectUri');
-  const linkedInRedirectDisplay = document.getElementById('linkedInRedirectUriDisplay');
-  
-  const googleCallback = `${domain}/api/google-drive/callback`;
-  const linkedInCallback = `${domain}/auth/linkedin/callback`;
-  
-  if (googleRedirectDisplay) {
-    googleRedirectDisplay.textContent = googleCallback;
-  }
-  if (googleRedirectInput && !googleRedirectInput.value) {
-    googleRedirectInput.placeholder = googleCallback;
-    googleRedirectInput.value = googleCallback;
-  }
-  if (linkedInRedirectDisplay) {
-    linkedInRedirectDisplay.textContent = linkedInCallback;
-  }
-}
-
 function initGoogleDrive() {
-  // Update redirect URIs with actual domain
-  updateRedirectUris();
-  
   const connectBtn = document.getElementById('btnConnectGoogleDrive');
   const disconnectBtn = document.getElementById('btnDisconnectGoogleDrive');
-  const oauthForm = document.getElementById('googleDriveOAuthForm');
-  const serviceAccountForm = document.getElementById('googleDriveServiceAccountForm');
+  const serviceAccountForm = document.getElementById('serviceAccountForm');
   const folderForm = document.getElementById('googleDriveFolderForm');
   const browseBtn = document.getElementById('btnBrowseFolders');
   const clearFolderBtn = document.getElementById('btnClearFolder');
@@ -710,39 +615,6 @@ function initGoogleDrive() {
   const folderBrowserClose = document.getElementById('folderBrowserClose');
   const folderBrowserCancel = document.getElementById('folderBrowserCancel');
   const folderBrowserSelect = document.getElementById('folderBrowserSelect');
-  
-  // OAuth form handler
-  if (oauthForm) {
-    oauthForm.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      
-      const formData = new FormData(oauthForm);
-      const settings = [];
-      
-      for (const [key, value] of formData.entries()) {
-        if (value.trim()) {
-          settings.push({ key, value: value.trim() });
-        }
-      }
-      
-      // Ensure redirect URI is set
-      const redirectUriInput = document.getElementById('googleDriveRedirectUri');
-      if (redirectUriInput && redirectUriInput.value) {
-        settings.push({ key: 'google_drive_redirect_uri', value: redirectUriInput.value.trim() });
-      }
-      
-      try {
-        showLoader();
-        await API.settings.setBulk(settings);
-        showToast('OAuth credentials saved successfully', 'ok');
-        await loadGoogleDriveStatus();
-      } catch (error) {
-        showToast('Failed to save OAuth credentials', 'bad');
-      } finally {
-        hideLoader();
-      }
-    });
-  }
   
   if (connectBtn) {
     connectBtn.addEventListener('click', async () => {
@@ -777,22 +649,12 @@ function initGoogleDrive() {
     });
   }
   
-  // Service Account form handler
   if (serviceAccountForm) {
     serviceAccountForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       
       const fileInput = document.getElementById('serviceAccountFile');
       const jsonTextarea = document.getElementById('serviceAccountJson');
-      
-      // If jsonTextarea doesn't exist, it's the new form without JSON paste option
-      if (!jsonTextarea) {
-        // New form only has file input
-        if (!fileInput.files || fileInput.files.length === 0) {
-          showToast('Please select a service account JSON file', 'bad');
-          return;
-        }
-      }
       
       let serviceAccountJson = null;
       
@@ -989,60 +851,6 @@ function initGoogleDrive() {
   // Make functions globally available for inline handlers
   window.navigateToFolder = navigateToFolder;
   window.navigateToBreadcrumb = navigateToBreadcrumb;
-}
-
-// Initialize LinkedIn settings form
-function initLinkedInSettings() {
-  const form = document.getElementById('linkedInSettingsForm');
-  if (!form) return;
-  
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const formData = new FormData(form);
-    const settings = [];
-    
-    for (const [key, value] of formData.entries()) {
-      if (value.trim()) {
-        settings.push({ key, value: value.trim() });
-      }
-    }
-    
-    if (settings.length === 0) {
-      showToast('No settings to save', 'neutral');
-      return;
-    }
-    
-    try {
-      showLoader();
-      await API.settings.setBulk(settings);
-      showToast('LinkedIn settings saved successfully', 'ok');
-    } catch (error) {
-      showToast('Failed to save LinkedIn settings', 'bad');
-    } finally {
-      hideLoader();
-    }
-  });
-  
-  // Test button
-  const testBtn = form.querySelector('[data-test="linkedin"]');
-  if (testBtn) {
-    testBtn.addEventListener('click', async () => {
-      try {
-        showLoader();
-        const result = await API.settings.test('linkedin');
-        if (result.success) {
-          showToast('LinkedIn connection successful', 'ok');
-        } else {
-          showToast(`LinkedIn test failed: ${result.error}`, 'bad');
-        }
-      } catch (error) {
-        showToast(`LinkedIn test failed: ${error.message}`, 'bad');
-      } finally {
-        hideLoader();
-      }
-    });
-  }
 }
 
 // ============================================================
@@ -1482,7 +1290,59 @@ const CALC_CONSTANTS = {
   TREE_ABSORPTION: 21,         // kg CO2 absorbed per tree per year
 };
 
-// Removed loadCalculatorStats and updateCalculatorDisplay - calculator is now slider-based only
+async function loadCalculatorStats() {
+  try {
+    const result = await API.workflow.stats();
+    const stats = result.stats || { totalGenerations: 0, totalImages: 0 };
+    
+    updateCalculatorDisplay(stats.totalGenerations || 0, stats.totalImages || 0);
+  } catch (error) {
+    console.error('Failed to load calculator stats:', error);
+    updateCalculatorDisplay(0, 0);
+  }
+}
+
+function updateCalculatorDisplay(gptCount, imageCount) {
+  // Calculate energy usage
+  const gptEnergy = gptCount * CALC_CONSTANTS.GPT_ENERGY_WH;
+  const imageEnergy = imageCount * CALC_CONSTANTS.IMAGE_ENERGY_WH;
+  const totalEnergy = gptEnergy + imageEnergy;
+  
+  // Calculate CO2 equivalent (convert Wh to kWh first)
+  const co2Kg = (totalEnergy / 1000) * CALC_CONSTANTS.CO2_PER_KWH;
+  
+  // Calculate trees needed to offset
+  const treesNeeded = co2Kg / CALC_CONSTANTS.TREE_ABSORPTION;
+  
+  // Get display elements
+  const totalGen = document.getElementById('calcTotalGenerations');
+  const energyUsed = document.getElementById('calcEnergyUsed');
+  const co2Saved = document.getElementById('calcCO2Saved');
+  const treesEquiv = document.getElementById('calcTreesEquiv');
+  const gptCountEl = document.getElementById('calcGptCount');
+  const imageCountEl = document.getElementById('calcImageCount');
+  const gptEnergyEl = document.getElementById('calcGptEnergy');
+  const imageEnergyEl = document.getElementById('calcImageEnergy');
+  
+  // Store actual values as data attributes for manual calculator to use
+  if (totalGen) {
+    totalGen.dataset.actualGpt = gptCount;
+    totalGen.dataset.actualImages = imageCount;
+  }
+  if (energyUsed) {
+    energyUsed.dataset.actualEnergy = totalEnergy;
+  }
+  if (co2Saved) {
+    co2Saved.dataset.actualCO2 = co2Kg;
+  }
+  if (treesEquiv) {
+    treesEquiv.dataset.actualTrees = treesNeeded;
+  }
+  
+  // Don't update display here - let calculateManualImpact handle it
+  // This ensures manual calculator values are always included
+  calculateManualImpact();
+}
 
 function formatEnergy(wh) {
   if (wh < 1000) {
@@ -1514,6 +1374,9 @@ function initCalculator() {
       }
     });
   }
+  
+  // Load actual stats
+  loadCalculatorStats();
   
   // Calculate initial impact (with a small delay to ensure DOM is ready)
   setTimeout(() => {
@@ -1580,24 +1443,45 @@ function calculateManualImpact() {
   const co2El = document.getElementById('calcResultCO2');
   const equivEl = document.getElementById('calcResultEquiv');
   
-  // Update usage breakdown (slider-based only)
-  if (gptCountEl) gptCountEl.textContent = totalGptRequests;
-  if (imageCountEl) imageCountEl.textContent = totalImages;
-  if (gptEnergyEl) gptEnergyEl.textContent = formatEnergy(gptEnergy);
-  if (imageEnergyEl) imageEnergyEl.textContent = formatEnergy(imageEnergy);
+  // Get actual stats from data attributes (set by updateCalculatorDisplay)
+  const actualGpt = parseInt(totalGenEl?.dataset.actualGpt || '0');
+  const actualImages = parseInt(totalGenEl?.dataset.actualImages || '0');
+  const actualEnergy = parseFloat(energyUsedEl?.dataset.actualEnergy || '0');
+  const actualCO2 = parseFloat(co2SavedEl?.dataset.actualCO2 || '0');
+  const actualTrees = parseFloat(treesEquivEl?.dataset.actualTrees || '0');
   
-  // Update main stats (slider-based only)
+  // Calculate combined totals (actual + manual)
+  const combinedGpt = actualGpt + totalGptRequests;
+  const combinedImages = actualImages + totalImages;
+  const combinedTotalGen = combinedGpt + combinedImages;
+  const combinedEnergy = actualEnergy + totalEnergy;
+  const combinedCO2 = actualCO2 + co2Kg;
+  const combinedTrees = actualTrees + treesNeeded;
+  
+  // Calculate combined energy breakdown
+  const actualGptEnergy = actualGpt * CALC_CONSTANTS.GPT_ENERGY_WH;
+  const actualImageEnergy = actualImages * CALC_CONSTANTS.IMAGE_ENERGY_WH;
+  const combinedGptEnergy = actualGptEnergy + gptEnergy;
+  const combinedImageEnergy = actualImageEnergy + imageEnergy;
+  
+  // Update usage breakdown (show combined actual + manual)
+  if (gptCountEl) gptCountEl.textContent = combinedGpt;
+  if (imageCountEl) imageCountEl.textContent = combinedImages;
+  if (gptEnergyEl) gptEnergyEl.textContent = formatEnergy(combinedGptEnergy);
+  if (imageEnergyEl) imageEnergyEl.textContent = formatEnergy(combinedImageEnergy);
+  
+  // Update main stats (show combined actual + manual)
   if (totalGenEl) {
-    totalGenEl.textContent = totalRequests;
+    totalGenEl.textContent = combinedTotalGen;
   }
   if (energyUsedEl) {
-    energyUsedEl.textContent = formatEnergy(totalEnergy);
+    energyUsedEl.textContent = formatEnergy(combinedEnergy);
   }
   if (co2SavedEl) {
-    co2SavedEl.textContent = co2Kg.toFixed(4) + ' kg';
+    co2SavedEl.textContent = combinedCO2.toFixed(4) + ' kg';
   }
   if (treesEquivEl) {
-    treesEquivEl.textContent = (Math.ceil(treesNeeded * 100) / 100).toFixed(2);
+    treesEquivEl.textContent = (Math.ceil(combinedTrees * 100) / 100).toFixed(2);
   }
   
   // Update manual calculator result
@@ -1634,22 +1518,24 @@ function getEnergyComparison(wh) {
 }
 
 // ============================================================
+// INITIALIZATION
+// ============================================================
+
+// ============================================================
 // SETTINGS TILES NAVIGATION
 // ============================================================
 
-// Store tile handlers to prevent duplicate listeners
 let tilesInitialized = false;
 
 function initSettingsTiles() {
   const tilesGrid = document.getElementById('settingsTilesGrid');
-  const backBtn = document.getElementById('btnSettingsBack');
   const backContainer = document.getElementById('settingsBack');
+  const backBtn = document.getElementById('btnSettingsBack');
   
   if (!tilesGrid) return;
   
-  // Only add event listeners once
   if (!tilesInitialized) {
-    // Handle tile clicks
+    // Add click handlers to tiles
     tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
       tile.addEventListener('click', () => {
         const section = tile.dataset.section;
@@ -1714,8 +1600,11 @@ function initSettingsTiles() {
       if (sectionName === 'admin') {
         if (window.AppState.user?.role === 'admin') {
           loadUsers();
-          document.getElementById('userManagementSection')?.classList.remove('hidden');
-          document.getElementById('instanceRefreshSection')?.classList.remove('hidden');
+          // Explicitly show admin sections
+          const userMgmtSection = document.getElementById('userManagementSection');
+          const instanceRefreshSection = document.getElementById('instanceRefreshSection');
+          if (userMgmtSection) userMgmtSection.classList.remove('hidden');
+          if (instanceRefreshSection) instanceRefreshSection.classList.remove('hidden');
         } else {
           // Hide admin sections for non-admin users
           document.getElementById('userManagementSection')?.classList.add('hidden');
@@ -1731,111 +1620,21 @@ function initSettingsTiles() {
     }
   }
   
-  // Make functions available globally for debugging
-  window.showSettingsTiles = showTiles;
+  // Make showSection available globally for other code
   window.showSettingsSection = showSection;
 }
 
-// ============================================================
-// PASSWORD VISIBILITY TOGGLES
-// ============================================================
-
-function initPasswordVisibilityToggles() {
-  // Find all password inputs
-  const passwordInputs = document.querySelectorAll('input[type="password"]');
-  
-  passwordInputs.forEach(input => {
-    // Skip if already has a toggle
-    if (input.parentElement.querySelector('.password-toggle')) return;
-    
-    // Check if already wrapped
-    let wrapper = input.parentElement;
-    const isWrapped = wrapper.classList.contains('password-input-wrapper');
-    
-    if (!isWrapped) {
-      // Create wrapper
-      wrapper = document.createElement('div');
-      wrapper.className = 'password-input-wrapper';
-      wrapper.style.position = 'relative';
-      wrapper.style.display = 'flex';
-      wrapper.style.alignItems = 'center';
-      
-      // Insert wrapper before input
-      input.parentNode.insertBefore(wrapper, input);
-      // Move input into wrapper
-      wrapper.appendChild(input);
-    }
-    
-    // Create toggle button with SVG icon
-    const toggle = document.createElement('button');
-    toggle.type = 'button';
-    toggle.className = 'password-toggle';
-    toggle.setAttribute('aria-label', 'Toggle password visibility');
-    toggle.style.position = 'absolute';
-    toggle.style.right = '8px';
-    toggle.style.background = 'transparent';
-    toggle.style.border = 'none';
-    toggle.style.cursor = 'pointer';
-    toggle.style.padding = '4px 8px';
-    toggle.style.color = 'var(--ink-muted, #a0a0a0)';
-    toggle.style.zIndex = '1';
-    toggle.style.display = 'flex';
-    toggle.style.alignItems = 'center';
-    toggle.style.justifyContent = 'center';
-    
-    // SVG eye icon (show password)
-    const eyeSvg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-      <circle cx="12" cy="12" r="3"></circle>
-    </svg>`;
-    
-    // SVG eye-off icon (hide password)
-    const eyeOffSvg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-      <line x1="1" y1="1" x2="23" y2="23"></line>
-    </svg>`;
-    
-    toggle.innerHTML = eyeSvg;
-    
-    // Add click handler
-    toggle.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      const isPassword = input.type === 'password';
-      input.type = isPassword ? 'text' : 'password';
-      toggle.innerHTML = isPassword ? eyeOffSvg : eyeSvg;
-      toggle.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
-    });
-    
-    // Insert toggle into wrapper
-    wrapper.appendChild(toggle);
-    
-    // Ensure input has right padding for toggle
-    if (!input.style.paddingRight) {
-      input.style.paddingRight = '40px';
-    }
-  });
-}
-
-// ============================================================
-// INITIALIZATION
-// ============================================================
-
 function initSettingsModule() {
-  initSettingsTiles();
-  initPasswordVisibilityToggles();
   initProfileSettingsForm();
   initPasswordForm();
-  initOpenaiSettingsForm();
-  initStorageSettingsForm();
+  initApiSettingsForm();
   initPromptsSection();
   initStabilitySettings();
   initGoogleDrive();
-  initLinkedInSettings();
   initPostEditModal();
   initCsvButtons();
   initUserEditModal();
-  // Calculator is only initialized when environmental section is shown
+  // Calculator should NOT be initialized here - only when environmental tile is clicked
 }
 
 // Initialize on DOM ready
