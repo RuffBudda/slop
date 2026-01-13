@@ -1,101 +1,103 @@
 #!/bin/bash
 
 # SLOP Deployment Script
-# Run this on a fresh Ubuntu 22.04 server
+# This script automates the deployment of SLOP on a new server
+# Usage: ./deploy.sh <domain>
 
-set -e
+set -e  # Exit on error
 
-echo "╔════════════════════════════════════════════════════════════╗"
-echo "║                                                            ║"
-echo "║   SLOP Deployment Script                                   ║"
-echo "║   LinkedIn Content Automizer - Standalone Edition          ║"
-echo "║                                                            ║"
-echo "╚════════════════════════════════════════════════════════════╝"
-echo ""
+DOMAIN=$1
 
-# Colors
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+if [ -z "$DOMAIN" ]; then
+    echo "Usage: ./deploy.sh <domain>"
+    echo "Example: ./deploy.sh slop.example.com"
+    exit 1
+fi
+
+echo "=========================================="
+echo "SLOP Deployment Script"
+echo "Domain: $DOMAIN"
+echo "=========================================="
 
 # Check if running as root
-if [[ $EUID -ne 0 ]]; then
-   echo -e "${RED}This script must be run as root${NC}" 
-   exit 1
+if [ "$EUID" -ne 0 ]; then 
+    echo "Please run as root (use sudo)"
+    exit 1
 fi
 
-echo -e "${YELLOW}Updating system packages...${NC}"
-apt update && apt upgrade -y
+# Update system
+echo ""
+echo "Step 1: Updating system packages..."
+apt-get update
+apt-get upgrade -y
 
-echo -e "${YELLOW}Installing Node.js 20 LTS...${NC}"
-curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
-apt install -y nodejs
+# Install required packages
+echo ""
+echo "Step 2: Installing required packages..."
+apt-get install -y curl git nginx certbot python3-certbot-nginx nodejs npm sqlite3
 
-echo -e "${YELLOW}Installing build tools...${NC}"
-apt install -y build-essential python3 git nginx
-
-echo -e "${YELLOW}Installing PM2...${NC}"
+# Install PM2 globally
+echo ""
+echo "Step 3: Installing PM2..."
 npm install -g pm2
 
-echo -e "${YELLOW}Creating application user...${NC}"
-if ! id "slop" &>/dev/null; then
-    useradd -m -s /bin/bash slop
+# Create application directory
+echo ""
+echo "Step 4: Setting up application directory..."
+APP_DIR="/opt/slop"
+if [ -d "$APP_DIR" ]; then
+    echo "Directory $APP_DIR already exists. Backing up..."
+    mv "$APP_DIR" "${APP_DIR}.backup.$(date +%Y%m%d_%H%M%S)"
 fi
-mkdir -p /home/slop/app
-mkdir -p /home/slop/backups
+mkdir -p "$APP_DIR"
+cd "$APP_DIR"
 
-echo -e "${YELLOW}Setting up application directory...${NC}"
-if [ -d "/root/slop-standalone" ]; then
-    cp -r /root/slop-standalone/* /home/slop/app/
-fi
-
-chown -R slop:slop /home/slop
-
-echo -e "${YELLOW}Installing application dependencies...${NC}"
-cd /home/slop/app
-su - slop -c "cd /home/slop/app && npm install --omit=dev"
-
-# Generate session secret if .env doesn't exist
-if [ ! -f "/home/slop/app/.env" ]; then
-    echo -e "${YELLOW}Creating .env file...${NC}"
-    SESSION_SECRET=$(openssl rand -base64 32)
-    cat > /home/slop/app/.env << EOF
-PORT=3000
-NODE_ENV=production
-SESSION_SECRET=${SESSION_SECRET}
-DATABASE_PATH=./data/slop.db
-EOF
-    chown slop:slop /home/slop/app/.env
-    chmod 600 /home/slop/app/.env
+# Clone repository (assuming it's already cloned or will be cloned)
+echo ""
+echo "Step 5: Cloning repository..."
+if [ ! -d ".git" ]; then
+    echo "Please clone the repository to $APP_DIR first"
+    echo "Example: git clone https://github.com/RuffBudda/slop.git $APP_DIR"
+    read -p "Press Enter after cloning the repository..."
 fi
 
-echo -e "${YELLOW}Initializing database...${NC}"
-su - slop -c "cd /home/slop/app && npm run migrate"
+# Install dependencies
+echo ""
+echo "Step 6: Installing Node.js dependencies..."
+npm install
 
-echo -e "${YELLOW}Setting up PM2...${NC}"
-su - slop -c "cd /home/slop/app && pm2 start src/server.js --name slop"
-su - slop -c "pm2 save"
-env PATH=$PATH:/usr/bin pm2 startup systemd -u slop --hp /home/slop
+# Create .env file if it doesn't exist
+echo ""
+echo "Step 7: Setting up environment variables..."
+if [ ! -f ".env" ]; then
+    cp env.example.txt .env
+    # Generate random session secret
+    SESSION_SECRET=$(openssl rand -hex 32)
+    sed -i "s/SESSION_SECRET=.*/SESSION_SECRET=$SESSION_SECRET/" .env
+    # Update port if needed
+    sed -i "s/PORT=.*/PORT=3000/" .env
+    echo "Created .env file with generated SESSION_SECRET"
+    echo "Please edit .env and add your API keys"
+else
+    echo ".env file already exists, skipping..."
+fi
 
-echo -e "${YELLOW}Configuring Nginx...${NC}"
-cat > /etc/nginx/sites-available/slop << EOF
+# Initialize database
+echo ""
+echo "Step 8: Initializing database..."
+npm run migrate
+
+# Configure Nginx
+echo ""
+echo "Step 9: Configuring Nginx..."
+NGINX_CONFIG="/etc/nginx/sites-available/slop"
+cat > "$NGINX_CONFIG" <<EOF
 server {
     listen 80;
-    server_name _;
+    server_name $DOMAIN;
 
-    # Serve static files directly from Nginx for better performance
-    location ~* \.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot|map)$ {
-        root /home/slop/app/public;
-        expires 1d;
-        add_header Cache-Control "public, immutable";
-        access_log off;
-        try_files \$uri =404;
-    }
-
-    # Proxy all other requests to Node.js
     location / {
-        proxy_pass http://127.0.0.1:3000;
+        proxy_pass http://localhost:3000;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -104,51 +106,61 @@ server {
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_cache_bypass \$http_upgrade;
-        proxy_connect_timeout 300;
-        proxy_send_timeout 300;
-        proxy_read_timeout 300;
     }
-
-    client_max_body_size 50M;
 }
 EOF
 
-ln -sf /etc/nginx/sites-available/slop /etc/nginx/sites-enabled/
+# Enable site
+ln -sf "$NGINX_CONFIG" /etc/nginx/sites-enabled/
 rm -f /etc/nginx/sites-enabled/default
+
+# Test Nginx configuration
 nginx -t
-systemctl restart nginx
 
-echo -e "${YELLOW}Configuring firewall...${NC}"
-ufw allow 22
-ufw allow 80
-ufw allow 443
-echo "y" | ufw enable
-
-echo -e "${YELLOW}Setting up database backup cron...${NC}"
-cat > /etc/cron.daily/slop-backup << 'EOF'
-#!/bin/bash
-cp /home/slop/app/data/slop.db /home/slop/backups/slop-$(date +%Y%m%d).db
-# Keep only last 30 days
-find /home/slop/backups -name "slop-*.db" -mtime +30 -delete
-EOF
-chmod +x /etc/cron.daily/slop-backup
-
+# Start application with PM2
 echo ""
-echo -e "${GREEN}╔════════════════════════════════════════════════════════════╗${NC}"
-echo -e "${GREEN}║                                                            ║${NC}"
-echo -e "${GREEN}║   SLOP deployment complete!                                ║${NC}"
-echo -e "${GREEN}║                                                            ║${NC}"
-echo -e "${GREEN}╠════════════════════════════════════════════════════════════╣${NC}"
-echo -e "${GREEN}║                                                            ║${NC}"
-echo -e "${GREEN}║   Access your application at:                              ║${NC}"
-echo -e "${GREEN}║   http://$(curl -s ifconfig.me)                            ${NC}"
-echo -e "${GREEN}║                                                            ║${NC}"
-echo -e "${GREEN}║   Next steps:                                              ║${NC}"
-echo -e "${GREEN}║   1. Visit the URL above                                   ║${NC}"
-echo -e "${GREEN}║   2. Create your admin account                             ║${NC}"
-echo -e "${GREEN}║   3. Go to Settings to configure API keys                  ║${NC}"
-echo -e "${GREEN}║                                                            ║${NC}"
-echo -e "${GREEN}║   For SSL, run:                                            ║${NC}"
-echo -e "${GREEN}║   certbot --nginx -d your-domain.com                       ║${NC}"
-echo -e "${GREEN}║                                                            ║${NC}"
-echo -e "${GREEN}╚════════════════════════════════════════════════════════════╝${NC}"
+echo "Step 10: Starting application with PM2..."
+cd "$APP_DIR"
+pm2 start src/server.js --name slop
+pm2 save
+pm2 startup
+
+# Reload Nginx
+echo ""
+echo "Step 11: Reloading Nginx..."
+systemctl reload nginx
+
+# Setup SSL with Let's Encrypt
+echo ""
+echo "Step 12: Setting up SSL certificate..."
+read -p "Do you want to set up SSL with Let's Encrypt? (y/n) " -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]]; then
+    certbot --nginx -d "$DOMAIN" --non-interactive --agree-tos --email admin@$DOMAIN --redirect
+    echo "SSL certificate installed successfully!"
+else
+    echo "Skipping SSL setup. You can run 'certbot --nginx -d $DOMAIN' later."
+fi
+
+# Final instructions
+echo ""
+echo "=========================================="
+echo "Deployment Complete!"
+echo "=========================================="
+echo ""
+echo "Application is running at: http://$DOMAIN"
+if certbot certificates 2>/dev/null | grep -q "$DOMAIN"; then
+    echo "SSL is configured: https://$DOMAIN"
+fi
+echo ""
+echo "Next steps:"
+echo "1. Edit $APP_DIR/.env and add your API keys"
+echo "2. Restart the application: pm2 restart slop"
+echo "3. Access the application and create your admin account"
+echo ""
+echo "Useful commands:"
+echo "  - View logs: pm2 logs slop"
+echo "  - Restart: pm2 restart slop"
+echo "  - Stop: pm2 stop slop"
+echo "  - Status: pm2 status"
+echo ""

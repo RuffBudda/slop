@@ -197,8 +197,9 @@ async function loadApiSettings() {
   }
 }
 
-function initApiSettingsForm() {
-  const form = document.getElementById('apiSettingsForm');
+// Initialize OpenAI settings form
+function initOpenaiSettingsForm() {
+  const form = document.getElementById('openaiSettingsForm');
   if (!form) return;
   
   form.addEventListener('submit', async (e) => {
@@ -207,7 +208,6 @@ function initApiSettingsForm() {
     const formData = new FormData(form);
     const settings = [];
     
-    // Only include non-empty values (don't override with empty)
     for (const [key, value] of formData.entries()) {
       if (value.trim()) {
         settings.push({ key, value: value.trim() });
@@ -222,10 +222,8 @@ function initApiSettingsForm() {
     try {
       showLoader();
       await API.settings.setBulk(settings);
-      showToast('Settings saved successfully', 'ok');
-      
-      // Reload to show updated placeholders
-      loadApiSettings();
+      showToast('OpenAI settings saved successfully', 'ok');
+      await loadApiSettings();
     } catch (error) {
       showToast('Failed to save settings', 'bad');
     } finally {
@@ -233,27 +231,86 @@ function initApiSettingsForm() {
     }
   });
   
-  // Test buttons
-  form.querySelectorAll('[data-test]').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const service = e.currentTarget.dataset.test;
-      
+  // Test button
+  const testBtn = form.querySelector('[data-test="openai"]');
+  if (testBtn) {
+    testBtn.addEventListener('click', async () => {
       try {
         showLoader();
-        const result = await API.settings.test(service);
-        
+        const result = await API.settings.test('openai');
         if (result.success) {
-          showToast(`${service} connection successful`, 'ok');
+          showToast('OpenAI connection successful', 'ok');
         } else {
-          showToast(`${service} test failed: ${result.error}`, 'bad');
+          showToast(`OpenAI test failed: ${result.error}`, 'bad');
         }
       } catch (error) {
-        showToast(`${service} test failed: ${error.message}`, 'bad');
+        showToast(`OpenAI test failed: ${error.message}`, 'bad');
       } finally {
         hideLoader();
       }
     });
+  }
+}
+
+// Initialize Storage settings form
+function initStorageSettingsForm() {
+  const form = document.getElementById('storageSettingsForm');
+  if (!form) return;
+  
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    const settings = [];
+    
+    for (const [key, value] of formData.entries()) {
+      if (value.trim()) {
+        settings.push({ key, value: value.trim() });
+      }
+    }
+    
+    if (settings.length === 0) {
+      showToast('No settings to save', 'neutral');
+      return;
+    }
+    
+    try {
+      showLoader();
+      await API.settings.setBulk(settings);
+      showToast('Storage settings saved successfully', 'ok');
+      await loadApiSettings();
+    } catch (error) {
+      showToast('Failed to save settings', 'bad');
+    } finally {
+      hideLoader();
+    }
   });
+  
+  // Test button
+  const testBtn = form.querySelector('[data-test="spaces"]');
+  if (testBtn) {
+    testBtn.addEventListener('click', async () => {
+      try {
+        showLoader();
+        const result = await API.settings.test('spaces');
+        if (result.success) {
+          showToast('Storage connection successful', 'ok');
+        } else {
+          showToast(`Storage test failed: ${result.error}`, 'bad');
+        }
+      } catch (error) {
+        showToast(`Storage test failed: ${error.message}`, 'bad');
+      } finally {
+        hideLoader();
+      }
+    });
+  }
+}
+
+// Legacy function for backward compatibility
+function initApiSettingsForm() {
+  initOpenaiSettingsForm();
+  initStorageSettingsForm();
 }
 
 // ============================================================
@@ -614,10 +671,40 @@ function selectFolderInBrowser(folderId, folderName) {
   }
 }
 
+// Update redirect URI placeholders with actual domain
+function updateRedirectUris() {
+  const domain = window.location.origin;
+  const protocol = window.location.protocol;
+  const host = window.location.host;
+  
+  // Update Google Drive redirect URI
+  const googleRedirectDisplay = document.getElementById('redirectUriDisplay');
+  const googleRedirectInput = document.getElementById('googleDriveRedirectUri');
+  const linkedInRedirectDisplay = document.getElementById('linkedInRedirectUriDisplay');
+  
+  const googleCallback = `${domain}/api/google-drive/callback`;
+  const linkedInCallback = `${domain}/auth/linkedin/callback`;
+  
+  if (googleRedirectDisplay) {
+    googleRedirectDisplay.textContent = googleCallback;
+  }
+  if (googleRedirectInput && !googleRedirectInput.value) {
+    googleRedirectInput.placeholder = googleCallback;
+    googleRedirectInput.value = googleCallback;
+  }
+  if (linkedInRedirectDisplay) {
+    linkedInRedirectDisplay.textContent = linkedInCallback;
+  }
+}
+
 function initGoogleDrive() {
+  // Update redirect URIs with actual domain
+  updateRedirectUris();
+  
   const connectBtn = document.getElementById('btnConnectGoogleDrive');
   const disconnectBtn = document.getElementById('btnDisconnectGoogleDrive');
-  const serviceAccountForm = document.getElementById('serviceAccountForm');
+  const oauthForm = document.getElementById('googleDriveOAuthForm');
+  const serviceAccountForm = document.getElementById('googleDriveServiceAccountForm');
   const folderForm = document.getElementById('googleDriveFolderForm');
   const browseBtn = document.getElementById('btnBrowseFolders');
   const clearFolderBtn = document.getElementById('btnClearFolder');
@@ -625,6 +712,39 @@ function initGoogleDrive() {
   const folderBrowserClose = document.getElementById('folderBrowserClose');
   const folderBrowserCancel = document.getElementById('folderBrowserCancel');
   const folderBrowserSelect = document.getElementById('folderBrowserSelect');
+  
+  // OAuth form handler
+  if (oauthForm) {
+    oauthForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(oauthForm);
+      const settings = [];
+      
+      for (const [key, value] of formData.entries()) {
+        if (value.trim()) {
+          settings.push({ key, value: value.trim() });
+        }
+      }
+      
+      // Ensure redirect URI is set
+      const redirectUriInput = document.getElementById('googleDriveRedirectUri');
+      if (redirectUriInput && redirectUriInput.value) {
+        settings.push({ key: 'google_drive_redirect_uri', value: redirectUriInput.value.trim() });
+      }
+      
+      try {
+        showLoader();
+        await API.settings.setBulk(settings);
+        showToast('OAuth credentials saved successfully', 'ok');
+        await loadGoogleDriveStatus();
+      } catch (error) {
+        showToast('Failed to save OAuth credentials', 'bad');
+      } finally {
+        hideLoader();
+      }
+    });
+  }
   
   if (connectBtn) {
     connectBtn.addEventListener('click', async () => {
@@ -659,12 +779,22 @@ function initGoogleDrive() {
     });
   }
   
+  // Service Account form handler
   if (serviceAccountForm) {
     serviceAccountForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       
       const fileInput = document.getElementById('serviceAccountFile');
       const jsonTextarea = document.getElementById('serviceAccountJson');
+      
+      // If jsonTextarea doesn't exist, it's the new form without JSON paste option
+      if (!jsonTextarea) {
+        // New form only has file input
+        if (!fileInput.files || fileInput.files.length === 0) {
+          showToast('Please select a service account JSON file', 'bad');
+          return;
+        }
+      }
       
       let serviceAccountJson = null;
       
@@ -861,6 +991,60 @@ function initGoogleDrive() {
   // Make functions globally available for inline handlers
   window.navigateToFolder = navigateToFolder;
   window.navigateToBreadcrumb = navigateToBreadcrumb;
+}
+
+// Initialize LinkedIn settings form
+function initLinkedInSettings() {
+  const form = document.getElementById('linkedInSettingsForm');
+  if (!form) return;
+  
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    const settings = [];
+    
+    for (const [key, value] of formData.entries()) {
+      if (value.trim()) {
+        settings.push({ key, value: value.trim() });
+      }
+    }
+    
+    if (settings.length === 0) {
+      showToast('No settings to save', 'neutral');
+      return;
+    }
+    
+    try {
+      showLoader();
+      await API.settings.setBulk(settings);
+      showToast('LinkedIn settings saved successfully', 'ok');
+    } catch (error) {
+      showToast('Failed to save LinkedIn settings', 'bad');
+    } finally {
+      hideLoader();
+    }
+  });
+  
+  // Test button
+  const testBtn = form.querySelector('[data-test="linkedin"]');
+  if (testBtn) {
+    testBtn.addEventListener('click', async () => {
+      try {
+        showLoader();
+        const result = await API.settings.test('linkedin');
+        if (result.success) {
+          showToast('LinkedIn connection successful', 'ok');
+        } else {
+          showToast(`LinkedIn test failed: ${result.error}`, 'bad');
+        }
+      } catch (error) {
+        showToast(`LinkedIn test failed: ${error.message}`, 'bad');
+      } finally {
+        hideLoader();
+      }
+    });
+  }
 }
 
 // ============================================================
@@ -1640,21 +1824,36 @@ function initPasswordVisibilityToggles() {
       wrapper.appendChild(input);
     }
     
-    // Create toggle button
+    // Create toggle button with SVG icon
     const toggle = document.createElement('button');
     toggle.type = 'button';
     toggle.className = 'password-toggle';
     toggle.setAttribute('aria-label', 'Toggle password visibility');
-    toggle.innerHTML = '👁️';
     toggle.style.position = 'absolute';
     toggle.style.right = '8px';
     toggle.style.background = 'transparent';
     toggle.style.border = 'none';
     toggle.style.cursor = 'pointer';
     toggle.style.padding = '4px 8px';
-    toggle.style.fontSize = '16px';
     toggle.style.color = 'var(--ink-muted, #a0a0a0)';
     toggle.style.zIndex = '1';
+    toggle.style.display = 'flex';
+    toggle.style.alignItems = 'center';
+    toggle.style.justifyContent = 'center';
+    
+    // SVG eye icon (show password)
+    const eyeSvg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+      <circle cx="12" cy="12" r="3"></circle>
+    </svg>`;
+    
+    // SVG eye-off icon (hide password)
+    const eyeOffSvg = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+      <line x1="1" y1="1" x2="23" y2="23"></line>
+    </svg>`;
+    
+    toggle.innerHTML = eyeSvg;
     
     // Add click handler
     toggle.addEventListener('click', (e) => {
@@ -1662,16 +1861,57 @@ function initPasswordVisibilityToggles() {
       e.stopPropagation();
       const isPassword = input.type === 'password';
       input.type = isPassword ? 'text' : 'password';
-      toggle.innerHTML = isPassword ? '🙈' : '👁️';
+      toggle.innerHTML = isPassword ? eyeOffSvg : eyeSvg;
       toggle.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
     });
     
-    // Insert toggle into wrapper
+    // Add share password option (copy to clipboard)
+    const shareBtn = document.createElement('button');
+    shareBtn.type = 'button';
+    shareBtn.className = 'password-share';
+    shareBtn.setAttribute('aria-label', 'Copy password');
+    shareBtn.style.position = 'absolute';
+    shareBtn.style.right = '32px';
+    shareBtn.style.background = 'transparent';
+    shareBtn.style.border = 'none';
+    shareBtn.style.cursor = 'pointer';
+    shareBtn.style.padding = '4px 8px';
+    shareBtn.style.color = 'var(--ink-muted, #a0a0a0)';
+    shareBtn.style.zIndex = '1';
+    shareBtn.style.display = 'flex';
+    shareBtn.style.alignItems = 'center';
+    shareBtn.style.justifyContent = 'center';
+    
+    // SVG share icon
+    const shareSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+      <polyline points="16 6 12 2 8 6"></polyline>
+      <line x1="12" y1="2" x2="12" y2="15"></line>
+    </svg>`;
+    
+    shareBtn.innerHTML = shareSvg;
+    
+    shareBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      try {
+        await navigator.clipboard.writeText(input.value);
+        showToast('Password copied to clipboard', 'ok');
+      } catch (error) {
+        // Fallback for older browsers
+        input.select();
+        document.execCommand('copy');
+        showToast('Password copied to clipboard', 'ok');
+      }
+    });
+    
+    // Insert buttons into wrapper
+    wrapper.appendChild(shareBtn);
     wrapper.appendChild(toggle);
     
-    // Ensure input has right padding for toggle
+    // Ensure input has right padding for both buttons
     if (!input.style.paddingRight) {
-      input.style.paddingRight = '40px';
+      input.style.paddingRight = '70px';
     }
   });
 }
@@ -1685,10 +1925,12 @@ function initSettingsModule() {
   initPasswordVisibilityToggles();
   initProfileSettingsForm();
   initPasswordForm();
-  initApiSettingsForm();
+  initOpenaiSettingsForm();
+  initStorageSettingsForm();
   initPromptsSection();
   initStabilitySettings();
   initGoogleDrive();
+  initLinkedInSettings();
   initPostEditModal();
   initCsvButtons();
   initUserEditModal();

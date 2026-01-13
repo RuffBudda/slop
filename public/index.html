@@ -156,16 +156,48 @@
               </div>
             </div>
             
-            <div class="settings-tile" data-section="api">
-              <div class="tile-icon">🔑</div>
+            <div class="settings-tile" data-section="openai">
+              <div class="tile-icon">🤖</div>
               <div class="tile-content">
-                <h3>API & Integrations</h3>
-                <p>API keys and third-party integrations</p>
+                <h3>OpenAI Integration</h3>
+                <p>OpenAI API key configuration</p>
+              </div>
+            </div>
+            
+            <div class="settings-tile" data-section="googledrive">
+              <div class="tile-icon">📁</div>
+              <div class="tile-content">
+                <h3>Google Drive</h3>
+                <p>Google Drive integration and OAuth</p>
+              </div>
+            </div>
+            
+            <div class="settings-tile" data-section="linkedin">
+              <div class="tile-icon">💼</div>
+              <div class="tile-content">
+                <h3>LinkedIn API</h3>
+                <p>LinkedIn API credentials and tokens</p>
+              </div>
+            </div>
+            
+            <div class="settings-tile" data-section="storage">
+              <div class="tile-icon">☁️</div>
+              <div class="tile-content">
+                <h3>Storage (S3/Spaces)</h3>
+                <p>DigitalOcean Spaces configuration</p>
+              </div>
+            </div>
+            
+            <div class="settings-tile" data-section="environmental">
+              <div class="tile-icon">🌱</div>
+              <div class="tile-content">
+                <h3>Environmental Impact</h3>
+                <p>Track AI usage and carbon footprint</p>
               </div>
             </div>
             
             <div class="settings-tile" data-section="ai">
-              <div class="tile-icon">🤖</div>
+              <div class="tile-icon">⚙️</div>
               <div class="tile-content">
                 <h3>AI Configuration</h3>
                 <p>Prompts and AI generation settings</p>
@@ -176,12 +208,12 @@
               <div class="tile-icon">📝</div>
               <div class="tile-content">
                 <h3>Content Management</h3>
-                <p>Content ideas and environmental calculator</p>
+                <p>Content ideas and post management</p>
               </div>
             </div>
             
             <div class="settings-tile" data-section="admin">
-              <div class="tile-icon">⚙️</div>
+              <div class="tile-icon">🔐</div>
               <div class="tile-content">
                 <h3>Administration</h3>
                 <p>User management and instance settings</p>
@@ -250,57 +282,374 @@
             </section>
           </div>
           
-          <!-- API & Integrations Section -->
-          <div class="settings-group settings-section-content hidden" id="settingsSectionApi" data-section="api">
-            <h2 class="settings-group-title">API & Integrations</h2>
+          <!-- OpenAI Integration Section -->
+          <div class="settings-group settings-section-content hidden" id="settingsSectionOpenai" data-section="openai">
+            <h2 class="settings-group-title">OpenAI Integration</h2>
             
-            <!-- API Keys Section -->
             <section class="settings-section">
-              <h3>API Configuration</h3>
-            <form id="apiSettingsForm" class="settings-form">
-              <div class="form-group">
-                <label for="openaiKey">OpenAI API Key</label>
-                <div class="input-with-action">
-                  <input type="password" id="openaiKey" name="openai_api_key" placeholder="sk-...">
-                  <button type="button" class="btn clear btn-sm" data-test="openai">Test</button>
-                </div>
-              </div>
-              
-              <div class="form-group">
-                <label for="stabilityKey">Stability AI API Key</label>
-                <div class="input-with-action">
-                  <input type="password" id="stabilityKey" name="stability_api_key" placeholder="sk-...">
-                  <button type="button" class="btn clear btn-sm" data-test="stability">Test</button>
-                </div>
-              </div>
-              
-              <h4>DigitalOcean Spaces</h4>
-              <div class="form-row">
+              <h3>OpenAI API Configuration</h3>
+              <p class="section-description">
+                Configure your OpenAI API key for content generation. Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a>.
+              </p>
+              <form id="openaiSettingsForm" class="settings-form">
                 <div class="form-group">
-                  <label for="spacesName">Space Name</label>
-                  <input type="text" id="spacesName" name="spaces_name" placeholder="my-space">
+                  <label for="openaiKey">OpenAI API Key</label>
+                  <div class="input-with-action">
+                    <input type="password" id="openaiKey" name="openai_api_key" placeholder="sk-...">
+                    <button type="button" class="btn clear btn-sm" data-test="openai">Test</button>
+                  </div>
+                  <small>Your OpenAI API key starting with "sk-"</small>
                 </div>
-                <div class="form-group">
-                  <label for="spacesRegion">Region</label>
-                  <input type="text" id="spacesRegion" name="spaces_region" placeholder="blr1">
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="spacesKey">Access Key</label>
-                <input type="password" id="spacesKey" name="spaces_key">
-              </div>
-              <div class="form-group">
-                <label for="spacesSecret">Secret Key</label>
-                <div class="input-with-action">
-                  <input type="password" id="spacesSecret" name="spaces_secret">
-                  <button type="button" class="btn clear btn-sm" data-test="spaces">Test</button>
+                <button type="submit" class="btn approve">
+                  <span class="ico"></span> Save OpenAI Settings
+                </button>
+              </form>
+            </section>
+          </div>
+          
+          <!-- Google Drive Integration Section -->
+          <div class="settings-group settings-section-content hidden" id="settingsSectionGoogledrive" data-section="googledrive">
+            <h2 class="settings-group-title">Google Drive Integration</h2>
+            
+            <section class="settings-section">
+              <h3>Google Drive Integration</h3>
+              <p class="section-description">
+                Connect your Google Drive account to browse and upload images directly from your Drive.
+                Choose between OAuth (personal account) or Service Account (recommended for automation).
+              </p>
+              
+              <div id="googleDriveStatus" class="google-drive-status">
+                <p id="googleDriveStatusText">Checking connection status...</p>
+                <div id="googleDriveConnectionType" style="margin-top: 8px; font-size: 13px; color: #888;"></div>
+                <div id="googleDriveActions" style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+                  <button id="btnConnectGoogleDrive" class="btn approve" style="display: none;">
+                    <span class="ico">🔗</span> Connect via OAuth
+                  </button>
+                  <button id="btnDisconnectGoogleDrive" class="btn reject" style="display: none;">
+                    <span class="ico">✕</span> Disconnect
+                  </button>
                 </div>
               </div>
               
-              <button type="submit" class="btn approve">
-                <span class="ico"></span> Save API Settings
-              </button>
-            </form>
+              <!-- OAuth Configuration -->
+              <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bd);">
+                <h4>OAuth Configuration (Personal Account)</h4>
+                <p class="field-description" style="margin-bottom: 16px;">
+                  Connect using your personal Google account. You'll need to create OAuth credentials in Google Cloud Console.
+                  <br><strong>Quick Setup:</strong>
+                  <br>1. Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>
+                  <br>2. Create a project or select existing one
+                  <br>3. Enable <strong>Google Drive API</strong>
+                  <br>4. Go to <strong>"APIs & Services" → "Credentials"</strong>
+                  <br>5. Click <strong>"Create Credentials" → "OAuth client ID"</strong>
+                  <br>6. Choose <strong>"Web application"</strong>
+                  <br>7. Add authorized redirect URI: <code id="redirectUriDisplay">https://yourdomain.com/api/google-drive/callback</code>
+                  <br>8. Copy your Client ID and Client Secret below
+                </p>
+                
+                <form id="googleDriveOAuthForm" class="settings-form">
+                  <div class="form-row">
+                    <div class="form-group">
+                      <label for="googleDriveClientId">Client ID</label>
+                      <input type="text" id="googleDriveClientId" name="google_drive_client_id" 
+                             placeholder="xxxxx.apps.googleusercontent.com">
+                      <small>Your OAuth 2.0 Client ID from Google Cloud Console</small>
+                    </div>
+                    <div class="form-group">
+                      <label for="googleDriveClientSecret">Client Secret</label>
+                      <input type="password" id="googleDriveClientSecret" name="google_drive_client_secret" 
+                             placeholder="GOCSPX-xxxxx">
+                      <small>Your OAuth 2.0 Client Secret</small>
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <label for="googleDriveRedirectUri">Redirect URI</label>
+                    <input type="text" id="googleDriveRedirectUri" name="google_drive_redirect_uri" 
+                           placeholder="https://yourdomain.com/api/google-drive/callback">
+                    <small>Must match exactly what you set in Google Cloud Console. Use your actual domain, not localhost.</small>
+                  </div>
+                  <button type="submit" class="btn approve">
+                    <span class="ico">💾</span> Save OAuth Credentials
+                  </button>
+                </form>
+              </div>
+              
+              <!-- Service Account Configuration -->
+              <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bd);">
+                <h4>Service Account (Recommended for Automation)</h4>
+                <p class="field-description" style="margin-bottom: 16px;">
+                  Upload a service account JSON key file for automated access without user interaction.
+                  <br><strong>How to create a Service Account:</strong>
+                  <br>1. Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>
+                  <br>2. Navigate to <strong>"IAM & Admin" → "Service Accounts"</strong>
+                  <br>3. Click <strong>"Create Service Account"</strong>
+                  <br>4. Grant <strong>"Editor"</strong> role (or specific Drive permissions)
+                  <br>5. Create and download a JSON key
+                  <br>6. Upload the JSON file below
+                </p>
+                
+                <form id="googleDriveServiceAccountForm" class="settings-form">
+                  <div class="form-group">
+                    <label for="serviceAccountFile">Service Account JSON Key</label>
+                    <input type="file" id="serviceAccountFile" accept=".json" style="margin-bottom: 12px;">
+                    <small>Upload the JSON key file downloaded from Google Cloud Console</small>
+                  </div>
+                  <button type="submit" class="btn approve">
+                    <span class="ico">💾</span> Upload Service Account
+                  </button>
+                </form>
+              </div>
+              
+              <!-- Folder Selection -->
+              <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bd);">
+                <h4>Folder Selection</h4>
+                <p class="field-description" style="margin-bottom: 16px;">
+                  Select a specific Google Drive folder to use for images. Only images from this folder will be available.
+                </p>
+                
+                <form id="googleDriveFolderForm" class="settings-form">
+                  <div class="form-group">
+                    <label for="googleDriveFolderLink">Folder Link or ID</label>
+                    <div style="display: flex; gap: 8px;">
+                      <input type="text" id="googleDriveFolderLink" name="google_drive_folder_id" 
+                             placeholder="https://drive.google.com/drive/folders/... or folder ID">
+                      <button type="button" id="btnBrowseFolders" class="btn clear">
+                        <span class="ico">📁</span> Browse
+                      </button>
+                    </div>
+                    <small id="googleDriveFolderStatus" style="margin-top: 8px; display: block; color: #666;">
+                      No folder selected. Images will be fetched from all folders.
+                    </small>
+                  </div>
+                  <div class="form-group" style="display: flex; gap: 8px;">
+                    <button type="submit" class="btn approve">
+                      <span class="ico">💾</span> Save Folder
+                    </button>
+                    <button type="button" id="btnClearFolder" class="btn clear">
+                      <span class="ico">✕</span> Clear
+                    </button>
+                  </div>
+                </form>
+                
+                <!-- Folder Browser Modal -->
+                <dialog id="folderBrowserModal" style="max-width: 600px; width: 90%; border-radius: 8px; border: 1px solid var(--bd);">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+                    <h3 style="margin: 0;">Select Google Drive Folder</h3>
+                    <button id="folderBrowserClose" class="btn clear" style="padding: 4px 8px;">✕</button>
+                  </div>
+                  <div id="folderBrowserBreadcrumb" style="margin-bottom: 12px; padding: 8px; background: var(--bg-alt); border-radius: 4px; font-size: 13px;">
+                    <button class="btn-link" data-folder-id="root" style="text-decoration: none; color: var(--fg);">Root</button>
+                  </div>
+                  <div id="folderBrowserList" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--bd); border-radius: 4px; padding: 8px;">
+                    <p style="text-align: center; color: #666; padding: 20px;">Loading folders...</p>
+                  </div>
+                  <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;">
+                    <button id="folderBrowserCancel" class="btn clear">Cancel</button>
+                    <button id="folderBrowserSelect" class="btn approve" disabled>Select Folder</button>
+                  </div>
+                </dialog>
+              </div>
+            </section>
+          </div>
+          
+          <!-- LinkedIn API Integration Section -->
+          <div class="settings-group settings-section-content hidden" id="settingsSectionLinkedin" data-section="linkedin">
+            <h2 class="settings-group-title">LinkedIn API Integration</h2>
+            
+            <section class="settings-section">
+              <h3>LinkedIn API Integration</h3>
+              <p class="section-description">
+                Connect your LinkedIn account to automatically post approved and scheduled content.
+                You'll need to create a LinkedIn app and get OAuth credentials.
+                <br><strong>How to get LinkedIn API credentials:</strong>
+                <br>1. Go to <a href="https://www.linkedin.com/developers/apps" target="_blank">LinkedIn Developers</a>
+                <br>2. Create a new app or select an existing one
+                <br>3. In the "Auth" tab, add redirect URL: <code id="linkedInRedirectUriDisplay">https://yourdomain.com/auth/linkedin/callback</code>
+                <br>4. Request the following scopes: <code>w_member_social</code>, <code>r_liteprofile</code>, <code>r_emailaddress</code>
+                <br>5. Copy the Client ID and Client Secret below
+                <br>6. Use the OAuth flow to get Access Token and Refresh Token
+              </p>
+              
+              <div id="linkedInStatus" class="google-drive-status">
+                <p id="linkedInStatusText">Checking connection status...</p>
+                <div id="linkedInActions" style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+                  <button id="btnTestLinkedIn" class="btn clear" style="display: none;">
+                    <span class="ico">🔍</span> Test Connection
+                  </button>
+                </div>
+              </div>
+              
+              <form id="linkedInSettingsForm" class="settings-form" style="margin-top: 24px;">
+                <h4>LinkedIn OAuth Credentials</h4>
+                
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="linkedInClientId">Client ID</label>
+                    <input type="text" id="linkedInClientId" name="linkedin_client_id" placeholder="Your LinkedIn App Client ID">
+                  </div>
+                  <div class="form-group">
+                    <label for="linkedInClientSecret">Client Secret</label>
+                    <div class="input-with-action">
+                      <input type="password" id="linkedInClientSecret" name="linkedin_client_secret" placeholder="Your LinkedIn App Client Secret">
+                      <button type="button" class="btn clear btn-sm" data-test="linkedin">Test</button>
+                    </div>
+                  </div>
+                </div>
+                
+                <h4 style="margin-top: 24px;">Access Tokens</h4>
+                <p class="field-description" style="margin-bottom: 16px;">
+                  After setting up Client ID and Secret, you'll need to complete the OAuth flow to get access tokens.
+                  For now, you can manually paste the Access Token and Refresh Token if you have them.
+                </p>
+                
+                <div class="form-group">
+                  <label for="linkedInAccessToken">Access Token</label>
+                  <input type="password" id="linkedInAccessToken" name="linkedin_access_token" placeholder="LinkedIn Access Token">
+                  <small>This token expires after 60 days. The system will automatically refresh it using the Refresh Token.</small>
+                </div>
+                
+                <div class="form-group">
+                  <label for="linkedInRefreshToken">Refresh Token</label>
+                  <input type="password" id="linkedInRefreshToken" name="linkedin_refresh_token" placeholder="LinkedIn Refresh Token">
+                  <small>Used to automatically refresh the Access Token when it expires.</small>
+                </div>
+                
+                <button type="submit" class="btn approve">
+                  <span class="ico">💾</span> Save LinkedIn Settings
+                </button>
+              </form>
+            </section>
+          </div>
+          
+          <!-- Storage (S3/Spaces) Section -->
+          <div class="settings-group settings-section-content hidden" id="settingsSectionStorage" data-section="storage">
+            <h2 class="settings-group-title">Storage (S3/DigitalOcean Spaces)</h2>
+            
+            <section class="settings-section">
+              <h3>DigitalOcean Spaces Configuration</h3>
+              <p class="section-description">
+                Configure DigitalOcean Spaces (S3-compatible) for image storage. Get your credentials from the DigitalOcean Spaces dashboard.
+              </p>
+              <form id="storageSettingsForm" class="settings-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="spacesName">Space Name</label>
+                    <input type="text" id="spacesName" name="spaces_name" placeholder="my-space">
+                  </div>
+                  <div class="form-group">
+                    <label for="spacesRegion">Region</label>
+                    <input type="text" id="spacesRegion" name="spaces_region" placeholder="blr1">
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="spacesKey">Access Key</label>
+                  <input type="password" id="spacesKey" name="spaces_key">
+                </div>
+                <div class="form-group">
+                  <label for="spacesSecret">Secret Key</label>
+                  <div class="input-with-action">
+                    <input type="password" id="spacesSecret" name="spaces_secret">
+                    <button type="button" class="btn clear btn-sm" data-test="spaces">Test</button>
+                  </div>
+                </div>
+                <button type="submit" class="btn approve">
+                  <span class="ico"></span> Save Storage Settings
+                </button>
+              </form>
+            </section>
+          </div>
+          
+          <!-- Environmental Impact Calculator Section -->
+          <div class="settings-group settings-section-content hidden" id="settingsSectionEnvironmental" data-section="environmental">
+            <h2 class="settings-group-title">Environmental Impact Calculator</h2>
+            
+            <section class="settings-section">
+              <h3>🌱 Environmental Impact Calculator</h3>
+              <p class="section-description">
+                Track the environmental impact of your AI-powered content generation. Estimates are based on average energy consumption for AI inference.
+              </p>
+              
+              <div class="calculator-container" id="calculatorContainer">
+                <div class="calc-stats-grid">
+                  <div class="calc-stat-card">
+                    <div class="calc-stat-icon">📝</div>
+                    <div class="calc-stat-value" id="calcTotalGenerations">0</div>
+                    <div class="calc-stat-label">Total Generations</div>
+                  </div>
+                  <div class="calc-stat-card">
+                    <div class="calc-stat-icon">⚡</div>
+                    <div class="calc-stat-value" id="calcEnergyUsed">0 Wh</div>
+                    <div class="calc-stat-label">Energy Used</div>
+                  </div>
+                  <div class="calc-stat-card">
+                    <div class="calc-stat-icon">🌿</div>
+                    <div class="calc-stat-value" id="calcCO2Saved">0 kg</div>
+                    <div class="calc-stat-label">CO₂ Equivalent</div>
+                  </div>
+                  <div class="calc-stat-card">
+                    <div class="calc-stat-icon">🌳</div>
+                    <div class="calc-stat-value" id="calcTreesEquiv">0</div>
+                    <div class="calc-stat-label">Trees to Offset</div>
+                  </div>
+                </div>
+                
+                <div class="calc-breakdown">
+                  <h4>Usage Breakdown</h4>
+                  <div class="calc-breakdown-row">
+                    <span>GPT Content Generations:</span>
+                    <span id="calcGptCount">0</span>
+                  </div>
+                  <div class="calc-breakdown-row">
+                    <span>Stability AI Image Generations:</span>
+                    <span id="calcImageCount">0</span>
+                  </div>
+                  <div class="calc-breakdown-row">
+                    <span>Estimated GPT Energy (0.03 Wh/request):</span>
+                    <span id="calcGptEnergy">0 Wh</span>
+                  </div>
+                  <div class="calc-breakdown-row">
+                    <span>Estimated Image Energy (0.5 Wh/image):</span>
+                    <span id="calcImageEnergy">0 Wh</span>
+                  </div>
+                </div>
+                
+                <div class="calc-manual" style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bd);">
+                  <h4>Manual Calculator</h4>
+                  <p class="field-description">
+                    Estimate the environmental impact of your planned content generation.
+                  </p>
+                  <div class="calculator-input">
+                    <label for="calcManualPosts">Number of Posts</label>
+                    <div class="slider-container">
+                      <input type="range" id="calcManualPosts" min="1" max="100" value="10" class="posts-slider">
+                      <span id="calcManualPostsValue">10</span>
+                    </div>
+                  </div>
+                  <div class="calculator-input">
+                    <label for="calcManualVariants">Variants per Post</label>
+                    <div class="slider-container">
+                      <input type="range" id="calcManualVariants" min="1" max="10" value="3" class="posts-slider">
+                      <span id="calcManualVariantsValue">3</span>
+                    </div>
+                  </div>
+                  <div class="calculator-input">
+                    <label for="calcManualImages">Images per Post</label>
+                    <div class="slider-container">
+                      <input type="range" id="calcManualImages" min="0" max="10" value="3" class="posts-slider">
+                      <span id="calcManualImagesValue">3</span>
+                    </div>
+                  </div>
+                  <div class="calc-result hidden" id="calcManualResult">
+                    <h4>Estimated Impact</h4>
+                    <div class="calc-result-stats">
+                      <div><strong>Total Requests:</strong> <span id="calcManualRequests">0</span></div>
+                      <div><strong>Energy:</strong> <span id="calcManualEnergy">0 Wh</span></div>
+                      <div><strong>CO₂:</strong> <span id="calcManualCO2">0 kg</span></div>
+                      <div><strong>Equivalent:</strong> <span id="calcManualEquiv">-</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </section>
           </div>
           
@@ -419,220 +768,6 @@
               </button>
             </form>
             </section>
-
-            <!-- Google Drive Integration Section -->
-            <section class="settings-section">
-              <h3>Google Drive Integration</h3>
-            <p class="section-description">
-              Connect your Google Drive account to browse and upload images directly from your Drive.
-              Choose between OAuth (personal account) or Service Account (recommended for automation).
-            </p>
-            
-            <div id="googleDriveStatus" class="google-drive-status">
-              <p id="googleDriveStatusText">Checking connection status...</p>
-              <div id="googleDriveConnectionType" style="margin-top: 8px; font-size: 13px; color: #888;"></div>
-              <div id="googleDriveActions" style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
-                <button id="btnConnectGoogleDrive" class="btn approve" style="display: none;">
-                  <span class="ico">🔗</span> Connect via OAuth
-                </button>
-                <button id="btnDisconnectGoogleDrive" class="btn reject" style="display: none;">
-                  <span class="ico">✕</span> Disconnect
-                </button>
-              </div>
-            </div>
-            
-            <!-- OAuth Configuration -->
-            <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bd);">
-              <h4>OAuth Configuration (Personal Account)</h4>
-              <p class="field-description" style="margin-bottom: 16px;">
-                Connect using your personal Google account. You'll need to create OAuth credentials in Google Cloud Console.
-                <br><strong>Quick Setup:</strong>
-                <br>1. Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>
-                <br>2. Create a project or select existing one
-                <br>3. Enable <strong>Google Drive API</strong>
-                <br>4. Go to <strong>"APIs & Services" → "Credentials"</strong>
-                <br>5. Click <strong>"Create Credentials" → "OAuth client ID"</strong>
-                <br>6. Choose <strong>"Web application"</strong>
-                <br>7. Add authorized redirect URI: <code id="redirectUriDisplay">http://localhost:3000/api/google-drive/callback</code>
-                <br>8. Copy your Client ID and Client Secret below
-              </p>
-              
-              <form id="googleDriveOAuthForm" class="settings-form">
-                <div class="form-row">
-                  <div class="form-group">
-                    <label for="googleDriveClientId">Client ID</label>
-                    <input type="text" id="googleDriveClientId" name="google_drive_client_id" 
-                           placeholder="xxxxx.apps.googleusercontent.com">
-                    <small>Your OAuth 2.0 Client ID from Google Cloud Console</small>
-                  </div>
-                  <div class="form-group">
-                    <label for="googleDriveClientSecret">Client Secret</label>
-                    <input type="password" id="googleDriveClientSecret" name="google_drive_client_secret" 
-                           placeholder="GOCSPX-xxxxx">
-                    <small>Your OAuth 2.0 Client Secret</small>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label for="googleDriveRedirectUri">Redirect URI</label>
-                  <input type="text" id="googleDriveRedirectUri" name="google_drive_redirect_uri" 
-                         value="http://localhost:3000/api/google-drive/callback"
-                         placeholder="http://localhost:3000/api/google-drive/callback">
-                  <small>Must match exactly what you set in Google Cloud Console. Change if using a different domain.</small>
-                </div>
-                <button type="submit" class="btn approve">
-                  <span class="ico">💾</span> Save OAuth Credentials
-                </button>
-              </form>
-            </div>
-            
-            <!-- Service Account Configuration -->
-            <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bd);">
-              <h4>Service Account (Recommended for Automation)</h4>
-              <p class="field-description" style="margin-bottom: 16px;">
-                Service accounts don't require OAuth verification and work great for automated access.
-                <br><strong>How to get a Service Account key:</strong>
-                <br>1. Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>
-                <br>2. Create a project or select existing one
-                <br>3. Enable <strong>Google Drive API</strong>
-                <br>4. Go to <strong>"APIs & Services" → "Credentials"</strong>
-                <br>5. Click <strong>"Create Credentials" → "Service account"</strong>
-                <br>6. Create a service account and download the JSON key file
-                <br>7. Upload the JSON file below
-              </p>
-              <form id="serviceAccountForm" class="settings-form">
-                <div class="form-group">
-                  <label for="serviceAccountFile">Service Account JSON Key File</label>
-                  <input type="file" id="serviceAccountFile" name="serviceAccountFile" accept=".json">
-                  <small>Select the JSON key file downloaded from Google Cloud Console</small>
-                </div>
-                <div class="form-group">
-                  <label for="serviceAccountJson">Or paste JSON directly</label>
-                  <textarea id="serviceAccountJson" name="serviceAccountJson" rows="6" 
-                            placeholder='{"type": "service_account", "project_id": "...", "private_key_id": "...", ...}' 
-                            class="prompt-textarea"></textarea>
-                  <small>Paste the entire JSON content from your service account key file</small>
-                </div>
-                <button type="submit" class="btn approve">
-                  <span class="ico">💾</span> Save Service Account Key
-                </button>
-              </form>
-            </div>
-            
-            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--bd);">
-              <h4>Image Folder Selection</h4>
-              <p class="field-description" style="margin-bottom: 16px;">
-                Select a specific Google Drive folder to use for images. Only images from this folder will be available for your posts.
-                <br>Leave empty to use all images from your Drive.
-              </p>
-              <form id="googleDriveFolderForm" class="settings-form">
-                <div class="form-group">
-                  <label for="googleDriveFolderLink">Google Drive Folder Link or ID</label>
-                  <div style="display: flex; gap: 8px; align-items: flex-start;">
-                    <input type="text" id="googleDriveFolderLink" name="googleDriveFolderLink" 
-                           placeholder="https://drive.google.com/drive/folders/1ABC... or folder ID"
-                           style="flex: 1;">
-                    <button type="button" id="btnBrowseFolders" class="btn clear" style="white-space: nowrap;">
-                      <span class="ico">📁</span> Browse
-                    </button>
-                  </div>
-                  <small id="googleDriveFolderStatus" style="margin-top: 8px; display: block; color: #666;">
-                    No folder selected. Images will be fetched from all folders.
-                  </small>
-                </div>
-                <div class="form-group" style="display: flex; gap: 8px;">
-                  <button type="submit" class="btn approve">
-                    <span class="ico">💾</span> Save Folder
-                  </button>
-                  <button type="button" id="btnClearFolder" class="btn clear">
-                    <span class="ico">✕</span> Clear
-                  </button>
-                </div>
-              </form>
-              
-              <!-- Folder Browser Modal -->
-              <dialog id="folderBrowserModal" style="max-width: 600px; width: 90%; border-radius: 8px; border: 1px solid var(--bd);">
-                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-                  <h3 style="margin: 0;">Select Google Drive Folder</h3>
-                  <button id="folderBrowserClose" class="btn clear" style="padding: 4px 8px;">✕</button>
-                </div>
-                <div id="folderBrowserBreadcrumb" style="margin-bottom: 12px; padding: 8px; background: var(--bg-alt); border-radius: 4px; font-size: 13px;">
-                  <button class="btn-link" data-folder-id="root" style="text-decoration: none; color: var(--fg);">Root</button>
-                </div>
-                <div id="folderBrowserList" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--bd); border-radius: 4px; padding: 8px;">
-                  <p style="text-align: center; color: #666; padding: 20px;">Loading folders...</p>
-                </div>
-                <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;">
-                  <button id="folderBrowserCancel" class="btn clear">Cancel</button>
-                  <button id="folderBrowserSelect" class="btn approve" disabled>Select Folder</button>
-                </div>
-              </dialog>
-            </div>
-            </section>
-
-            <!-- LinkedIn Integration Section -->
-            <section class="settings-section">
-              <h3>LinkedIn API Integration</h3>
-            <p class="section-description">
-              Connect your LinkedIn account to automatically post approved and scheduled content.
-              You'll need to create a LinkedIn app and get OAuth credentials.
-              <br><strong>How to get LinkedIn API credentials:</strong>
-              <br>1. Go to <a href="https://www.linkedin.com/developers/apps" target="_blank">LinkedIn Developers</a>
-              <br>2. Create a new app or select an existing one
-              <br>3. In the "Auth" tab, add redirect URL: <code>http://localhost:3000/auth/linkedin/callback</code> (or your domain)
-              <br>4. Request the following scopes: <code>w_member_social</code>, <code>r_liteprofile</code>, <code>r_emailaddress</code>
-              <br>5. Copy the Client ID and Client Secret below
-              <br>6. Use the OAuth flow to get Access Token and Refresh Token
-            </p>
-            
-            <div id="linkedInStatus" class="google-drive-status">
-              <p id="linkedInStatusText">Checking connection status...</p>
-              <div id="linkedInActions" style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
-                <button id="btnTestLinkedIn" class="btn clear" style="display: none;">
-                  <span class="ico">🔍</span> Test Connection
-                </button>
-              </div>
-            </div>
-            
-            <form id="linkedInSettingsForm" class="settings-form" style="margin-top: 24px;">
-              <h4>LinkedIn OAuth Credentials</h4>
-              
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="linkedInClientId">Client ID</label>
-                  <input type="text" id="linkedInClientId" name="linkedin_client_id" placeholder="Your LinkedIn App Client ID">
-                </div>
-                <div class="form-group">
-                  <label for="linkedInClientSecret">Client Secret</label>
-                  <div class="input-with-action">
-                    <input type="password" id="linkedInClientSecret" name="linkedin_client_secret" placeholder="Your LinkedIn App Client Secret">
-                    <button type="button" class="btn clear btn-sm" data-test="linkedin">Test</button>
-                  </div>
-                </div>
-              </div>
-              
-              <h4 style="margin-top: 24px;">Access Tokens</h4>
-              <p class="field-description" style="margin-bottom: 16px;">
-                After setting up Client ID and Secret, you'll need to complete the OAuth flow to get access tokens.
-                For now, you can manually paste the Access Token and Refresh Token if you have them.
-              </p>
-              
-              <div class="form-group">
-                <label for="linkedInAccessToken">Access Token</label>
-                <input type="password" id="linkedInAccessToken" name="linkedin_access_token" placeholder="LinkedIn Access Token">
-                <small>This token expires after 60 days. The system will automatically refresh it using the Refresh Token.</small>
-              </div>
-              
-              <div class="form-group">
-                <label for="linkedInRefreshToken">Refresh Token</label>
-                <input type="password" id="linkedInRefreshToken" name="linkedin_refresh_token" placeholder="LinkedIn Refresh Token">
-                <small>Used to automatically refresh the Access Token when it expires.</small>
-              </div>
-              
-              <button type="submit" class="btn approve">
-                <span class="ico">💾</span> Save LinkedIn Settings
-              </button>
-            </form>
-            </section>
           </div>
           
           <!-- Content Management Section -->
@@ -678,15 +813,7 @@
               </table>
             </div>
           </section>
-
-          <!-- Environmental Calculator Section -->
-          <section class="settings-section">
-            <h3>🌱 Environmental Impact Calculator</h3>
-            <p class="section-description">
-              Track the environmental impact of your AI-powered content generation. Estimates are based on average energy consumption for AI inference.
-            </p>
-            
-            <div class="calculator-container" id="calculatorContainer">
+          </div>
               <div class="calc-stats-grid">
                 <div class="calc-stat-card">
                   <div class="calc-stat-icon">📝</div>

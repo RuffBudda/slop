@@ -320,7 +320,52 @@ The application uses SQLite with the following tables:
 
 ## 🚢 Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions on Ubuntu servers.
+### Automated Deployment Script
+
+For new server deployments, use the provided deployment script:
+
+```bash
+# 1. Point your domain to the server IP
+# 2. SSH into your server
+# 3. Clone the repository
+git clone https://github.com/RuffBudda/slop.git /opt/slop
+cd /opt/slop
+
+# 4. Run the deployment script
+sudo chmod +x deploy.sh
+sudo ./deploy.sh yourdomain.com
+```
+
+The script will:
+- Update the server packages
+- Install Node.js, Nginx, PM2, and Certbot
+- Clone the repository (if not already cloned)
+- Install dependencies
+- Set up environment variables
+- Initialize the database
+- Configure Nginx with your domain
+- Start the application with PM2
+- Set up SSL certificate with Let's Encrypt (optional)
+
+**Prerequisites:**
+- Ubuntu/Debian server
+- Domain name pointing to server IP
+- Root/sudo access
+
+**After deployment:**
+1. Edit `/opt/slop/.env` and add your API keys
+2. Restart: `pm2 restart slop`
+3. Access the application and create your admin account
+
+**Useful commands:**
+- View logs: `pm2 logs slop`
+- Restart: `pm2 restart slop`
+- Stop: `pm2 stop slop`
+- Status: `pm2 status`
+
+### Manual Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed manual deployment instructions on Ubuntu servers.
 
 ## Environment Variables
 

@@ -33,8 +33,30 @@ async function loadContent(forceRefresh = false) {
     updateDock();
   } catch (error) {
     console.error('Failed to load content:', error);
-    showToast('Failed to load content', 'bad');
-    container.innerHTML = renderEmptyState('Error loading content', 'Please try again later.');
+    
+    // Check if it's a settings/configuration issue
+    if (error.message && (error.message.includes('API') || error.message.includes('settings') || error.message.includes('401'))) {
+      container.innerHTML = `
+        <div class="emptyState">
+          <h2>Configuration Required</h2>
+          <p>Please configure your settings before generating content.</p>
+          <p style="margin-top: 16px; color: var(--ink-muted);">
+            Go to <strong>Settings</strong> to set up:
+          </p>
+          <ul style="text-align: left; margin: 16px auto; max-width: 400px; color: var(--ink-muted);">
+            <li>OpenAI API Key</li>
+            <li>Stability AI API Key (for images)</li>
+            <li>Google Drive Integration (optional)</li>
+          </ul>
+          <button class="btn approve" onclick="window.activateTab('settings')" style="margin-top: 24px;">
+            Go to Settings
+          </button>
+        </div>
+      `;
+    } else {
+      showToast('Failed to load content', 'bad');
+      container.innerHTML = renderEmptyState('Error loading content', 'Please try again later.');
+    }
   }
 }
 

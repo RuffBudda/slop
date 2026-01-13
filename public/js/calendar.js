@@ -31,7 +31,8 @@ async function loadCalendar(forceRefresh = false) {
   } catch (error) {
     console.error('Failed to load calendar:', error);
     showToast('Failed to load calendar', 'bad');
-    container.innerHTML = '<div class="emptyState"><h2>Error</h2><p>Failed to load scheduled posts.</p></div>';
+    // Still render calendar outline even on error
+    renderCalendar();
   }
 }
 
