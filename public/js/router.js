@@ -26,7 +26,9 @@ const Router = {
    * Navigate to a route
    */
   navigate(path) {
-    window.location.hash = path.startsWith('#') ? path : `#${path}`;
+    // Remove leading / and # for cleaner URLs
+    const cleanPath = path.replace(/^[#\/]+/, '');
+    window.location.hash = cleanPath;
   },
   
   /**
@@ -39,12 +41,14 @@ const Router = {
     if (loginPage && !loginPage.classList.contains('hidden')) return;
     if (setupPage && !setupPage.classList.contains('hidden')) return;
     
-    const hash = window.location.hash.slice(1) || '/content';
-    const [path, ...params] = hash.split('/').filter(p => p);
+    const hash = window.location.hash.slice(1);
+    // Default to content if hash is empty or just #
+    const routePath = hash || 'content';
+    const [path, ...params] = routePath.split('/').filter(p => p);
     
-    this.currentRoute = { path, params, full: hash };
+    this.currentRoute = { path, params, full: routePath };
     
-    // Default route
+    // Default route - content page
     if (!path || path === 'content') {
       await this.loadPage('content');
       return;
@@ -61,7 +65,7 @@ const Router = {
     }
     
     // Other main routes
-    const validRoutes = ['calendar', 'timeline', 'bin', 'settings'];
+    const validRoutes = ['calendar', 'timeline', 'bin'];
     if (validRoutes.includes(path)) {
       await this.loadPage(path);
     } else {
@@ -136,7 +140,7 @@ const Router = {
         <div class="emptyState">
           <h2>Error Loading Page</h2>
           <p>${error.message}</p>
-          <button class="btn approve" onclick="window.location.hash = '#/content'">Go to Content</button>
+          <button class="btn approve" onclick="window.Router.navigate('content')">Go to Content</button>
         </div>
       `;
     }
@@ -160,6 +164,15 @@ const Router = {
       'settings/storage': () => { if (typeof loadSettings === 'function') loadSettings(); },
       'settings/ai': () => { if (typeof loadSettings === 'function') loadSettings(); },
       'settings/content': () => { if (typeof loadSettings === 'function') loadSettings(); },
+      'settings/calculator': () => { 
+        if (typeof loadSettings === 'function') loadSettings(); 
+        // Initialize calculator
+        setTimeout(() => {
+          if (typeof initCalculator === 'function') {
+            initCalculator();
+          }
+        }, 200);
+      },
       'settings/admin': () => { 
         if (typeof loadSettings === 'function') loadSettings(); 
         // Load users if admin

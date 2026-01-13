@@ -21,6 +21,17 @@ async function initApp() {
     searchIcon.innerHTML = window.Icons.get('search', 'search-icon-flaticon', { size: '14px' });
   }
   
+  // Logo click handler - navigate to content
+  const brandLogo = document.getElementById('brandLogo');
+  const appLogo = document.getElementById('appLogo');
+  const logoClickHandler = () => {
+    if (window.Router && window.Router.navigate) {
+      window.Router.navigate('content');
+    }
+  };
+  if (brandLogo) brandLogo.addEventListener('click', logoClickHandler);
+  if (appLogo) appLogo.addEventListener('click', logoClickHandler);
+  
   // Initialize keyboard shortcuts
   initKeyboardShortcuts();
   

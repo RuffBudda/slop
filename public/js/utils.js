@@ -128,9 +128,9 @@ window.activateTab = function(tabName, subSection = null) {
   } else {
     // Fallback to hash navigation
     if (subSection) {
-      window.location.hash = `#/${tabName}/${subSection}`;
+      window.Router.navigate(`${tabName}/${subSection}`);
     } else {
-      window.location.hash = `#/${tabName}`;
+      window.Router.navigate(tabName);
     }
   }
   

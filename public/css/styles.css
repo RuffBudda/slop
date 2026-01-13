@@ -2177,6 +2177,7 @@ dialog::backdrop {
   align-items: center;
   justify-content: center;
   justify-self: center;
+  grid-column: 3;
 }
 
 .search-input {

@@ -1528,32 +1528,26 @@ async function fullInstanceReset() {
 
 let tilesInitialized = false;
 
-function initSettingsTiles(retryCount = 0) {
-  const MAX_RETRIES = 50; // Maximum 5 seconds (50 * 100ms)
+function initSettingsTiles() {
   const tilesGrid = document.getElementById('settingsTilesGrid');
   const backContainer = document.getElementById('settingsBack');
   const backBtn = document.getElementById('btnSettingsBack');
   
-  if (!tilesGrid) {
-    // Retry if tiles grid not found yet (page might still be loading), but limit retries
-    if (retryCount < MAX_RETRIES) {
-      setTimeout(() => initSettingsTiles(retryCount + 1), 100);
-    } else {
-      console.warn('Settings tiles grid not found after maximum retries');
-    }
-    return;
-  }
+  if (!tilesGrid) return;
   
   // Populate tile icons
   populateSettingsTileIcons();
+  
+  // Reset tilesInitialized flag to allow re-initialization
+  tilesInitialized = false;
   
   if (!tilesInitialized) {
     // Add click handlers to tiles - use router navigation
     tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
       tile.addEventListener('click', () => {
         const section = tile.dataset.section;
-        if (section && window.Router) {
-          window.Router.navigate(`/settings/${section}`);
+        if (section && window.Router && window.Router.navigate) {
+          window.Router.navigate(`settings/${section}`);
         }
       });
     });
@@ -1561,20 +1555,23 @@ function initSettingsTiles(retryCount = 0) {
     tilesInitialized = true;
   }
   
-  // Update active tile based on current route
-  const currentHash = window.location.hash;
-  const match = currentHash.match(/#\/settings\/([^\/]+)/);
-  const currentSection = match ? match[1] : null;
-  
-  if (tilesGrid) {
-    tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
-      tile.classList.toggle('active', tile.dataset.section === currentSection);
-    });
+  // showSection is now only used internally for admin-specific logic
+  // Navigation is handled by router
+  function showSection(sectionName) {
+    // Only handle admin-specific logic here
+    if (sectionName === 'admin') {
+      if (window.AppState.user?.role === 'admin') {
+        loadUsers();
+      }
+    }
   }
+  
+  // Make showSection available globally for admin page initialization
+  window.showSettingsSection = showSection;
 }
 
 /**
- * Populate settings tile icons with Flaticon icons
+ * Populate settings tile icons with SVG icons
  */
 function populateSettingsTileIcons() {
   // Map section names to icon names
@@ -1586,63 +1583,172 @@ function populateSettingsTileIcons() {
     storage: 'storage',
     ai: 'ai',
     content: 'contentManagement', // Note: icon name is contentManagement
+    calculator: 'calculator',
     admin: 'admin'
   };
   
   // Retry mechanism if Icons module not loaded yet
   if (!window.Icons || !window.Icons.get) {
-    // Retry after a short delay, but limit retries
-    const retryCount = populateSettingsTileIcons.retryCount || 0;
-    const MAX_RETRIES = 50; // Maximum 5 seconds (50 * 100ms)
-    if (retryCount < MAX_RETRIES) {
-      populateSettingsTileIcons.retryCount = retryCount + 1;
-      setTimeout(() => populateSettingsTileIcons(), 100);
-    } else {
-      console.warn('Icons module not available after maximum retries');
-      populateSettingsTileIcons.retryCount = 0; // Reset for next call
-    }
+    // Retry after a short delay
+    setTimeout(() => populateSettingsTileIcons(), 100);
     return;
   }
-  
-  // Reset retry count on success
-  populateSettingsTileIcons.retryCount = 0;
   
   // Populate each tile icon
   Object.keys(iconMap).forEach(section => {
     const iconEl = document.getElementById(`tileIcon${section.charAt(0).toUpperCase() + section.slice(1)}`);
-    if (iconEl) {
+    if (iconEl && !iconEl.innerHTML.trim()) {
       const iconName = iconMap[section];
-      const iconHtml = window.Icons.get(iconName, 'tile-icon-flaticon', { size: '24px' });
-      if (iconHtml) {
-        iconEl.innerHTML = iconHtml;
+      const iconSvg = window.Icons.get(iconName, 'icon');
+      if (iconSvg) {
+        iconEl.innerHTML = iconSvg;
       }
     }
   });
 }
 
+/**
+ * Initialize Calculator
+ * Loads stats and sets up calculator functionality
+ */
+async function initCalculator() {
+  try {
+    await loadCalculatorStats();
+    initCalculatorForm();
+  } catch (error) {
+    console.error('Failed to initialize calculator:', error);
+  }
+}
+
+/**
+ * Load calculator statistics
+ */
+async function loadCalculatorStats() {
+  try {
+    // Try to get scheduled posts first
+    let gptCount = 0;
+    let imageCount = 0;
+    
+    try {
+      const scheduled = await API.posts.getScheduled();
+      if (scheduled && scheduled.posts && scheduled.posts.length > 0) {
+        gptCount = scheduled.posts.length;
+        imageCount = scheduled.posts.length * 3; // Assume 3 images per post
+      }
+    } catch (e) {
+      // Fallback to workflow stats
+      const stats = await API.workflow.getStats();
+      if (stats && stats.stats) {
+        gptCount = stats.stats.totalGenerations || 0;
+        imageCount = stats.stats.totalImages || 0;
+      }
+    }
+    
+    updateCalculatorDisplay(gptCount, imageCount);
+  } catch (error) {
+    console.error('Failed to load calculator stats:', error);
+  }
+}
+
+/**
+ * Update calculator display with stats
+ */
+function updateCalculatorDisplay(gptCount, imageCount) {
+  const CALC_CONSTANTS = {
+    GPT_ENERGY_PER_REQUEST: 0.03, // Wh
+    IMAGE_ENERGY_PER_IMAGE: 0.1, // Wh
+    CO2_PER_KWH: 0.4, // kg CO2 per kWh
+    CO2_PER_TREE_YEAR: 21 // kg CO2 per tree per year
+  };
+  
+  const gptEnergy = gptCount * CALC_CONSTANTS.GPT_ENERGY_PER_REQUEST;
+  const imageEnergy = imageCount * CALC_CONSTANTS.IMAGE_ENERGY_PER_IMAGE;
+  const totalEnergy = gptEnergy + imageEnergy;
+  const totalCO2 = (totalEnergy / 1000) * CALC_CONSTANTS.CO2_PER_KWH;
+  const treesNeeded = Math.ceil(totalCO2 / CALC_CONSTANTS.CO2_PER_TREE_YEAR);
+  
+  // Update display
+  const totalGenerations = gptCount + imageCount;
+  document.getElementById('calcTotalGenerations').textContent = totalGenerations;
+  document.getElementById('calcEnergyUsed').textContent = formatEnergy(totalEnergy);
+  document.getElementById('calcCO2Equivalent').textContent = totalCO2.toFixed(3) + ' kg';
+  document.getElementById('calcTreesOffset').textContent = treesNeeded;
+  document.getElementById('calcGptCount').textContent = gptCount;
+  document.getElementById('calcImageCount').textContent = imageCount;
+  document.getElementById('calcGptEnergy').textContent = formatEnergy(gptEnergy);
+  document.getElementById('calcImageEnergy').textContent = formatEnergy(imageEnergy);
+}
+
+/**
+ * Format energy value
+ */
+function formatEnergy(wh) {
+  if (wh < 1) return wh.toFixed(3) + ' Wh';
+  if (wh < 1000) return wh.toFixed(1) + ' Wh';
+  return (wh / 1000).toFixed(2) + ' kWh';
+}
+
+/**
+ * Initialize calculator form
+ */
+function initCalculatorForm() {
+  const form = document.getElementById('calculatorForm');
+  const calculateBtn = document.getElementById('btnCalculateImpact');
+  
+  if (calculateBtn) {
+    calculateBtn.addEventListener('click', () => {
+      const posts = parseInt(document.getElementById('calcPosts').value) || 0;
+      const variants = parseInt(document.getElementById('calcVariants').value) || 1;
+      const images = parseInt(document.getElementById('calcImages').value) || 0;
+      
+      calculateManualImpact(posts, variants, images);
+    });
+  }
+}
+
+/**
+ * Calculate manual impact
+ */
+function calculateManualImpact(posts, variants, images) {
+  const CALC_CONSTANTS = {
+    GPT_ENERGY_PER_REQUEST: 0.03,
+    IMAGE_ENERGY_PER_IMAGE: 0.1,
+    CO2_PER_KWH: 0.4,
+    CO2_PER_TREE_YEAR: 21
+  };
+  
+  const gptRequests = posts * variants;
+  const totalImages = posts * images;
+  const gptEnergy = gptRequests * CALC_CONSTANTS.GPT_ENERGY_PER_REQUEST;
+  const imageEnergy = totalImages * CALC_CONSTANTS.IMAGE_ENERGY_PER_IMAGE;
+  const totalEnergy = gptEnergy + imageEnergy;
+  const totalCO2 = (totalEnergy / 1000) * CALC_CONSTANTS.CO2_PER_KWH;
+  const treesNeeded = Math.ceil(totalCO2 / CALC_CONSTANTS.CO2_PER_TREE_YEAR);
+  
+  // Show results
+  const resultsDiv = document.getElementById('calcManualResults');
+  if (resultsDiv) {
+    resultsDiv.style.display = 'block';
+    document.getElementById('calcManualEnergy').textContent = formatEnergy(totalEnergy);
+    document.getElementById('calcManualCO2').textContent = totalCO2.toFixed(3) + ' kg';
+    document.getElementById('calcManualTrees').textContent = treesNeeded;
+  }
+}
+
 function initPasswordVisibilityToggles() {
-  // Add toggle buttons to all password fields in settings (scoped to settings containers)
-  const passwordFields = document.querySelectorAll('.settings-container input[type="password"], .settings-section input[type="password"]');
+  // Add toggle buttons to all password fields in settings
+  const passwordFields = document.querySelectorAll('#settingsView input[type="password"]');
   
   passwordFields.forEach(field => {
     // Skip if already has a toggle
     if (field.parentElement.classList.contains('password-input-wrapper')) {
       const toggle = field.parentElement.querySelector('.password-toggle');
       if (toggle) {
-        // Remove existing listeners and add new one
-        const newToggle = toggle.cloneNode(true);
-        toggle.parentNode.replaceChild(newToggle, toggle);
-        newToggle.addEventListener('click', () => {
+        toggle.addEventListener('click', () => {
           const isPassword = field.type === 'password';
           field.type = isPassword ? 'text' : 'password';
-          if (window.Icons && window.Icons.get) {
-            newToggle.innerHTML = isPassword ? window.Icons.get('eyeSlash', 'password-toggle-icon') : window.Icons.get('eye', 'password-toggle-icon');
-          }
+          toggle.innerHTML = isPassword ? (window.Icons ? window.Icons.get('eyeSlash') : '👁️') : (window.Icons ? window.Icons.get('eye') : '👁️');
         });
-        // Initialize icon
-        if (window.Icons && window.Icons.get) {
-          newToggle.innerHTML = window.Icons.get('eye', 'password-toggle-icon');
-        }
       }
       return;
     }
@@ -1656,9 +1762,7 @@ function initPasswordVisibilityToggles() {
     toggle.type = 'button';
     toggle.className = 'password-toggle';
     toggle.setAttribute('aria-label', 'Toggle password visibility');
-    if (window.Icons && window.Icons.get) {
-      toggle.innerHTML = window.Icons.get('eye', 'password-toggle-icon');
-    }
+    toggle.innerHTML = window.Icons ? window.Icons.get('eye') : '👁️';
     
     // Wrap the field
     field.parentNode.insertBefore(wrapper, field);
@@ -1669,9 +1773,7 @@ function initPasswordVisibilityToggles() {
     toggle.addEventListener('click', () => {
       const isPassword = field.type === 'password';
       field.type = isPassword ? 'text' : 'password';
-      if (window.Icons && window.Icons.get) {
-        toggle.innerHTML = isPassword ? window.Icons.get('eyeSlash', 'password-toggle-icon') : window.Icons.get('eye', 'password-toggle-icon');
-      }
+      toggle.innerHTML = isPassword ? (window.Icons ? window.Icons.get('eyeSlash') : '👁️') : (window.Icons ? window.Icons.get('eye') : '👁️');
     });
   });
 }

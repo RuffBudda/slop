@@ -112,7 +112,18 @@ if (typeof window !== 'undefined') {
   window.Icons = {
     get: getIcon,
     render: renderIcon,
-    init: function() {
+    init: function(retryCount = 0) {
+      const MAX_RETRIES = 10;
+      
+      // Check if Flaticon CSS is loaded
+      const flaticonLoaded = document.querySelector('link[href*="flaticon"]') && 
+                            (document.styleSheets.length > 0 || window.getComputedStyle);
+      
+      if (!flaticonLoaded && retryCount < MAX_RETRIES) {
+        setTimeout(() => this.init(retryCount + 1), 100);
+        return;
+      }
+      
       initNavigationIcons();
       
       // Initialize search icon
@@ -129,6 +140,11 @@ if (typeof window !== 'undefined') {
         const color = el.dataset.iconColor;
         el.innerHTML = this.get(iconName, className, { size, color });
       });
+      
+      // Initialize settings tile icons if on settings page
+      if (typeof populateSettingsTileIcons === 'function') {
+        populateSettingsTileIcons();
+      }
     },
     FLATICON_ICONS
   };

@@ -421,6 +421,16 @@ const API = {
       if (!response.ok) throw new Error(data.error || 'Upload failed');
       return data;
     }
+  },
+  
+  // ============================================================
+  // WORKFLOW ENDPOINTS
+  // ============================================================
+  
+  workflow: {
+    async getStats() {
+      return API.call('/workflow/stats');
+    }
   }
 };
 

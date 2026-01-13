@@ -1,0 +1,107 @@
+<div class="settings-container">
+  <nav class="settings-breadcrumbs" aria-label="Breadcrumb">
+    <a href="#settings" class="breadcrumb-link">Settings</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Environmental Impact Calculator</span>
+  </nav>
+  <div class="settings-group settings-section-content" id="settingsSectionCalculator" data-section="calculator">
+    <h2 class="settings-group-title">Environmental Impact Calculator</h2>
+    
+    <section class="settings-section">
+      <h3>Environmental Impact Calculator</h3>
+      <p class="section-description">
+        Estimate the environmental impact of your AI content generation. This calculator helps you understand the energy consumption and carbon footprint of your content creation workflow.
+      </p>
+      
+      <!-- Current Statistics -->
+      <div class="calc-stats-grid" id="calcStatsGrid">
+        <div class="calc-stat-card">
+          <div class="calc-stat-label">Total Generations</div>
+          <div class="calc-stat-value" id="calcTotalGenerations">0</div>
+        </div>
+        <div class="calc-stat-card">
+          <div class="calc-stat-label">Energy Used</div>
+          <div class="calc-stat-value" id="calcEnergyUsed">0 Wh</div>
+        </div>
+        <div class="calc-stat-card">
+          <div class="calc-stat-label">CO₂ Equivalent</div>
+          <div class="calc-stat-value" id="calcCO2Equivalent">0 kg</div>
+        </div>
+        <div class="calc-stat-card">
+          <div class="calc-stat-label">Trees to Offset</div>
+          <div class="calc-stat-value" id="calcTreesOffset">0</div>
+        </div>
+      </div>
+      
+      <!-- Usage Breakdown -->
+      <div style="margin-top: 24px;">
+        <h4>Usage Breakdown</h4>
+        <div id="calcUsageBreakdown" style="margin-top: 12px; padding: 16px; background: var(--bg-alt); border-radius: 8px; font-size: 14px; line-height: 1.6;">
+          <p>GPT Content Generations: <span id="calcGptCount">0</span></p>
+          <p>Stability AI Image Generations: <span id="calcImageCount">0</span></p>
+          <p>Estimated GPT Energy (0.03 Wh/request): <span id="calcGptEnergy">0 Wh</span></p>
+          <p>Estimated Image Energy (0.1 Wh/image): <span id="calcImageEnergy">0 Wh</span></p>
+        </div>
+      </div>
+      
+      <!-- Manual Calculator -->
+      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bd);">
+        <h4>Estimate Future Impact</h4>
+        <p class="field-description" style="margin-bottom: 16px;">
+          Estimate the environmental impact of your planned content generation.
+        </p>
+        <form id="calculatorForm" class="settings-form">
+          <div class="form-row">
+            <div class="form-group calculator-input">
+              <label for="calcPosts">Number of Posts</label>
+              <input type="number" id="calcPosts" name="posts" min="0" value="10">
+            </div>
+            <div class="form-group calculator-input">
+              <label for="calcVariants">Variants per Post</label>
+              <input type="number" id="calcVariants" name="variants" min="1" value="3">
+            </div>
+            <div class="form-group calculator-input">
+              <label for="calcImages">Images per Post</label>
+              <input type="number" id="calcImages" name="images" min="0" value="3">
+            </div>
+          </div>
+          <button type="button" class="btn approve" id="btnCalculateImpact">
+            <span class="ico"></span> Calculate Impact
+          </button>
+        </form>
+        
+        <div id="calcManualResults" style="margin-top: 20px; padding: 16px; background: var(--bg-alt); border-radius: 8px; display: none;">
+          <h5 style="margin-top: 0;">Estimated Impact:</h5>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 12px;">
+            <div>
+              <div style="font-size: 12px; color: #888; margin-bottom: 4px;">Energy</div>
+              <div style="font-size: 18px; font-weight: 600;" id="calcManualEnergy">0 Wh</div>
+            </div>
+            <div>
+              <div style="font-size: 12px; color: #888; margin-bottom: 4px;">CO₂</div>
+              <div style="font-size: 18px; font-weight: 600;" id="calcManualCO2">0 kg</div>
+            </div>
+            <div>
+              <div style="font-size: 12px; color: #888; margin-bottom: 4px;">Trees</div>
+              <div style="font-size: 18px; font-weight: 600;" id="calcManualTrees">0</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Information Section -->
+      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bd);">
+        <h4>How we calculate:</h4>
+        <ul style="margin-top: 12px; padding-left: 20px; line-height: 1.8; font-size: 14px; color: #aaa;">
+          <li>GPT-4 inference: ~0.03 Wh per request (based on industry estimates)</li>
+          <li>Stable Diffusion image: ~0.1 Wh per image</li>
+          <li>CO₂ conversion: 0.4 kg CO₂ per kWh (global average grid)</li>
+          <li>Tree offset: 1 tree absorbs ~21 kg CO₂ per year</li>
+        </ul>
+        <p style="margin-top: 16px; font-size: 13px; color: #888; font-style: italic;">
+          Note: These are estimates based on publicly available research. Actual values may vary based on data center efficiency and location.
+        </p>
+      </div>
+    </section>
+  </div>
+</div>
