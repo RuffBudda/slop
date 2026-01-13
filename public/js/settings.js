@@ -9,9 +9,6 @@
 
 async function loadSettings() {
   try {
-    // Load profile settings
-    await loadProfileSettings();
-    
     // Load API settings
     await loadApiSettings();
     
@@ -46,75 +43,6 @@ async function loadSettings() {
   }
 }
 
-// ============================================================
-// PROFILE SETTINGS
-// ============================================================
-
-async function loadProfileSettings() {
-  try {
-    const result = await API.settings.getProfile();
-    const profile = result.profile || {};
-    
-    // Use getElementById for more reliable field access
-    const usernameField = document.getElementById('profileUsername');
-    const emailField = document.getElementById('profileEmail');
-    const displayNameField = document.getElementById('profileDisplayName');
-    
-    if (usernameField) usernameField.value = profile.username || '';
-    if (emailField) emailField.value = profile.email || '';
-    if (displayNameField) displayNameField.value = profile.display_name || '';
-    
-    // Also update form name attributes if they exist
-    const form = document.getElementById('profileSettingsForm');
-    if (form) {
-      const formUsername = form.querySelector('[name="username"]');
-      const formEmail = form.querySelector('[name="email"]');
-      const formDisplayName = form.querySelector('[name="displayName"]');
-      
-      if (formUsername) formUsername.value = profile.username || '';
-      if (formEmail) formEmail.value = profile.email || '';
-      if (formDisplayName) formDisplayName.value = profile.display_name || '';
-    }
-  } catch (error) {
-    console.error('Failed to load profile:', error);
-    showToast('Failed to load profile settings', 'bad');
-  }
-}
-
-function initProfileSettingsForm() {
-  const form = document.getElementById('profileSettingsForm');
-  if (!form) return;
-  
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const data = {
-      username: form.username.value.trim(),
-      email: form.email.value.trim(),
-      displayName: form.displayName.value.trim()
-    };
-    
-    if (!data.username || !data.email) {
-      showToast('Username and email are required', 'bad');
-      return;
-    }
-    
-    try {
-      showLoader();
-      const result = await API.settings.updateProfile(data);
-      showToast('Profile updated successfully', 'ok');
-      
-      // Update AppState with new user info
-      if (result.profile) {
-        window.AppState.user = { ...window.AppState.user, ...result.profile };
-      }
-    } catch (error) {
-      showToast(error.message || 'Failed to update profile', 'bad');
-    } finally {
-      hideLoader();
-    }
-  });
-}
 
 function initPasswordForm() {
   const form = document.getElementById('passwordForm');
@@ -356,8 +284,8 @@ async function loadGoogleDriveStatus() {
     const disconnectBtn = document.getElementById('btnDisconnectGoogleDrive');
     
     if (statusText) {
-      statusText.textContent = isConnected 
-        ? '✓ Google Drive is connected' 
+      statusText.innerHTML = isConnected 
+        ? (window.Icons ? window.Icons.get('success', '', { size: '14px' }) : '✓') + ' Google Drive is connected' 
         : 'Google Drive is not connected';
     }
     
@@ -549,7 +477,7 @@ async function loadFoldersForBrowser(parentId = null) {
     folderList.innerHTML = folders.map(folder => `
       <div class="folder-item" style="padding: 12px; border-bottom: 1px solid var(--bd); cursor: pointer; display: flex; align-items: center; gap: 12px; transition: background 0.2s;"
            data-folder-id="${folder.id}" data-folder-name="${escapeHtml(folder.name)}">
-        <span style="font-size: 20px;">📁</span>
+        <span class="folder-icon-large">${window.Icons ? window.Icons.get('folder', '', { size: '20px' }) : '📁'}</span>
         <div style="flex: 1;">
           <div style="font-weight: 500;">${escapeHtml(folder.name)}</div>
           <div style="font-size: 12px; color: #666;">ID: ${folder.id}</div>
@@ -1199,24 +1127,46 @@ async function loadUsers() {
     const result = await API.users.list();
     const users = result.users || [];
     
-    container.innerHTML = users.map(user => `
+    container.innerHTML = users.map(user => {
+      const createdDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
+      const lastLogin = user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never';
+      const isCurrentUser = user.id === window.AppState.user.id;
+      
+      return `
       <div class="user-item" data-user-id="${user.id}">
         <div class="user-info">
-          <span class="user-name">${escapeHtml(user.display_name || user.username)}</span>
-          <span class="user-email">${escapeHtml(user.email)}</span>
+          <div style="display: flex; align-items: center; gap: 12px;">
+            <span class="user-name">${escapeHtml(user.display_name || user.username)}</span>
+            <span class="user-role ${user.role === 'admin' ? 'admin' : ''}">${user.role}</span>
+          </div>
+          <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
+            <span class="user-email">${escapeHtml(user.email)}</span>
+            <div style="display: flex; gap: 16px; font-size: 12px; color: #888;">
+              <span>Created: ${createdDate}</span>
+              <span>Last login: ${lastLogin}</span>
+            </div>
+          </div>
         </div>
         <div style="display: flex; gap: 8px; align-items: center;">
-          <span class="user-role ${user.role === 'admin' ? 'admin' : ''}">${user.role}</span>
-          ${user.id !== window.AppState.user.id ? `
+          ${!isCurrentUser ? `
+            <button class="btn clear btn-sm" data-action="view-user" data-user-id="${user.id}">View</button>
+            <button class="btn approve btn-sm" data-action="edit-user" data-user-id="${user.id}">Edit</button>
             <button class="btn reject btn-sm" data-action="delete-user" data-user-id="${user.id}">Delete</button>
-          ` : ''}
+          ` : '<span style="color: #888; font-size: 12px;">Current user</span>'}
         </div>
       </div>
-    `).join('');
+    `;
+    }).join('');
     
     // Attach event listeners
     container.querySelectorAll('[data-action="delete-user"]').forEach(btn => {
       btn.addEventListener('click', handleDeleteUser);
+    });
+    container.querySelectorAll('[data-action="edit-user"]').forEach(btn => {
+      btn.addEventListener('click', handleEditUser);
+    });
+    container.querySelectorAll('[data-action="view-user"]').forEach(btn => {
+      btn.addEventListener('click', handleViewUser);
     });
   } catch (error) {
     console.error('Failed to load users:', error);
@@ -1224,17 +1174,35 @@ async function loadUsers() {
   }
 }
 
+let currentEditUserId = null;
+
 function initUserEditModal() {
   const modal = document.getElementById('userEditModal');
   const form = document.getElementById('userEditForm');
   const closeBtn = document.getElementById('userEditClose');
   const cancelBtn = document.getElementById('userEditCancel');
+  const modalTitle = modal?.querySelector('h3');
+  const submitBtn = form?.querySelector('button[type="submit"]');
+  const passwordField = form?.querySelector('#userPassword');
+  const passwordLabel = form?.querySelector('label[for="userPassword"]');
   
   // Close handlers
-  closeBtn?.addEventListener('click', () => modal.close());
-  cancelBtn?.addEventListener('click', () => modal.close());
+  closeBtn?.addEventListener('click', () => {
+    modal.close();
+    currentEditUserId = null;
+    form.reset();
+  });
+  cancelBtn?.addEventListener('click', () => {
+    modal.close();
+    currentEditUserId = null;
+    form.reset();
+  });
   modal?.addEventListener('click', (e) => {
-    if (e.target === modal) modal.close();
+    if (e.target === modal) {
+      modal.close();
+      currentEditUserId = null;
+      form.reset();
+    }
   });
   
   // Form submit
@@ -1244,24 +1212,42 @@ function initUserEditModal() {
     const data = {
       username: form.username.value.trim(),
       email: form.email.value.trim(),
-      password: form.password.value,
       displayName: form.displayName.value.trim() || undefined,
       role: form.role.value
     };
     
-    if (!data.username || !data.email || !data.password) {
-      showToast('Please fill in all required fields', 'bad');
+    // Password is only required for new users
+    if (!currentEditUserId && !form.password.value) {
+      showToast('Password is required for new users', 'bad');
+      return;
+    }
+    
+    if (form.password.value) {
+      data.password = form.password.value;
+    }
+    
+    if (!data.username || !data.email) {
+      showToast('Username and email are required', 'bad');
       return;
     }
     
     try {
       showLoader();
-      await API.auth.register(data);
-      showToast('User created', 'ok');
+      if (currentEditUserId) {
+        // Update existing user
+        await API.users.update(currentEditUserId, data);
+        showToast('User updated successfully', 'ok');
+      } else {
+        // Create new user
+        await API.users.create(data);
+        showToast('User created successfully', 'ok');
+      }
       modal.close();
+      currentEditUserId = null;
+      form.reset();
       loadUsers();
     } catch (error) {
-      showToast(error.message || 'Failed to create user', 'bad');
+      showToast(error.message || (currentEditUserId ? 'Failed to update user' : 'Failed to create user'), 'bad');
     } finally {
       hideLoader();
     }
@@ -1269,9 +1255,104 @@ function initUserEditModal() {
   
   // Add user button
   document.getElementById('btnAddUser')?.addEventListener('click', () => {
+    currentEditUserId = null;
     form.reset();
+    if (modalTitle) modalTitle.textContent = 'Add New User';
+    if (submitBtn) submitBtn.innerHTML = '<span class="ico"></span> Create User';
+    if (passwordField) {
+      passwordField.required = true;
+      passwordField.disabled = false;
+    }
+    if (passwordLabel) passwordLabel.innerHTML = 'Password *';
     modal.showModal();
   });
+}
+
+async function handleEditUser(e) {
+  const userId = e.currentTarget.dataset.userId;
+  if (!userId) return;
+  
+  try {
+    showLoader();
+    const result = await API.users.get(userId);
+    const user = result.user;
+    
+    if (!user) {
+      showToast('User not found', 'bad');
+      return;
+    }
+    
+    // Populate form
+    const form = document.getElementById('userEditForm');
+    const modal = document.getElementById('userEditModal');
+    const modalTitle = modal?.querySelector('h3');
+    const submitBtn = form?.querySelector('button[type="submit"]');
+    const passwordField = form?.querySelector('#userPassword');
+    const passwordLabel = form?.querySelector('label[for="userPassword"]');
+    
+    form.username.value = user.username || '';
+    form.email.value = user.email || '';
+    form.displayName.value = user.display_name || '';
+    form.role.value = user.role || 'user';
+    passwordField.value = '';
+    
+    // Update UI for edit mode
+    currentEditUserId = userId;
+    if (modalTitle) modalTitle.textContent = `Edit User: ${user.username}`;
+    if (submitBtn) submitBtn.innerHTML = '<span class="ico"></span> Update User';
+    if (passwordField) {
+      passwordField.required = false;
+      passwordField.placeholder = 'Leave blank to keep current password';
+    }
+    if (passwordLabel) passwordLabel.innerHTML = 'Password (leave blank to keep current)';
+    
+    modal.showModal();
+  } catch (error) {
+    showToast(error.message || 'Failed to load user', 'bad');
+  } finally {
+    hideLoader();
+  }
+}
+
+async function handleViewUser(e) {
+  const userId = e.currentTarget.dataset.userId;
+  if (!userId) return;
+  
+  try {
+    showLoader();
+    const result = await API.users.get(userId);
+    const user = result.user;
+    
+    if (!user) {
+      showToast('User not found', 'bad');
+      return;
+    }
+    
+    // Show user details in a simple alert or modal
+    const createdDate = user.created_at ? new Date(user.created_at).toLocaleString() : 'N/A';
+    const lastLogin = user.last_login ? new Date(user.last_login).toLocaleString() : 'Never';
+    const updatedDate = user.updated_at ? new Date(user.updated_at).toLocaleString() : 'N/A';
+    
+    const details = `
+User Details:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ID: ${user.id}
+Username: ${user.username}
+Email: ${user.email}
+Display Name: ${user.display_name || 'Not set'}
+Role: ${user.role}
+Created: ${createdDate}
+Last Login: ${lastLogin}
+Updated: ${updatedDate}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    `.trim();
+    
+    alert(details);
+  } catch (error) {
+    showToast(error.message || 'Failed to load user details', 'bad');
+  } finally {
+    hideLoader();
+  }
 }
 
 async function handleDeleteUser(e) {
@@ -1294,218 +1375,146 @@ async function handleDeleteUser(e) {
 }
 
 // ============================================================
-// ENVIRONMENTAL CALCULATOR
+// CLEAR INSTANCE OPTIONS
 // ============================================================
 
-// Environmental impact constants (based on research estimates)
-const CALC_CONSTANTS = {
-  GPT_ENERGY_WH: 0.03,        // Wh per GPT request
-  IMAGE_ENERGY_WH: 0.1,       // Wh per Stability AI image
-  CO2_PER_KWH: 0.4,           // kg CO2 per kWh (global average)
-  TREE_ABSORPTION: 21,         // kg CO2 absorbed per tree per year
-};
-
-async function loadCalculatorStats() {
-  try {
-    const result = await API.workflow.stats();
-    const stats = result.stats || { totalGenerations: 0, totalImages: 0 };
-    
-    updateCalculatorDisplay(stats.totalGenerations || 0, stats.totalImages || 0);
-  } catch (error) {
-    console.error('Failed to load calculator stats:', error);
-    updateCalculatorDisplay(0, 0);
-  }
-}
-
-function updateCalculatorDisplay(gptCount, imageCount) {
-  // Calculate energy usage
-  const gptEnergy = gptCount * CALC_CONSTANTS.GPT_ENERGY_WH;
-  const imageEnergy = imageCount * CALC_CONSTANTS.IMAGE_ENERGY_WH;
-  const totalEnergy = gptEnergy + imageEnergy;
+function initClearInstanceOptions() {
+  // Clear posts
+  document.querySelectorAll('[data-clear-action="posts"]').forEach(btn => {
+    btn.addEventListener('click', () => clearAllPosts());
+  });
   
-  // Calculate CO2 equivalent (convert Wh to kWh first)
-  const co2Kg = (totalEnergy / 1000) * CALC_CONSTANTS.CO2_PER_KWH;
+  // Clear settings
+  document.querySelectorAll('[data-clear-action="settings"]').forEach(btn => {
+    btn.addEventListener('click', () => clearAllSettings());
+  });
   
-  // Calculate trees needed to offset
-  const treesNeeded = co2Kg / CALC_CONSTANTS.TREE_ABSORPTION;
+  // Clear sessions
+  document.querySelectorAll('[data-clear-action="sessions"]').forEach(btn => {
+    btn.addEventListener('click', () => clearWorkflowSessions());
+  });
   
-  // Get display elements (calc-stats-grid removed, only use breakdown elements)
-  const gptCountEl = document.getElementById('calcGptCount');
-  const imageCountEl = document.getElementById('calcImageCount');
-  const gptEnergyEl = document.getElementById('calcGptEnergy');
-  const imageEnergyEl = document.getElementById('calcImageEnergy');
+  // Clear users
+  document.querySelectorAll('[data-clear-action="users"]').forEach(btn => {
+    btn.addEventListener('click', () => clearAllUsers());
+  });
   
-  // Store actual values as data attributes for manual calculator to use
-  // Use breakdown elements to store data
-  if (gptCountEl) {
-    gptCountEl.dataset.actualGpt = gptCount;
-    gptCountEl.dataset.actualImages = imageCount;
-    gptCountEl.dataset.actualEnergy = totalEnergy;
-    gptCountEl.dataset.actualCO2 = co2Kg;
-    gptCountEl.dataset.actualTrees = treesNeeded;
-  }
-  
-  // Don't update display here - let calculateManualImpact handle it
-  // This ensures manual calculator values are always included
-  calculateManualImpact();
-}
-
-function formatEnergy(wh) {
-  if (wh < 1000) {
-    return wh.toFixed(2) + ' Wh';
-  } else {
-    return (wh / 1000).toFixed(3) + ' kWh';
-  }
-}
-
-function initCalculator() {
-  // Use event delegation on the calculator container to handle sliders
-  const calculatorContainer = document.getElementById('calculatorContainer');
-  
-  if (calculatorContainer) {
-    // Remove any existing listeners by using a single delegated listener
-    calculatorContainer.addEventListener('input', function(e) {
-      if (e.target.id === 'calcManualPosts') {
-        const valueEl = document.getElementById('calcManualPostsValue');
-        if (valueEl) valueEl.textContent = e.target.value;
-        calculateManualImpact();
-      } else if (e.target.id === 'calcManualVariants') {
-        const valueEl = document.getElementById('calcManualVariantsValue');
-        if (valueEl) valueEl.textContent = e.target.value;
-        calculateManualImpact();
-      } else if (e.target.id === 'calcManualImages') {
-        const valueEl = document.getElementById('calcManualImagesValue');
-        if (valueEl) valueEl.textContent = e.target.value;
-        calculateManualImpact();
-      }
+  // Full reset form
+  const form = document.getElementById('instanceRefreshForm');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await fullInstanceReset();
     });
   }
   
-  // Load actual stats
-  loadCalculatorStats();
-  
-  // Calculate initial impact (with a small delay to ensure DOM is ready)
-  setTimeout(() => {
-    calculateManualImpact();
-  }, 100);
+  // Copy confirmation text button
+  const copyBtn = document.getElementById('btnCopyConfirmation');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const text = "Humpty Dumpty sat on a wall. Humpty Dumpty had a great fall. All the king's horses and all the king's men couldn't put Humpty together again.";
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Confirmation text copied to clipboard', 'ok');
+      }).catch(() => {
+        showToast('Failed to copy text', 'bad');
+      });
+    });
+  }
 }
 
-function calculateManualImpact() {
-  const postsSlider = document.getElementById('calcManualPosts');
-  const variantsSlider = document.getElementById('calcManualVariants');
-  const imagesSlider = document.getElementById('calcManualImages');
-  
-  if (!postsSlider || !variantsSlider || !imagesSlider) {
-    return; // Elements not available yet
+async function clearAllPosts() {
+  if (!confirm('Are you sure you want to clear all posts? This action cannot be undone.')) {
+    return;
   }
   
-  const posts = parseInt(postsSlider.value) || 0;
-  const variants = parseInt(variantsSlider.value) || 3;
-  const images = parseInt(imagesSlider.value) || 3;
+  try {
+    showLoader();
+    const result = await API.call('/settings/clear/posts', { method: 'POST' });
+    showToast(result.message || `Cleared ${result.count || 0} posts`, 'ok');
+  } catch (error) {
+    showToast(error.message || 'Failed to clear posts', 'bad');
+  } finally {
+    hideLoader();
+  }
+}
+
+async function clearAllSettings() {
+  if (!confirm('Are you sure you want to clear all settings? This will remove all API keys and configurations. This action cannot be undone.')) {
+    return;
+  }
   
-  // Calculate totals
-  // GPT generates all variants in one request, but variants affect the output size/complexity
-  // More variants = more tokens generated = more energy consumed
-  const totalGptRequests = posts;
-  const totalVariants = posts * variants; // Total variants generated
-  const totalImages = posts * images;
-  const totalRequests = totalGptRequests + totalImages;
+  try {
+    showLoader();
+    const result = await API.call('/settings/clear/settings', { method: 'POST' });
+    showToast(result.message || `Cleared ${result.count || 0} settings`, 'ok');
+  } catch (error) {
+    showToast(error.message || 'Failed to clear settings', 'bad');
+  } finally {
+    hideLoader();
+  }
+}
+
+async function clearWorkflowSessions() {
+  if (!confirm('Are you sure you want to clear all workflow sessions? This action cannot be undone.')) {
+    return;
+  }
   
-  // Calculate energy
-  // Variants affect energy: more variants = more tokens = more energy
-  // Base energy per request, multiplied by variant complexity
-  // Each variant adds ~20% more tokens, so energy scales with variants
-  const baseGptEnergy = totalGptRequests * CALC_CONSTANTS.GPT_ENERGY_WH;
-  const variantMultiplier = 1 + (variants - 3) * 0.2; // 20% more energy per extra variant (more realistic)
-  const gptEnergy = baseGptEnergy * Math.max(0.5, variantMultiplier); // Minimum 50% of base
-  const imageEnergy = totalImages * CALC_CONSTANTS.IMAGE_ENERGY_WH;
-  const totalEnergy = gptEnergy + imageEnergy;
+  try {
+    showLoader();
+    const result = await API.call('/settings/clear/sessions', { method: 'POST' });
+    showToast(result.message || `Cleared ${result.count || 0} sessions`, 'ok');
+  } catch (error) {
+    showToast(error.message || 'Failed to clear sessions', 'bad');
+  } finally {
+    hideLoader();
+  }
+}
+
+async function clearAllUsers() {
+  if (!confirm('Are you sure you want to clear all users except your admin account? This action cannot be undone.')) {
+    return;
+  }
   
-  // Calculate CO2 (in kg)
-  const co2Kg = (totalEnergy / 1000) * CALC_CONSTANTS.CO2_PER_KWH;
+  try {
+    showLoader();
+    const result = await API.call('/settings/clear/users', { method: 'POST' });
+    showToast(result.message || `Cleared ${result.count || 0} users`, 'ok');
+    loadUsers();
+  } catch (error) {
+    showToast(error.message || 'Failed to clear users', 'bad');
+  } finally {
+    hideLoader();
+  }
+}
+
+async function fullInstanceReset() {
+  const form = document.getElementById('instanceRefreshForm');
+  if (!form) return;
   
-  // Calculate trees needed to offset
-  const treesNeeded = co2Kg / CALC_CONSTANTS.TREE_ABSORPTION;
+  const data = {
+    adminUsername: form.refreshAdminUsername.value.trim(),
+    adminPassword: form.refreshAdminPassword.value,
+    confirmationText: form.refreshConfirmationText.value.trim()
+  };
   
-  // Get comparison
-  const comparison = getEnergyComparison(totalEnergy);
+  if (!data.adminUsername || !data.adminPassword || !data.confirmationText) {
+    showToast('All fields are required', 'bad');
+    return;
+  }
   
-  // Update usage breakdown
-  const gptCountEl = document.getElementById('calcGptCount');
-  const imageCountEl = document.getElementById('calcImageCount');
-  const gptEnergyEl = document.getElementById('calcGptEnergy');
-  const imageEnergyEl = document.getElementById('calcImageEnergy');
-  
-  // Update result display
-  const resultEl = document.getElementById('calcManualResult');
-  const requestsEl = document.getElementById('calcResultRequests');
-  const energyEl = document.getElementById('calcResultEnergy');
-  const co2El = document.getElementById('calcResultCO2');
-  const equivEl = document.getElementById('calcResultEquiv');
-  
-  // Get actual stats from data attributes (set by updateCalculatorDisplay)
-  // Use gptCountEl to get stored values since calc-stats-grid was removed
-  const actualGpt = parseInt(gptCountEl?.dataset.actualGpt || '0');
-  const actualImages = parseInt(gptCountEl?.dataset.actualImages || '0');
-  const actualEnergy = parseFloat(gptCountEl?.dataset.actualEnergy || '0');
-  const actualCO2 = parseFloat(gptCountEl?.dataset.actualCO2 || '0');
-  const actualTrees = parseFloat(gptCountEl?.dataset.actualTrees || '0');
-  
-  // Calculate combined totals (actual + manual)
-  const combinedGpt = actualGpt + totalGptRequests;
-  const combinedImages = actualImages + totalImages;
-  const combinedTotalGen = combinedGpt + combinedImages;
-  const combinedEnergy = actualEnergy + totalEnergy;
-  const combinedCO2 = actualCO2 + co2Kg;
-  const combinedTrees = actualTrees + treesNeeded;
-  
-  // Calculate combined energy breakdown
-  const actualGptEnergy = actualGpt * CALC_CONSTANTS.GPT_ENERGY_WH;
-  const actualImageEnergy = actualImages * CALC_CONSTANTS.IMAGE_ENERGY_WH;
-  const combinedGptEnergy = actualGptEnergy + gptEnergy;
-  const combinedImageEnergy = actualImageEnergy + imageEnergy;
-  
-  // Update usage breakdown (show combined actual + manual)
-  const breakdownGptCountEl = document.getElementById('calcGptCount');
-  const breakdownImageCountEl = document.getElementById('calcImageCount');
-  const breakdownGptEnergyEl = document.getElementById('calcGptEnergy');
-  const breakdownImageEnergyEl = document.getElementById('calcImageEnergy');
-  
-  if (breakdownGptCountEl) breakdownGptCountEl.textContent = combinedGpt;
-  if (breakdownImageCountEl) breakdownImageCountEl.textContent = combinedImages;
-  if (breakdownGptEnergyEl) breakdownGptEnergyEl.textContent = formatEnergy(combinedGptEnergy);
-  if (breakdownImageEnergyEl) breakdownImageEnergyEl.textContent = formatEnergy(combinedImageEnergy);
-  
-  // Update manual calculator result
-  if (resultEl) {
-    resultEl.classList.remove('hidden');
-    resultEl.style.opacity = '0';
+  try {
+    showLoader();
+    const result = await API.call('/settings/reset-instance', { method: 'POST', body: data });
+    showToast(result.message || 'Instance reset successfully', 'ok');
+    
+    // Redirect to login after a delay
     setTimeout(() => {
-      resultEl.style.transition = 'opacity 0.3s';
-      resultEl.style.opacity = '1';
-    }, 10);
-  }
-  if (requestsEl) requestsEl.textContent = totalRequests;
-  if (energyEl) energyEl.textContent = formatEnergy(totalEnergy);
-  if (co2El) co2El.textContent = co2Kg.toFixed(4) + ' kg';
-  if (equivEl) equivEl.textContent = comparison;
-}
-
-function getEnergyComparison(wh) {
-  // Fun comparisons for context
-  const ledBulbMinutes = wh / (10 / 60); // 10W LED bulb
-  const phoneCharges = wh / 10; // ~10Wh to charge a smartphone
-  const kettleSeconds = wh / (2000 / 3600); // 2kW kettle
-  const laptopMinutes = wh / (50 / 60); // 50W laptop
-  
-  if (wh < 0.5) {
-    return `${(kettleSeconds * 60).toFixed(0)} seconds of kettle use`;
-  } else if (wh < 5) {
-    return `${ledBulbMinutes.toFixed(1)} minutes of LED bulb`;
-  } else if (wh < 20) {
-    return `${phoneCharges.toFixed(2)} phone charges`;
-  } else {
-    return `${laptopMinutes.toFixed(1)} minutes of laptop use`;
+      window.location.href = '/';
+    }, 2000);
+  } catch (error) {
+    showToast(error.message || 'Failed to reset instance', 'bad');
+  } finally {
+    hideLoader();
   }
 }
 
@@ -1584,18 +1593,6 @@ function initSettingsTiles() {
       // Update URL hash
       window.location.hash = `#/settings/${sectionName}`;
       
-      // Initialize calculator if environmental section is shown
-      if (sectionName === 'environmental') {
-        setTimeout(() => {
-          initCalculator();
-        }, 100);
-      }
-      
-      // Load profile settings if account section is shown
-      if (sectionName === 'account') {
-        loadProfileSettings();
-      }
-      
       // Load users if admin section is shown
       if (sectionName === 'admin') {
         if (window.AppState.user?.role === 'admin') {
@@ -1620,25 +1617,6 @@ function initSettingsTiles() {
     }
   }
   
-  function showTiles() {
-    // Show tiles grid
-    if (tilesGrid) tilesGrid.classList.remove('hidden');
-    // Hide back button
-    if (backContainer) backContainer.classList.add('hidden');
-    // Hide all sections
-    document.querySelectorAll('.settings-section-content').forEach(section => {
-      section.classList.add('hidden');
-    });
-    // Remove active state from all tiles
-    if (tilesGrid) {
-      tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
-        tile.classList.remove('active');
-      });
-    }
-    // Update URL hash
-    window.location.hash = '#/settings';
-  }
-  
   // Make showSection available globally for other code
   window.showSettingsSection = showSection;
 }
@@ -1655,7 +1633,7 @@ function initPasswordVisibilityToggles() {
         toggle.addEventListener('click', () => {
           const isPassword = field.type === 'password';
           field.type = isPassword ? 'text' : 'password';
-          toggle.innerHTML = isPassword ? '🙈' : '👁️';
+          toggle.innerHTML = isPassword ? (window.Icons ? window.Icons.get('eyeSlash') : '👁️') : (window.Icons ? window.Icons.get('eye') : '👁️');
         });
       }
       return;
@@ -1670,7 +1648,7 @@ function initPasswordVisibilityToggles() {
     toggle.type = 'button';
     toggle.className = 'password-toggle';
     toggle.setAttribute('aria-label', 'Toggle password visibility');
-    toggle.innerHTML = '👁️';
+    toggle.innerHTML = window.Icons ? window.Icons.get('eye') : '👁️';
     
     // Wrap the field
     field.parentNode.insertBefore(wrapper, field);
@@ -1681,13 +1659,12 @@ function initPasswordVisibilityToggles() {
     toggle.addEventListener('click', () => {
       const isPassword = field.type === 'password';
       field.type = isPassword ? 'text' : 'password';
-      toggle.innerHTML = isPassword ? '🙈' : '👁️';
+      toggle.innerHTML = isPassword ? (window.Icons ? window.Icons.get('eyeSlash') : '👁️') : (window.Icons ? window.Icons.get('eye') : '👁️');
     });
   });
 }
 
 function initSettingsModule() {
-  initProfileSettingsForm();
   initPasswordForm();
   initApiSettingsForm();
   initPromptsSection();
@@ -1696,7 +1673,7 @@ function initSettingsModule() {
   initPostEditModal();
   initCsvButtons();
   initUserEditModal();
-  // Calculator should NOT be initialized here - only when environmental tile is clicked
+  initClearInstanceOptions();
 }
 
 // Initialize on DOM ready

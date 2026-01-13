@@ -431,105 +431,6 @@ router.post('/test/stability', async (req, res) => {
 });
 
 /**
- * Get current user profile
- * GET /api/settings/profile
- */
-router.get('/profile', (req, res) => {
-  try {
-    const user = db.prepare(`
-      SELECT id, username, email, display_name, role, created_at
-      FROM users WHERE id = ?
-    `).get(req.user.id);
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    res.json({ profile: user });
-  } catch (error) {
-    console.error('Get profile error:', error);
-    res.status(500).json({ error: 'Failed to get profile' });
-  }
-});
-
-/**
- * Update current user profile (username, email, display_name)
- * PUT /api/settings/profile
- */
-router.put('/profile', (req, res) => {
-  try {
-    const { username, email, displayName } = req.body;
-
-    // Validate inputs
-    if (!username && !email && !displayName) {
-      return res.status(400).json({ error: 'No fields to update' });
-    }
-
-    // Check for unique username
-    if (username) {
-      const existing = db.prepare(`
-        SELECT id FROM users WHERE username = ? AND id != ?
-      `).get(username, req.user.id);
-      
-      if (existing) {
-        return res.status(400).json({ error: 'Username already taken' });
-      }
-    }
-
-    // Check for unique email
-    if (email) {
-      const existing = db.prepare(`
-        SELECT id FROM users WHERE email = ? AND id != ?
-      `).get(email, req.user.id);
-      
-      if (existing) {
-        return res.status(400).json({ error: 'Email already taken' });
-      }
-    }
-
-    // Build update query dynamically
-    const updates = [];
-    const values = [];
-
-    if (username) {
-      updates.push('username = ?');
-      values.push(username);
-    }
-    if (email) {
-      updates.push('email = ?');
-      values.push(email);
-    }
-    if (displayName !== undefined) {
-      updates.push('display_name = ?');
-      values.push(displayName || null);
-    }
-
-    updates.push('updated_at = CURRENT_TIMESTAMP');
-    values.push(req.user.id);
-
-    db.prepare(`
-      UPDATE users SET ${updates.join(', ')} WHERE id = ?
-    `).run(...values);
-
-    // Fetch updated user
-    const user = db.prepare(`
-      SELECT id, username, email, display_name, role
-      FROM users WHERE id = ?
-    `).get(req.user.id);
-
-    res.json({ 
-      success: true, 
-      message: 'Profile updated',
-      profile: user
-    });
-
-  } catch (error) {
-    console.error('Update profile error:', error);
-    res.status(500).json({ error: 'Failed to update profile' });
-  }
-});
-
-/**
  * Change current user password
  * PUT /api/settings/password
  */
@@ -882,6 +783,78 @@ router.post('/reset-instance', requireAuth, requireAdmin, async (req, res) => {
       error: 'Failed to reset instance',
       details: error.message 
     });
+  }
+});
+
+/**
+ * Clear all posts
+ * POST /api/settings/clear/posts
+ */
+router.post('/clear/posts', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const result = db.prepare('DELETE FROM posts').run();
+    res.json({ 
+      success: true, 
+      message: 'All posts cleared successfully',
+      count: result.changes 
+    });
+  } catch (error) {
+    console.error('Clear posts error:', error);
+    res.status(500).json({ error: 'Failed to clear posts' });
+  }
+});
+
+/**
+ * Clear all settings
+ * POST /api/settings/clear/settings
+ */
+router.post('/clear/settings', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const result = db.prepare('DELETE FROM settings').run();
+    res.json({ 
+      success: true, 
+      message: 'All settings cleared successfully',
+      count: result.changes 
+    });
+  } catch (error) {
+    console.error('Clear settings error:', error);
+    res.status(500).json({ error: 'Failed to clear settings' });
+  }
+});
+
+/**
+ * Clear workflow sessions
+ * POST /api/settings/clear/sessions
+ */
+router.post('/clear/sessions', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const result = db.prepare('DELETE FROM workflow_sessions').run();
+    res.json({ 
+      success: true, 
+      message: 'All workflow sessions cleared successfully',
+      count: result.changes 
+    });
+  } catch (error) {
+    console.error('Clear sessions error:', error);
+    res.status(500).json({ error: 'Failed to clear sessions' });
+  }
+});
+
+/**
+ * Clear all users except current admin
+ * POST /api/settings/clear/users
+ */
+router.post('/clear/users', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const result = db.prepare('DELETE FROM users WHERE id != ?').run(req.user.id);
+    res.json({ 
+      success: true, 
+      message: 'All users cleared successfully (except your admin account)',
+      count: result.changes 
+    });
+  } catch (error) {
+    console.error('Clear users error:', error);
+    res.status(500).json({ error: 'Failed to clear users' });
   }
 });
 

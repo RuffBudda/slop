@@ -67,7 +67,7 @@ function initLoginPasswordToggles() {
       toggle.addEventListener('click', () => {
         const isPassword = passwordField.type === 'password';
         passwordField.type = isPassword ? 'text' : 'password';
-        toggle.innerHTML = isPassword ? '🙈' : '👁️';
+        toggle.innerHTML = isPassword ? (window.Icons ? window.Icons.get('eyeSlash') : '👁️') : (window.Icons ? window.Icons.get('eye') : '👁️');
       });
     }
     return;
@@ -81,7 +81,7 @@ function initLoginPasswordToggles() {
   toggle.type = 'button';
   toggle.className = 'password-toggle';
   toggle.setAttribute('aria-label', 'Toggle password visibility');
-  toggle.innerHTML = '👁️';
+  toggle.innerHTML = window.Icons ? window.Icons.get('eye') : '👁️';
   
   passwordField.parentNode.insertBefore(wrapper, passwordField);
   wrapper.appendChild(passwordField);
@@ -90,7 +90,7 @@ function initLoginPasswordToggles() {
   toggle.addEventListener('click', () => {
     const isPassword = passwordField.type === 'password';
     passwordField.type = isPassword ? 'text' : 'password';
-    toggle.innerHTML = isPassword ? '🙈' : '👁️';
+    toggle.innerHTML = isPassword ? (window.Icons ? window.Icons.get('eyeSlash') : '👁️') : (window.Icons ? window.Icons.get('eye') : '👁️');
   });
 }
 

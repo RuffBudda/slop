@@ -44,6 +44,24 @@ function initNavigation() {
       activateTab(btn.dataset.tab);
     });
   });
+  
+  // Populate navigation icons
+  if (window.Icons) {
+    const iconMap = {
+      'navIconContent': 'content',
+      'navIconCalendar': 'calendar',
+      'navIconList': 'list',
+      'navIconBin': 'bin',
+      'navIconSettings': 'settings'
+    };
+    
+    Object.entries(iconMap).forEach(([id, iconName]) => {
+      const el = document.getElementById(id);
+      if (el) {
+        el.innerHTML = window.Icons.get(iconName, 'nav-icon-svg');
+      }
+    });
+  }
 }
 
 // ============================================================
@@ -216,6 +234,9 @@ window.toggleBulkSelect = function(postId) {
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('DOM ready, checking auth status...');
   
+  // Initialize icons first
+  initIcons();
+  
   const isAuthenticated = await checkAuthStatus();
   
   if (isAuthenticated) {
@@ -223,6 +244,54 @@ document.addEventListener('DOMContentLoaded', async () => {
     initApp();
   }
 });
+
+function initIcons() {
+  if (!window.Icons) return;
+  
+  // Back icon (left arrow)
+  const backArrow = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <polyline points="15 18 9 12 15 6"></polyline>
+  </svg>`;
+  document.querySelectorAll('.back-icon').forEach(el => {
+    el.innerHTML = backArrow;
+  });
+  
+  // Close icons
+  document.querySelectorAll('.close-icon').forEach(el => {
+    el.innerHTML = window.Icons.get('close');
+  });
+  
+  // Disconnect icon
+  document.querySelectorAll('.disconnect-icon').forEach(el => {
+    el.innerHTML = window.Icons.get('close');
+  });
+  
+  // Clear icon
+  document.querySelectorAll('.clear-icon').forEach(el => {
+    el.innerHTML = window.Icons.get('close');
+  });
+  
+  // Warning icons
+  document.querySelectorAll('.warning-icon-large').forEach(el => {
+    el.innerHTML = window.Icons.get('warning', '', { size: '24px' });
+  });
+  document.querySelectorAll('.warning-icon-inline').forEach(el => {
+    el.innerHTML = window.Icons.get('warning', '', { size: '16px' });
+  });
+  
+  // Copy icons
+  document.querySelectorAll('.copy-icon-small').forEach(el => {
+    el.innerHTML = window.Icons.get('copy', '', { size: '14px' });
+  });
+  document.querySelectorAll('.copy-icon-inline').forEach(el => {
+    el.innerHTML = window.Icons.get('copy', '', { size: '16px' });
+  });
+  
+  // FAB icon
+  document.querySelectorAll('.fab-icon').forEach(el => {
+    el.innerHTML = window.Icons.get('lightning', '', { size: '20px' });
+  });
+}
 
 // ============================================================
 // GLOBAL ERROR HANDLING

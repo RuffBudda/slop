@@ -103,11 +103,22 @@ window.activateTab = function(tabName, subSection = null) {
   // Update state
   window.AppState.currentTab = tabName;
   
-  // Update URL hash for routing
-  if (subSection) {
-    window.location.hash = `#/${tabName}/${subSection}`;
+  // Use router for navigation
+  if (window.Router) {
+    if (tabName === 'settings' && subSection) {
+      window.Router.navigate(`/settings/${subSection}`);
+    } else if (tabName === 'settings') {
+      window.Router.navigate('/settings');
+    } else {
+      window.Router.navigate(`/${tabName}`);
+    }
   } else {
-    window.location.hash = `#/${tabName}`;
+    // Fallback to hash navigation
+    if (subSection) {
+      window.location.hash = `#/${tabName}/${subSection}`;
+    } else {
+      window.location.hash = `#/${tabName}`;
+    }
   }
   
   // Update navigation buttons
@@ -115,72 +126,19 @@ window.activateTab = function(tabName, subSection = null) {
     btn.classList.toggle('active', btn.dataset.tab === tabName);
   });
   
-  // Update views
-  document.querySelectorAll('.tab-view').forEach(view => {
-    view.classList.add('hidden');
-  });
-  
-  // Hide admin section on all pages except settings
-  const adminSection = document.getElementById('settingsSectionAdmin');
-  if (adminSection && tabName !== 'settings') {
-    adminSection.classList.add('hidden');
-  }
-  
-  const viewMap = {
-    content: 'contentView',
-    calendar: 'calendarView',
-    timeline: 'timelineView',
-    bin: 'binView',
-    settings: 'settingsView'
-  };
-  
-  const targetView = document.getElementById(viewMap[tabName]);
-  if (targetView) {
-    targetView.classList.remove('hidden');
-  }
-  
-  // Handle settings sub-sections
-  if (tabName === 'settings' && subSection) {
-    // Show the specific settings section
-    if (typeof window.showSettingsSection === 'function') {
-      window.showSettingsSection(subSection);
-    }
-  } else if (tabName === 'settings') {
-    // Show settings tiles
-    const tilesGrid = document.getElementById('settingsTilesGrid');
-    const backContainer = document.getElementById('settingsBack');
-    if (tilesGrid) tilesGrid.classList.remove('hidden');
-    if (backContainer) backContainer.classList.add('hidden');
-    document.querySelectorAll('.settings-section-content').forEach(section => {
-      section.classList.add('hidden');
-    });
-  }
-  
-  // Trigger tab-specific loading
-  switch (tabName) {
-    case 'content':
-      if (typeof loadContent === 'function') loadContent();
-      break;
-    case 'calendar':
-      if (typeof loadCalendar === 'function') loadCalendar();
-      break;
-    case 'timeline':
-      if (typeof loadTimeline === 'function') loadTimeline();
-      break;
-    case 'bin':
-      if (typeof loadBin === 'function') loadBin();
-      break;
-    case 'settings':
-      if (typeof loadSettings === 'function') loadSettings();
-      break;
-  }
-  
   // Update dock
-  window.updateDock();
+  if (typeof window.updateDock === 'function') {
+    window.updateDock();
+  }
 };
 
 // Handle hash-based routing
+// Hash change handler - let router handle it
 window.addEventListener('hashchange', () => {
+  if (window.Router) {
+    window.Router.handleRoute();
+  }
+});
   const hash = window.location.hash.replace('#/', '');
   const parts = hash.split('/');
   const tabName = parts[0] || 'content';
@@ -313,12 +271,12 @@ window.getStatusClass = function(status) {
 
 window.getStatusIcon = function(status) {
   const icons = {
-    'generated': '✓',
+    'generated': window.Icons ? window.Icons.get('success', '', { size: '14px' }) : '✓',
     'Scheduled': '📅',
     'Queue': '⏳',
     'rejected': '✗',
     'published': '🚀',
-    'processing': '⚙'
+    'processing': window.Icons ? window.Icons.get('processing', '', { size: '14px' }) : '⚙'
   };
   return icons[status] || '•';
 };

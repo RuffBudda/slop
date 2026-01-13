@@ -761,7 +761,7 @@ body.processing {
 }
 
 .btn.approve .ico::before {
-  content: "[✓]";
+  content: "";
 }
 
 .btn.approve:hover {
@@ -1771,6 +1771,13 @@ dialog::backdrop {
   align-items: center;
   justify-content: center;
   z-index: 1;
+  width: 24px;
+  height: 24px;
+}
+
+.password-toggle svg {
+  width: 18px;
+  height: 18px;
 }
 
 .password-toggle:hover {
@@ -2129,7 +2136,7 @@ dialog::backdrop {
   transform: none;
   width: 100%;
   max-width: 300px;
-  justify-self: center;
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: center;

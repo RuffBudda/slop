@@ -123,7 +123,9 @@ function renderCard(post) {
           ${post.status ? `<span class="chip status-${getStatusClass(post.status)}">${getStatusIcon(post.status)} ${escapeHtml(post.status)}</span>` : ''}
         </div>
         <div style="display: flex; gap: 8px;">
-          <button class="btn clear btn-sm" data-action="preview" data-post-id="${post.id}" title="Preview (P)">👁 Preview</button>
+          <button class="btn clear btn-sm" data-action="preview" data-post-id="${post.id}" title="Preview (P)">
+            <span class="preview-icon">${window.Icons ? window.Icons.get('eye', '', { size: '14px' }) : '👁'}</span> Preview
+          </button>
           <label style="display: flex; align-items: center; gap: 4px; cursor: pointer;">
             <input type="checkbox" class="bulk-checkbox" data-post-id="${post.id}">
             <span style="font-size: 12px;">Select</span>
@@ -195,7 +197,7 @@ function renderImageCell(postId, image, selected) {
          data-image="${image.num}" 
          data-post-id="${postId}"
          data-source="${image.source || 'stability'}">
-      <div class="selectBadge">✓</div>
+      <div class="selectBadge">${window.Icons ? window.Icons.get('success', '', { size: '14px' }) : '✓'}</div>
       <div class="numberBadge">${image.num}</div>
       <div class="sourceBadge" style="position: absolute; top: 4px; right: 4px; background: ${image.source === 'drive' ? '#4285f4' : '#6366f1'}; color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: 600; z-index: 2;">${sourceLabel}</div>
       <img src="${imageUrl}" alt="Image ${image.num} (${sourceLabel})" 

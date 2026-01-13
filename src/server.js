@@ -47,9 +47,22 @@ app.use(cors({
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // limit each IP to 100 requests per windowMs
-  message: { error: 'Too many requests, please try again later.' }
+  message: { error: 'Too many requests, please try again later.' },
+  skip: (req) => {
+    // Skip rate limiting for auth routes (they have their own limiter)
+    return req.path.startsWith('/api/auth');
+  }
 });
 app.use('/api/', limiter);
+
+// Auth-specific rate limiter (more lenient for login)
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 10, // 10 login attempts per window
+  message: { error: 'Too many login attempts, please try again later.' },
+  skipSuccessfulRequests: true // Don't count successful logins
+});
+app.use('/api/auth/login', authLimiter);
 
 // Body parsing
 app.use(express.json({ limit: '50mb' }));

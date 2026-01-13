@@ -231,15 +231,6 @@ const API = {
       return API.call(`/settings/test/${service}`, { method: 'POST' });
     },
     
-    // Profile management
-    async getProfile() {
-      return API.call('/settings/profile');
-    },
-    
-    async updateProfile(data) {
-      return API.call('/settings/profile', { method: 'PUT', body: data });
-    },
-    
     async changePassword(data) {
       return API.call('/settings/password', { method: 'PUT', body: data });
     },
