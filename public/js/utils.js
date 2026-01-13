@@ -483,13 +483,15 @@ window.initGlobalSearch = function() {
       }).slice(0, 10);
       
       if (filtered.length === 0) {
-        searchResults.innerHTML = '<div class="search-result-item">No results found</div>';
+        searchResults.innerHTML = '<div class="search-result-item"><div class="result-title">No results found</div></div>';
       } else {
         searchResults.innerHTML = filtered.map(post => `
           <div class="search-result-item" data-post-id="${post.id}" data-status="${post.status}">
-            <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(post.post_id)}</div>
-            <div style="font-size: 12px; color: #666;">${escapeHtml((post.instruction || '').substring(0, 80))}...</div>
-            <span class="chip status-${getStatusClass(post.status)}" style="margin-top: 4px;">${post.status || 'Pending'}</span>
+            <div style="flex: 1;">
+              <div class="result-title">${escapeHtml(post.post_id)}</div>
+              <div class="result-snippet">${escapeHtml((post.instruction || 'No instruction').substring(0, 100))}${(post.instruction || '').length > 100 ? '...' : ''}</div>
+            </div>
+            <span class="chip status-${getStatusClass(post.status)}">${post.status || 'Pending'}</span>
           </div>
         `).join('');
         

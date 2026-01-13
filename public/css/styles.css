@@ -90,14 +90,17 @@ a {
 
 .brand {
   flex-shrink: 0;
+  order: 1;
 }
 
 .navBtns {
   flex: 1;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
   align-items: center;
   gap: 8px;
+  order: 2;
+  margin-left: 24px;
 }
 
 .user-menu {
@@ -105,6 +108,7 @@ a {
   display: flex;
   align-items: center;
   gap: 8px;
+  order: 3;
 }
 
 .brand {
@@ -157,11 +161,36 @@ a {
   color: #e8e8e8;
   border: 1px solid #333;
   border-radius: 10px;
-  padding: 8px 12px;
+  padding: 8px 16px;
   cursor: pointer;
   transition: transform .08s, box-shadow .15s, background .15s, border-color .15s;
   font-family: inherit;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  position: relative;
+}
+
+.navBtn .nav-label {
+  font-weight: 500;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+/* Responsive: Hide labels on smaller screens */
+@media (max-width: 768px) {
+  .navBtn .nav-label {
+    display: none;
+  }
+  
+  .navBtn {
+    padding: 8px 12px;
+  }
+  
+  .navBtns {
+    gap: 4px;
+  }
 }
 
 .navBtn.icon-only {
@@ -171,6 +200,10 @@ a {
   align-items: center;
   justify-content: center;
   font-size: 18px;
+}
+
+.navBtn.icon-only .nav-label {
+  display: none;
 }
 
 .navBtn:hover {
@@ -1277,14 +1310,49 @@ body.processing {
   color: #fff;
   box-shadow: 0 12px 28px rgba(0, 0, 0, .4);
   cursor: pointer;
-  transition: transform .15s, box-shadow .15s;
+  transition: transform .15s, box-shadow .15s, background .15s;
   border: none;
   font-size: 24px;
+  position: relative;
 }
 
 .fab:hover {
   transform: translateY(-4px);
   box-shadow: 0 18px 36px rgba(0, 0, 0, .5);
+  background: var(--accent-hover);
+}
+
+.fab::after {
+  content: attr(title);
+  position: absolute;
+  bottom: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(0, 0, 0, 0.9);
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s, transform 0.2s;
+  transform: translateX(-50%) translateY(-4px);
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.fab:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.fab-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .dock-items {
@@ -2421,9 +2489,19 @@ dialog::backdrop {
 }
 
 .search-modal::backdrop {
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .search-modal-content {
@@ -2432,69 +2510,136 @@ dialog::backdrop {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 90%;
-  max-width: 600px;
+  max-width: 640px;
   background: var(--bg-card);
   border: 1px solid var(--bd);
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border-radius: 16px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
   padding: 0;
   overflow: hidden;
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -45%);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%);
+  }
 }
 
 .search-modal-input-wrapper {
   position: relative;
   display: flex;
   align-items: center;
-  padding: 16px 20px;
+  padding: 20px 24px;
   border-bottom: 1px solid var(--bd);
+  background: var(--bg-elevated);
 }
 
 .search-modal-icon {
   position: absolute;
-  left: 20px;
-  color: #666;
-  font-size: 16px;
+  left: 24px;
+  color: var(--ink-muted);
+  font-size: 18px;
   display: flex;
   align-items: center;
   justify-content: center;
   pointer-events: none;
+  z-index: 1;
+  transition: color 0.2s;
+}
+
+.search-modal-input:focus ~ .search-modal-icon,
+.search-modal-input:not(:placeholder-shown) ~ .search-modal-icon {
+  color: var(--accent);
 }
 
 .search-modal-input {
   width: 100%;
-  padding: 12px 16px 12px 48px;
+  padding: 14px 20px 14px 52px;
   border: none;
   background: transparent;
   color: var(--ink);
-  font-size: 16px;
+  font-size: 17px;
   font-family: inherit;
+  font-weight: 400;
   outline: none;
+  transition: all 0.2s;
 }
 
 .search-modal-input::placeholder {
-  color: #666;
+  color: var(--ink-faint);
+  font-weight: 400;
+}
+
+.search-modal-input:focus {
+  color: var(--ink);
 }
 
 .search-results-modal {
   max-height: 400px;
   overflow-y: auto;
   background: var(--bg-card);
+  scrollbar-width: thin;
+  scrollbar-color: var(--bd) transparent;
+}
+
+.search-results-modal::-webkit-scrollbar {
+  width: 8px;
+}
+
+.search-results-modal::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.search-results-modal::-webkit-scrollbar-thumb {
+  background: var(--bd);
+  border-radius: 4px;
+}
+
+.search-results-modal::-webkit-scrollbar-thumb:hover {
+  background: var(--bd2);
 }
 
 .search-results-modal .search-result-item {
-  padding: 12px 20px;
+  padding: 14px 24px;
   border-bottom: 1px solid var(--bd);
   cursor: pointer;
-  transition: background 0.1s;
+  transition: all 0.15s ease;
   color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .search-results-modal .search-result-item:hover {
   background: var(--bg-elevated);
+  border-left: 3px solid var(--accent);
+  padding-left: 21px;
 }
 
 .search-results-modal .search-result-item:last-child {
   border-bottom: none;
+}
+
+.search-results-modal .search-result-item:first-child {
+  border-top: 1px solid var(--bd);
+}
+
+.search-results-modal .search-result-item .result-title {
+  font-weight: 500;
+  color: var(--ink);
+  margin-bottom: 4px;
+}
+
+.search-results-modal .search-result-item .result-snippet {
+  font-size: 13px;
+  color: var(--ink-muted);
+  line-height: 1.4;
 }
 
 .search-results {

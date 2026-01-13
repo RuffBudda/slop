@@ -54,6 +54,8 @@ const FLATICON_ICONS = {
   refresh: 'fi fi-rr-refresh',
   clear: 'fi fi-rr-trash-xmark',
   logout: 'fi fi-rr-sign-out',
+  menu: 'fi fi-rr-menu-dots-vertical',
+  grid: 'fi fi-rr-grid',
 };
 
 // Font Awesome fallback icon mappings
@@ -107,6 +109,8 @@ const FONT_AWESOME_ICONS = {
   refresh: 'fa-solid fa-arrow-rotate-right',
   clear: 'fa-solid fa-trash-can',
   logout: 'fa-solid fa-right-from-bracket',
+  menu: 'fa-solid fa-ellipsis-vertical',
+  grid: 'fa-solid fa-grid-2',
 };
 
 /**
@@ -254,6 +258,14 @@ if (typeof window !== 'undefined') {
         }
       }
       
+      // Initialize search modal icon
+      const searchModalIcon = document.querySelector('.search-modal-icon');
+      if (searchModalIcon) {
+        if (!searchModalIcon.innerHTML.trim() || (!searchModalIcon.querySelector('.fi') && !searchModalIcon.querySelector('.fa'))) {
+          searchModalIcon.innerHTML = this.get('search', '', { size: '18px' });
+        }
+      }
+      
       // Replace all elements with data-icon attribute
       document.querySelectorAll('[data-icon]').forEach(el => {
         const iconName = el.dataset.icon;
@@ -272,6 +284,12 @@ if (typeof window !== 'undefined') {
           toggle.innerHTML = this.get('eye', 'password-toggle-icon');
         }
       });
+      
+      // Initialize FAB icon
+      const fabIcon = document.querySelector('.fab-icon');
+      if (fabIcon && (!fabIcon.innerHTML.trim() || (!fabIcon.querySelector('.fi') && !fabIcon.querySelector('.fa')))) {
+        fabIcon.innerHTML = this.get('menu', '', { size: '24px' });
+      }
       
       // Initialize button icons with .ico class
       document.querySelectorAll('.btn .ico, .btn span.ico').forEach(ico => {

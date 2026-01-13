@@ -81,8 +81,14 @@ function initNavigation() {
 function initDock() {
   const dock = document.getElementById('dock');
   const fab = dock?.querySelector('.fab');
+  const fabIcon = fab?.querySelector('.fab-icon');
   
   if (!fab) return;
+  
+  // Initialize FAB icon
+  if (fabIcon && window.Icons && window.Icons.get) {
+    fabIcon.innerHTML = window.Icons.get('menu', '', { size: '24px' });
+  }
   
   // Toggle dock on mobile
   fab.addEventListener('click', () => {
