@@ -1535,6 +1535,9 @@ function initSettingsTiles() {
   
   if (!tilesGrid) return;
   
+  // Populate tile icons
+  populateSettingsTileIcons();
+  
   if (!tilesInitialized) {
     // Add click handlers to tiles
     tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
@@ -1619,6 +1622,42 @@ function initSettingsTiles() {
   
   // Make showSection available globally for other code
   window.showSettingsSection = showSection;
+}
+
+/**
+ * Populate settings tile icons with SVG icons
+ */
+function populateSettingsTileIcons() {
+  // Map section names to icon names
+  const iconMap = {
+    account: 'account',
+    openai: 'openai',
+    googledrive: 'googledrive',
+    linkedin: 'linkedin',
+    storage: 'storage',
+    ai: 'ai',
+    content: 'contentManagement', // Note: icon name is contentManagement
+    admin: 'admin'
+  };
+  
+  // Retry mechanism if Icons module not loaded yet
+  if (!window.Icons || !window.Icons.get) {
+    // Retry after a short delay
+    setTimeout(() => populateSettingsTileIcons(), 100);
+    return;
+  }
+  
+  // Populate each tile icon
+  Object.keys(iconMap).forEach(section => {
+    const iconEl = document.getElementById(`tileIcon${section.charAt(0).toUpperCase() + section.slice(1)}`);
+    if (iconEl && !iconEl.innerHTML.trim()) {
+      const iconName = iconMap[section];
+      const iconSvg = window.Icons.get(iconName, 'icon');
+      if (iconSvg) {
+        iconEl.innerHTML = iconSvg;
+      }
+    }
+  });
 }
 
 function initPasswordVisibilityToggles() {
