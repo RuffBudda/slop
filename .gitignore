@@ -41,4 +41,5 @@ OG/
 
 # Deployment documentation
 DEPLOYMENT.md
-SERVER_UPDATE.md
+# SERVER_UPDATE.md - uncomment to ignore local changes
+# SERVER_UPDATE.md
