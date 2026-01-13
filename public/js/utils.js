@@ -139,15 +139,6 @@ window.addEventListener('hashchange', () => {
     window.Router.handleRoute();
   }
 });
-  const hash = window.location.hash.replace('#/', '');
-  const parts = hash.split('/');
-  const tabName = parts[0] || 'content';
-  const subSection = parts[1] || null;
-  
-  if (tabName && ['content', 'calendar', 'timeline', 'bin', 'settings'].includes(tabName)) {
-    activateTab(tabName, subSection);
-  }
-});
 
 // Initialize routing on page load
 document.addEventListener('DOMContentLoaded', () => {
