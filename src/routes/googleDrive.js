@@ -53,7 +53,7 @@ router.get('/auth-url', (req, res) => {
     res.json({ authUrl });
   } catch (error) {
     console.error('Get auth URL error:', error);
-    res.status(500).json({ error: 'Failed to get authorization URL', details: error.message });
+    res.status(500).json({ error: 'Failed to get authorization URL' });
   }
 });
 
@@ -110,7 +110,7 @@ router.get('/files', async (req, res) => {
     res.json({ files });
   } catch (error) {
     console.error('List files error:', error);
-    res.status(500).json({ error: 'Failed to list files', details: error.message });
+    res.status(500).json({ error: 'Failed to list files' });
   }
 });
 
@@ -125,7 +125,7 @@ router.get('/folders', async (req, res) => {
     res.json({ folders });
   } catch (error) {
     console.error('List folders error:', error);
-    res.status(500).json({ error: 'Failed to list folders', details: error.message });
+    res.status(500).json({ error: 'Failed to list folders' });
   }
 });
 
@@ -140,7 +140,7 @@ router.get('/file/:fileId', async (req, res) => {
     res.json({ file });
   } catch (error) {
     console.error('Get file error:', error);
-    res.status(500).json({ error: 'Failed to get file', details: error.message });
+    res.status(500).json({ error: 'Failed to get file' });
   }
 });
 
@@ -155,7 +155,7 @@ router.get('/folder/:folderId', async (req, res) => {
     res.json({ folder });
   } catch (error) {
     console.error('Get folder error:', error);
-    res.status(500).json({ error: 'Failed to get folder', details: error.message });
+    res.status(500).json({ error: 'Failed to get folder' });
   }
 });
 
@@ -178,7 +178,7 @@ router.post('/extract-folder-id', (req, res) => {
     res.json({ folderId });
   } catch (error) {
     console.error('Extract folder ID error:', error);
-    res.status(500).json({ error: 'Failed to extract folder ID', details: error.message });
+    res.status(500).json({ error: 'Failed to extract folder ID' });
   }
 });
 
@@ -197,7 +197,7 @@ router.get('/download/:fileId', async (req, res) => {
     res.send(fileBuffer);
   } catch (error) {
     console.error('Download file error:', error);
-    res.status(500).json({ error: 'Failed to download file', details: error.message });
+    res.status(500).json({ error: 'Failed to download file' });
   }
 });
 
@@ -225,7 +225,7 @@ router.post('/upload', express.raw({ type: 'image/*', limit: '50mb' }), async (r
     res.json({ file: uploadedFile, success: true });
   } catch (error) {
     console.error('Upload file error:', error);
-    res.status(500).json({ error: 'Failed to upload file', details: error.message });
+    res.status(500).json({ error: 'Failed to upload file' });
   }
 });
 

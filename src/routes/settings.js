@@ -238,6 +238,16 @@ router.put('/:key', (req, res) => {
     const { key } = req.params;
     let { value } = req.body;
 
+    // Validate key name - only allow alphanumeric, underscore, and hyphen
+    if (!/^[a-zA-Z0-9_-]+$/.test(key)) {
+      return res.status(400).json({ error: 'Invalid setting key name' });
+    }
+
+    // Validate value length if provided
+    if (value && typeof value === 'string' && value.length > 50000) {
+      return res.status(400).json({ error: 'Setting value exceeds maximum length' });
+    }
+
     // For service account key, ensure it's valid JSON before storing
     if (key === 'google_drive_service_account' && value) {
       try {

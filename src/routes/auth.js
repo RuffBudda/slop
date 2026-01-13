@@ -6,7 +6,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const db = require('../database/db');
-const { requireAuth, checkSetupRequired } = require('../middleware/auth');
+const { requireAuth, requireAdmin, checkSetupRequired } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -98,13 +98,8 @@ router.post('/setup', checkSetupRequired, async (req, res) => {
  * User registration
  * POST /api/auth/register
  */
-router.post('/register', requireAuth, async (req, res) => {
+router.post('/register', requireAuth, requireAdmin, async (req, res) => {
   try {
-    // Only admins can create new users
-    const currentUser = db.prepare('SELECT role FROM users WHERE id = ?').get(req.session.userId);
-    if (currentUser.role !== 'admin') {
-      return res.status(403).json({ error: 'Only admins can create new users' });
-    }
 
     const { username, email, password, displayName, role } = req.body;
 
@@ -153,110 +148,19 @@ router.post('/register', requireAuth, async (req, res) => {
  * POST /api/auth/login
  */
 router.post('/login', async (req, res) => {
-  console.log('LOGIN ROUTE HIT - Starting login attempt');
   try {
-    // #region agent log
-    try {
-      const fs = require('fs');
-      const path = require('path');
-      const logPath = 'd:\\SLOP\\.cursor\\debug.log';
-      const logDir = path.dirname(logPath);
-      console.log('Log path:', logPath, 'Dir exists:', fs.existsSync(logDir));
-      if (!fs.existsSync(logDir)) {
-        fs.mkdirSync(logDir, { recursive: true });
-        console.log('Created log directory');
-      }
-      const logEntry = JSON.stringify({location:'auth.js:login-entry',message:'Login endpoint called',data:{bodyType:typeof req.body,bodyKeys:Object.keys(req.body||{}),rawBody:JSON.stringify(req.body).substring(0,200),hasContentType:!!req.headers['content-type']},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D,E'})+'\n';
-      fs.appendFileSync(logPath, logEntry);
-      console.log('Successfully wrote log entry');
-    } catch (logErr) {
-      console.error('Logging error:', logErr.message, logErr.stack);
-    }
-    // #endregion
-    
     const { username, password } = req.body;
 
-    // #region agent log
-    try {
-      const fs = require('fs');
-      const path = require('path');
-      const logPath = 'd:\\SLOP\\.cursor\\debug.log';
-      const logDir = path.dirname(logPath);
-      if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
-      const logEntry2 = JSON.stringify({location:'auth.js:login-parsed',message:'Request body parsed',data:{hasUsername:!!username,hasPassword:!!password,usernameValue:username,usernameLength:username?.length||0,passwordLength:password?.length||0,usernameType:typeof username,passwordType:typeof password},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D,E'})+'\n';
-      fs.appendFileSync(logPath, logEntry2);
-    } catch (logErr) {}
-    // #endregion
-
     if (!username || !password) {
-      // #region agent log
-      try {
-        const fs = require('fs');
-        const path = require('path');
-        const logPath = 'd:\\SLOP\\.cursor\\debug.log';
-        const logDir = path.dirname(logPath);
-        if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
-        const logEntry3 = JSON.stringify({location:'auth.js:login-validation-failed',message:'Missing username or password',data:{hasUsername:!!username,hasPassword:!!password},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'D,E'})+'\n';
-        fs.appendFileSync(logPath, logEntry3);
-      } catch (logErr) {}
-      // #endregion
       return res.status(400).json({ error: 'Username and password are required' });
     }
 
-    // #region agent log
-    try {
-      const fs = require('fs');
-      const path = require('path');
-      const logPath = 'd:\\SLOP\\.cursor\\debug.log';
-      const logDir = path.dirname(logPath);
-      if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
-      const userCount = db.prepare('SELECT COUNT(*) as count FROM users').get();
-      const logEntry4 = JSON.stringify({location:'auth.js:user-count',message:'Total users in DB',data:{userCount:userCount.count},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A'})+'\n';
-      fs.appendFileSync(logPath, logEntry4);
-    } catch (logErr) {}
-    // #endregion
-
     // Find user by username or email
-    // #region agent log
-    try {
-      const fs = require('fs');
-      const path = require('path');
-      const logPath = 'd:\\SLOP\\.cursor\\debug.log';
-      const logDir = path.dirname(logPath);
-      if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
-      const logEntry5 = JSON.stringify({location:'auth.js:before-user-lookup',message:'About to query user',data:{searchUsername:username,searchEmail:username},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'C'})+'\n';
-      fs.appendFileSync(logPath, logEntry5);
-    } catch (logErr) {}
-    // #endregion
-    
     const user = db.prepare(`
       SELECT * FROM users WHERE username = ? OR email = ?
     `).get(username, username);
 
-    // #region agent log
-    try {
-      const fs = require('fs');
-      const path = require('path');
-      const logPath = 'd:\\SLOP\\.cursor\\debug.log';
-      const logDir = path.dirname(logPath);
-      if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
-      const logEntry6 = JSON.stringify({location:'auth.js:user-lookup',message:'User lookup result',data:{userFound:!!user,userId:user?.id,userUsername:user?.username,userEmail:user?.email,userColumns:user?Object.keys(user):[],hasPasswordHash:user?.password_hash?true:false,passwordHashLength:user?.password_hash?.length||0,passwordHashType:typeof user?.password_hash,passwordHashFirstChars:user?.password_hash?.substring(0,20)||null},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,C,F'})+'\n';
-      fs.appendFileSync(logPath, logEntry6);
-    } catch (logErr) {}
-    // #endregion
-
     if (!user) {
-      // #region agent log
-      try {
-        const fs = require('fs');
-        const path = require('path');
-        const logPath = 'd:\\SLOP\\.cursor\\debug.log';
-        const logDir = path.dirname(logPath);
-        if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
-        const logEntry7 = JSON.stringify({location:'auth.js:user-not-found',message:'User not found - returning invalid credentials',data:{searchedFor:username},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'A,C'})+'\n';
-        fs.appendFileSync(logPath, logEntry7);
-      } catch (logErr) {}
-      // #endregion
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -266,44 +170,9 @@ router.post('/login', async (req, res) => {
       return res.status(401).json({ error: 'Invalid credentials' });
     }
     
-    // #region agent log
-    try {
-      const fs = require('fs');
-      const path = require('path');
-      const logPath = 'd:\\SLOP\\.cursor\\debug.log';
-      const logDir = path.dirname(logPath);
-      if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
-      const logEntry8 = JSON.stringify({location:'auth.js:before-password-compare',message:'About to compare password',data:{passwordLength:password.length,passwordHashLength:user.password_hash?.length||0,passwordHashExists:!!user.password_hash,hashFirstChars:user.password_hash?.substring(0,10)},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})+'\n';
-      fs.appendFileSync(logPath, logEntry8);
-    } catch (logErr) {}
-    // #endregion
-    
     const validPassword = await bcrypt.compare(password, user.password_hash);
 
-    // #region agent log
-    try {
-      const fs = require('fs');
-      const path = require('path');
-      const logPath = 'd:\\SLOP\\.cursor\\debug.log';
-      const logDir = path.dirname(logPath);
-      if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
-      const logEntry9 = JSON.stringify({location:'auth.js:password-compare',message:'Password comparison result',data:{validPassword,passwordProvided:password?.length||0,hashStartsWith:user.password_hash?.substring(0,7),hashLength:user.password_hash?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})+'\n';
-      fs.appendFileSync(logPath, logEntry9);
-    } catch (logErr) {}
-    // #endregion
-
     if (!validPassword) {
-      // #region agent log
-      try {
-        const fs = require('fs');
-        const path = require('path');
-        const logPath = 'd:\\SLOP\\.cursor\\debug.log';
-        const logDir = path.dirname(logPath);
-        if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
-        const logEntry10 = JSON.stringify({location:'auth.js:password-invalid',message:'Password invalid - returning invalid credentials',data:{passwordLength:password.length,hashLength:user.password_hash?.length||0},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'B'})+'\n';
-        fs.appendFileSync(logPath, logEntry10);
-      } catch (logErr) {}
-      // #endregion
       return res.status(401).json({ error: 'Invalid credentials' });
     }
 
@@ -312,18 +181,6 @@ router.post('/login', async (req, res) => {
 
     // Set session
     req.session.userId = user.id;
-
-    // #region agent log
-    try {
-      const fs = require('fs');
-      const path = require('path');
-      const logPath = 'd:\\SLOP\\.cursor\\debug.log';
-      const logDir = path.dirname(logPath);
-      if (!fs.existsSync(logDir)) fs.mkdirSync(logDir, { recursive: true });
-      const logEntry11 = JSON.stringify({location:'auth.js:login-success',message:'Login successful',data:{userId:user.id,username:user.username,hasSession:!!req.session.userId},timestamp:Date.now(),sessionId:'debug-session',runId:'run1',hypothesisId:'ALL'})+'\n';
-      fs.appendFileSync(logPath, logEntry11);
-    } catch (logErr) {}
-    // #endregion
 
     res.json({
       success: true,
@@ -400,13 +257,8 @@ router.post('/change-password', requireAuth, async (req, res) => {
  * Get all users (admin only)
  * GET /api/auth/users
  */
-router.get('/users', requireAuth, (req, res) => {
+router.get('/users', requireAuth, requireAdmin, (req, res) => {
   try {
-    const currentUser = db.prepare('SELECT role FROM users WHERE id = ?').get(req.session.userId);
-    if (currentUser.role !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
-    }
-
     const users = db.prepare(`
       SELECT id, username, email, display_name, role, created_at, last_login
       FROM users
@@ -425,14 +277,13 @@ router.get('/users', requireAuth, (req, res) => {
  * Delete user (admin only)
  * DELETE /api/auth/users/:id
  */
-router.delete('/users/:id', requireAuth, (req, res) => {
+router.delete('/users/:id', requireAuth, requireAdmin, (req, res) => {
   try {
-    const currentUser = db.prepare('SELECT role FROM users WHERE id = ?').get(req.session.userId);
-    if (currentUser.role !== 'admin') {
-      return res.status(403).json({ error: 'Admin access required' });
+    // Validate ID is an integer
+    const userId = parseInt(req.params.id, 10);
+    if (isNaN(userId) || userId <= 0) {
+      return res.status(400).json({ error: 'Invalid user ID' });
     }
-
-    const userId = parseInt(req.params.id);
     
     // Prevent self-deletion
     if (userId === req.session.userId) {

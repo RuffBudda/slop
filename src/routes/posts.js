@@ -200,8 +200,17 @@ router.get('/by-status/:status', (req, res) => {
  */
 router.get('/:id', (req, res) => {
   try {
+    // Validate ID - can be integer or post_id format (POST-XXXXXXXX)
+    const id = req.params.id;
+    const isNumericId = /^\d+$/.test(id);
+    const isPostId = /^POST-[A-Z0-9]+$/.test(id);
+    
+    if (!isNumericId && !isPostId) {
+      return res.status(400).json({ error: 'Invalid post ID format' });
+    }
+
     const post = db.prepare('SELECT * FROM posts WHERE id = ? OR post_id = ?')
-      .get(req.params.id, req.params.id);
+      .get(id, id);
 
     if (!post) {
       return res.status(404).json({ error: 'Post not found' });
@@ -227,12 +236,36 @@ router.post('/', (req, res) => {
   try {
     const { instruction, type, template, purpose, sample, keywords, identification } = req.body;
 
+    // Input validation - limit field lengths to prevent DoS
+    const MAX_FIELD_LENGTH = 10000;
+    if (instruction && instruction.length > MAX_FIELD_LENGTH) {
+      return res.status(400).json({ error: 'Instruction field exceeds maximum length' });
+    }
+    if (type && type.length > 500) {
+      return res.status(400).json({ error: 'Type field exceeds maximum length' });
+    }
+    if (template && template.length > MAX_FIELD_LENGTH) {
+      return res.status(400).json({ error: 'Template field exceeds maximum length' });
+    }
+    if (purpose && purpose.length > 500) {
+      return res.status(400).json({ error: 'Purpose field exceeds maximum length' });
+    }
+    if (sample && sample.length > MAX_FIELD_LENGTH) {
+      return res.status(400).json({ error: 'Sample field exceeds maximum length' });
+    }
+    if (keywords && keywords.length > 1000) {
+      return res.status(400).json({ error: 'Keywords field exceeds maximum length' });
+    }
+    if (identification && identification.length > 500) {
+      return res.status(400).json({ error: 'Identification field exceeds maximum length' });
+    }
+
     const postId = `POST-${uuidv4().substring(0, 8).toUpperCase()}`;
 
     const result = db.prepare(`
       INSERT INTO posts (post_id, instruction, type, template, purpose, sample, keywords, identification)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-    `).run(postId, instruction, type, template, purpose, sample, keywords, identification);
+    `).run(postId, instruction || null, type || null, template || null, purpose || null, sample || null, keywords || null, identification || null);
 
     const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(result.lastInsertRowid);
 
@@ -307,7 +340,13 @@ router.post('/bulk', (req, res) => {
  */
 router.put('/:id', (req, res) => {
   try {
-    const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(req.params.id);
+    // Validate ID is an integer
+    const postId = parseInt(req.params.id, 10);
+    if (isNaN(postId) || postId <= 0) {
+      return res.status(400).json({ error: 'Invalid post ID' });
+    }
+
+    const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
     if (!post) {
       return res.status(404).json({ error: 'Post not found' });
     }
@@ -326,6 +365,10 @@ router.put('/:id', (req, res) => {
 
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {
+        // Validate string fields have reasonable length limits
+        if (typeof req.body[field] === 'string' && req.body[field].length > 10000) {
+          return res.status(400).json({ error: `Field ${field} exceeds maximum length` });
+        }
         updates.push(`${field} = ?`);
         values.push(req.body[field]);
       }
@@ -336,11 +379,11 @@ router.put('/:id', (req, res) => {
     }
 
     updates.push('updated_at = CURRENT_TIMESTAMP');
-    values.push(req.params.id);
+    values.push(postId);
 
     db.prepare(`UPDATE posts SET ${updates.join(', ')} WHERE id = ?`).run(...values);
 
-    const updatedPost = db.prepare('SELECT * FROM posts WHERE id = ?').get(req.params.id);
+    const updatedPost = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
 
     res.json({
       success: true,
@@ -363,17 +406,28 @@ router.put('/:id', (req, res) => {
  */
 router.put('/:id/variant/:variantNum', (req, res) => {
   try {
-    const { id, variantNum } = req.params;
+    // Validate ID is an integer
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid post ID' });
+    }
+
+    const { variantNum } = req.params;
     const { text } = req.body;
 
     if (!['1', '2', '3'].includes(variantNum)) {
       return res.status(400).json({ error: 'Invalid variant number' });
     }
 
+    // Validate text length
+    if (text && typeof text === 'string' && text.length > 10000) {
+      return res.status(400).json({ error: 'Variant text exceeds maximum length' });
+    }
+
     const field = `variant_${variantNum}`;
     
     db.prepare(`UPDATE posts SET ${field} = ?, updated_at = CURRENT_TIMESTAMP WHERE id = ?`)
-      .run(text, id);
+      .run(text || null, id);
 
     res.json({ success: true });
 
@@ -389,8 +443,18 @@ router.put('/:id/variant/:variantNum', (req, res) => {
  */
 router.post('/:id/approve', (req, res) => {
   try {
-    const { id } = req.params;
+    // Validate ID is an integer
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid post ID' });
+    }
+
     const { choice, imgChoice, schedule } = req.body;
+
+    // Validate choice if provided
+    if (choice !== undefined && ![1, 2, 3].includes(choice)) {
+      return res.status(400).json({ error: 'Invalid variant choice' });
+    }
 
     const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(id);
     if (!post) {
@@ -459,7 +523,11 @@ router.post('/:id/approve', (req, res) => {
  */
 router.post('/:id/reject', (req, res) => {
   try {
-    const { id } = req.params;
+    // Validate ID is an integer
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid post ID' });
+    }
 
     db.prepare(`
       UPDATE posts SET 
@@ -482,7 +550,11 @@ router.post('/:id/reject', (req, res) => {
  */
 router.post('/:id/restore', (req, res) => {
   try {
-    const { id } = req.params;
+    // Validate ID is an integer
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid post ID' });
+    }
 
     db.prepare(`
       UPDATE posts SET 
@@ -505,8 +577,23 @@ router.post('/:id/restore', (req, res) => {
  */
 router.put('/:id/choices', (req, res) => {
   try {
-    const { id } = req.params;
+    // Validate ID is an integer
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid post ID' });
+    }
+
     const { selected_variant, selected_image, drive_image_url } = req.body;
+
+    // Validate selected_variant if provided
+    if (selected_variant !== undefined && ![1, 2, 3, null].includes(selected_variant)) {
+      return res.status(400).json({ error: 'Invalid variant selection' });
+    }
+
+    // Validate selected_image if provided
+    if (selected_image !== undefined && (!Number.isInteger(selected_image) || selected_image < 1 || selected_image > 6)) {
+      return res.status(400).json({ error: 'Invalid image selection' });
+    }
 
     const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(id);
     if (!post) {
@@ -560,7 +647,12 @@ router.put('/:id/choices', (req, res) => {
  */
 router.put('/:id/schedule', (req, res) => {
   try {
-    const { id } = req.params;
+    // Validate ID is an integer
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid post ID' });
+    }
+
     const { schedule } = req.body;
 
     db.prepare(`
@@ -568,7 +660,7 @@ router.put('/:id/schedule', (req, res) => {
         post_schedule = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
-    `).run(schedule, id);
+    `).run(schedule || null, id);
 
     res.json({ success: true, message: 'Schedule updated' });
 
@@ -584,7 +676,13 @@ router.put('/:id/schedule', (req, res) => {
  */
 router.delete('/:id', (req, res) => {
   try {
-    const result = db.prepare('DELETE FROM posts WHERE id = ?').run(req.params.id);
+    // Validate ID is an integer
+    const id = parseInt(req.params.id, 10);
+    if (isNaN(id) || id <= 0) {
+      return res.status(400).json({ error: 'Invalid post ID' });
+    }
+
+    const result = db.prepare('DELETE FROM posts WHERE id = ?').run(id);
 
     if (result.changes === 0) {
       return res.status(404).json({ error: 'Post not found' });
@@ -610,8 +708,22 @@ router.post('/bulk-delete', (req, res) => {
       return res.status(400).json({ error: 'IDs array is required' });
     }
 
-    const placeholders = ids.map(() => '?').join(',');
-    const result = db.prepare(`DELETE FROM posts WHERE id IN (${placeholders})`).run(...ids);
+    // Validate all IDs are integers to prevent SQL injection
+    const validIds = ids.filter(id => {
+      const numId = parseInt(id, 10);
+      return !isNaN(numId) && numId > 0 && numId.toString() === id.toString();
+    });
+
+    if (validIds.length === 0) {
+      return res.status(400).json({ error: 'Invalid IDs provided' });
+    }
+
+    if (validIds.length !== ids.length) {
+      return res.status(400).json({ error: 'Some IDs are invalid' });
+    }
+
+    const placeholders = validIds.map(() => '?').join(',');
+    const result = db.prepare(`DELETE FROM posts WHERE id IN (${placeholders})`).run(...validIds);
 
     res.json({
       success: true,
