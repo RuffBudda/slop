@@ -127,6 +127,9 @@ a {
   gap: 8px;
   align-items: center;
   flex-wrap: wrap;
+  position: relative;
+  z-index: 1;
+  flex-shrink: 0;
 }
 
 .navBtn {
