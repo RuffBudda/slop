@@ -366,44 +366,6 @@ async function loadGoogleDriveStatus() {
     if (disconnectBtn) {
       disconnectBtn.style.display = isConnected ? 'inline-flex' : 'none';
     }
-    
-    // Load OAuth credentials if they exist
-    try {
-      const result = await API.settings.get(['google_drive_client_id', 'google_drive_client_secret', 'google_drive_redirect_uri']);
-      const settings = result.settings || {};
-      
-      const clientIdInput = document.getElementById('googleDriveClientId');
-      const clientSecretInput = document.getElementById('googleDriveClientSecret');
-      const redirectUriInput = document.getElementById('googleDriveRedirectUri');
-      
-      // Client ID and Secret are encrypted, so they return { isSet, masked }
-      // We can't show the actual values, but we can indicate they're set
-      if (clientIdInput && settings.google_drive_client_id) {
-        if (settings.google_drive_client_id.isSet) {
-          // Show placeholder to indicate it's set (can't show actual value for security)
-          clientIdInput.placeholder = '•••••••••••••••• (already configured)';
-        }
-      }
-      if (clientSecretInput && settings.google_drive_client_secret) {
-        if (settings.google_drive_client_secret.isSet) {
-          // Show placeholder to indicate it's set (can't show actual value for security)
-          clientSecretInput.placeholder = '•••••••••••••••• (already configured)';
-        }
-      }
-      // Redirect URI is not encrypted, so it returns the actual value
-      if (redirectUriInput && settings.google_drive_redirect_uri) {
-        // Redirect URI is not encrypted, so it's a string value
-        const redirectUri = typeof settings.google_drive_redirect_uri === 'string' 
-          ? settings.google_drive_redirect_uri 
-          : '';
-        if (redirectUri) {
-          redirectUriInput.value = redirectUri;
-        }
-      }
-    } catch (error) {
-      // OAuth credentials not set yet, that's okay
-      console.log('OAuth credentials not loaded:', error);
-    }
   } catch (error) {
     console.error('Failed to load Google Drive status:', error);
     const statusText = document.getElementById('googleDriveStatusText');
@@ -1557,10 +1519,116 @@ function getEnergyComparison(wh) {
 }
 
 // ============================================================
+// SETTINGS TILES NAVIGATION
+// ============================================================
+
+function initSettingsTiles() {
+  const tilesGrid = document.getElementById('settingsTilesGrid');
+  const backBtn = document.getElementById('btnSettingsBack');
+  const backContainer = document.getElementById('settingsBack');
+  
+  if (!tilesGrid) return;
+  
+  // Show tiles by default
+  showTiles();
+  
+  // Handle tile clicks
+  tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
+    tile.addEventListener('click', () => {
+      const section = tile.dataset.section;
+      if (section) {
+        showSection(section);
+      }
+    });
+  });
+  
+  // Handle back button
+  if (backBtn) {
+    backBtn.addEventListener('click', () => {
+      showTiles();
+    });
+  }
+  
+  function showTiles() {
+    // Show tiles grid
+    tilesGrid.classList.remove('hidden');
+    // Hide back button
+    if (backContainer) backContainer.classList.add('hidden');
+    // Hide all sections
+    document.querySelectorAll('.settings-section-content').forEach(section => {
+      section.classList.add('hidden');
+    });
+  }
+  
+  function showSection(sectionName) {
+    // Hide tiles grid
+    tilesGrid.classList.add('hidden');
+    // Show back button
+    if (backContainer) backContainer.classList.remove('hidden');
+    // Hide all sections
+    document.querySelectorAll('.settings-section-content').forEach(section => {
+      section.classList.add('hidden');
+    });
+    // Show target section
+    const targetSection = document.querySelector(`.settings-section-content[data-section="${sectionName}"]`);
+    if (targetSection) {
+      targetSection.classList.remove('hidden');
+    }
+    // Update active tile
+    tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
+      tile.classList.toggle('active', tile.dataset.section === sectionName);
+    });
+  }
+}
+
+// ============================================================
+// PASSWORD VISIBILITY TOGGLES
+// ============================================================
+
+function initPasswordVisibilityToggles() {
+  // Find all password inputs
+  const passwordInputs = document.querySelectorAll('input[type="password"]');
+  
+  passwordInputs.forEach(input => {
+    // Skip if already has a toggle
+    if (input.parentElement.querySelector('.password-toggle')) return;
+    
+    // Create wrapper if needed
+    let wrapper = input.parentElement;
+    if (!wrapper.classList.contains('password-input-wrapper')) {
+      wrapper = document.createElement('div');
+      wrapper.className = 'password-input-wrapper';
+      input.parentNode.insertBefore(wrapper, input);
+      wrapper.appendChild(input);
+    }
+    
+    // Create toggle button
+    const toggle = document.createElement('button');
+    toggle.type = 'button';
+    toggle.className = 'password-toggle';
+    toggle.setAttribute('aria-label', 'Toggle password visibility');
+    toggle.innerHTML = '👁️';
+    
+    // Add click handler
+    toggle.addEventListener('click', () => {
+      const isPassword = input.type === 'password';
+      input.type = isPassword ? 'text' : 'password';
+      toggle.innerHTML = isPassword ? '🙈' : '👁️';
+      toggle.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
+    });
+    
+    // Insert toggle after input
+    wrapper.appendChild(toggle);
+  });
+}
+
+// ============================================================
 // INITIALIZATION
 // ============================================================
 
 function initSettingsModule() {
+  initSettingsTiles();
+  initPasswordVisibilityToggles();
   initProfileSettingsForm();
   initPasswordForm();
   initApiSettingsForm();

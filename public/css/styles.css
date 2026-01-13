@@ -1694,6 +1694,43 @@ dialog::backdrop {
   margin-bottom: 20px;
 }
 
+/* Password input wrapper and toggle */
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input-wrapper input[type="password"],
+.password-input-wrapper input[type="text"] {
+  padding-right: 40px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 8px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 4px 8px;
+  font-size: 16px;
+  color: var(--ink-muted);
+  transition: color 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.password-toggle:hover {
+  color: var(--ink);
+}
+
+.password-toggle:focus {
+  outline: none;
+  color: var(--accent);
+}
+
 .settings-form label {
   display: block;
   margin-bottom: 6px;
