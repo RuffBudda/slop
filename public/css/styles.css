@@ -78,12 +78,13 @@ a {
 .top-inner {
   max-width: var(--maxw);
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: auto 1fr auto;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   height: 58px;
   padding: 0 var(--g);
   gap: 16px;
+  position: relative;
 }
 
 .brand {
@@ -1452,7 +1453,7 @@ dialog::backdrop {
 /* Settings Tiles Navigation */
 .settings-tiles-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(5, 1fr);
   gap: 16px;
   margin-bottom: 32px;
 }
@@ -2082,10 +2083,11 @@ dialog::backdrop {
    GLOBAL SEARCH
    ============================================================ */
 .search-container {
-  position: relative;
-  max-width: 500px;
-  margin: 0 auto;
-  justify-self: center;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  max-width: 100%;
 }
 
 .search-input {

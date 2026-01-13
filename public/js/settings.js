@@ -1867,53 +1867,12 @@ function initPasswordVisibilityToggles() {
       toggle.setAttribute('aria-label', isPassword ? 'Hide password' : 'Show password');
     });
     
-    // Add share password option (copy to clipboard)
-    const shareBtn = document.createElement('button');
-    shareBtn.type = 'button';
-    shareBtn.className = 'password-share';
-    shareBtn.setAttribute('aria-label', 'Copy password');
-    shareBtn.style.position = 'absolute';
-    shareBtn.style.right = '32px';
-    shareBtn.style.background = 'transparent';
-    shareBtn.style.border = 'none';
-    shareBtn.style.cursor = 'pointer';
-    shareBtn.style.padding = '4px 8px';
-    shareBtn.style.color = 'var(--ink-muted, #a0a0a0)';
-    shareBtn.style.zIndex = '1';
-    shareBtn.style.display = 'flex';
-    shareBtn.style.alignItems = 'center';
-    shareBtn.style.justifyContent = 'center';
-    
-    // SVG share icon
-    const shareSvg = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-      <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
-      <polyline points="16 6 12 2 8 6"></polyline>
-      <line x1="12" y1="2" x2="12" y2="15"></line>
-    </svg>`;
-    
-    shareBtn.innerHTML = shareSvg;
-    
-    shareBtn.addEventListener('click', async (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      try {
-        await navigator.clipboard.writeText(input.value);
-        showToast('Password copied to clipboard', 'ok');
-      } catch (error) {
-        // Fallback for older browsers
-        input.select();
-        document.execCommand('copy');
-        showToast('Password copied to clipboard', 'ok');
-      }
-    });
-    
-    // Insert buttons into wrapper
-    wrapper.appendChild(shareBtn);
+    // Insert toggle into wrapper
     wrapper.appendChild(toggle);
     
-    // Ensure input has right padding for both buttons
+    // Ensure input has right padding for toggle
     if (!input.style.paddingRight) {
-      input.style.paddingRight = '70px';
+      input.style.paddingRight = '40px';
     }
   });
 }
