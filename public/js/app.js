@@ -170,32 +170,21 @@ window.toggleBulkSelect = function(postId) {
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('DOM ready, checking auth status...');
   
-  // Safety timeout: hide loader after 15 seconds no matter what
-  const safetyTimeout = setTimeout(() => {
-    console.warn('Safety timeout: hiding app loader');
-    hideAppLoader();
-    if (typeof showLoginPage === 'function') {
-      showLoginPage();
-    }
-  }, 15000);
-  
   try {
     const isAuthenticated = await checkAuthStatus();
-    
-    clearTimeout(safetyTimeout);
     
     if (isAuthenticated) {
       showMainApp();
       initApp();
     }
   } catch (error) {
-    clearTimeout(safetyTimeout);
     console.error('Failed to initialize app:', error);
-    // Ensure loader is hidden even if checkAuthStatus fails
-    hideAppLoader();
     // Show login page as fallback
     if (typeof showLoginPage === 'function') {
       showLoginPage();
+    } else {
+      // Last resort: hide loader directly
+      hideAppLoader();
     }
   }
 });

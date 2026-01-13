@@ -1021,8 +1021,7 @@ body.processing {
 }
 
 .app-loader.hidden {
-  opacity: 0;
-  pointer-events: none;
+  display: none !important;
 }
 
 .app-loader .spinner {
