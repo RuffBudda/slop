@@ -1,0 +1,30 @@
+<div class="settings-container">
+  <nav class="settings-breadcrumbs" aria-label="Breadcrumb">
+    <a href="#/settings" class="breadcrumb-link">Settings</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">OpenAI Integration</span>
+  </nav>
+  <div class="settings-group settings-section-content" id="settingsSectionOpenai" data-section="openai">
+    <h2 class="settings-group-title">OpenAI Integration</h2>
+    
+    <section class="settings-section">
+      <h3>OpenAI API Configuration</h3>
+      <p class="section-description">
+        Configure your OpenAI API key for content generation. Get your API key from <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a>.
+      </p>
+      <form id="openaiSettingsForm" class="settings-form">
+        <div class="form-group">
+          <label for="openaiKey">OpenAI API Key</label>
+          <div class="input-with-action">
+            <input type="password" id="openaiKey" name="openai_api_key" placeholder="sk-...">
+            <button type="button" class="btn clear btn-sm" data-test="openai">Test</button>
+          </div>
+          <small>Your OpenAI API key starting with "sk-"</small>
+        </div>
+        <button type="submit" class="btn approve">
+          <span class="ico"></span> Save OpenAI Settings
+        </button>
+      </form>
+    </section>
+  </div>
+</div>

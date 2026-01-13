@@ -1,0 +1,50 @@
+<div class="settings-container">
+  <nav class="settings-breadcrumbs" aria-label="Breadcrumb">
+    <a href="#/settings" class="breadcrumb-link">Settings</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Content Management</span>
+  </nav>
+  <div class="settings-group settings-section-content" id="settingsSectionContent" data-section="content">
+    <h2 class="settings-group-title">Content Management</h2>
+    
+    <!-- Sheet Management Section -->
+    <section class="settings-section">
+      <h3>Content Ideas</h3>
+      <p class="section-description">Add and manage content ideas. These will be processed during content generation.</p>
+      
+      <div class="sheet-toolbar">
+        <button class="btn approve" id="btnAddPost">
+          <span class="ico"></span> Add New Post
+        </button>
+        <button class="btn clear" id="btnImportPosts">
+          Import CSV
+        </button>
+        <button class="btn clear" id="btnExportPosts">
+          Export CSV
+        </button>
+      </div>
+      
+      <div class="sheet-container" id="sheetContainer">
+        <table class="sheet-table" id="sheetTable">
+          <thead>
+            <tr>
+              <th class="col-id">ID</th>
+              <th class="col-identification">Identification</th>
+              <th class="col-instruction">Instruction</th>
+              <th class="col-type">Type</th>
+              <th class="col-template">Template</th>
+              <th class="col-purpose">Purpose</th>
+              <th class="col-sample">Sample</th>
+              <th class="col-keywords">Keywords</th>
+              <th class="col-status">Status</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="sheetBody">
+            <!-- Rows populated by JavaScript -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</div>

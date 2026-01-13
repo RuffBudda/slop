@@ -1,0 +1,150 @@
+<div class="settings-container">
+  <nav class="settings-breadcrumbs" aria-label="Breadcrumb">
+    <a href="#/settings" class="breadcrumb-link">Settings</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Google Drive</span>
+  </nav>
+  <div class="settings-group settings-section-content" id="settingsSectionGoogledrive" data-section="googledrive">
+    <h2 class="settings-group-title">Google Drive Integration</h2>
+    
+    <section class="settings-section">
+      <h3>Google Drive Integration</h3>
+      <p class="section-description">
+        Connect your Google Drive account to browse and upload images directly from your Drive.
+        Choose between OAuth (personal account) or Service Account (recommended for automation).
+      </p>
+      
+      <div id="googleDriveStatus" class="google-drive-status">
+        <p id="googleDriveStatusText">Checking connection status...</p>
+        <div id="googleDriveConnectionType" style="margin-top: 8px; font-size: 13px; color: #888;"></div>
+        <div id="googleDriveActions" style="display: flex; gap: 12px; margin-top: 12px; flex-wrap: wrap;">
+          <button id="btnConnectGoogleDrive" class="btn approve" style="display: none;">
+            <span class="ico"></span> Connect via OAuth
+          </button>
+          <button id="btnDisconnectGoogleDrive" class="btn reject" style="display: none;">
+            <span class="ico disconnect-icon"></span> Disconnect
+          </button>
+        </div>
+      </div>
+      
+      <!-- OAuth Configuration -->
+      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bd);">
+        <h4>OAuth Configuration (Personal Account)</h4>
+        <p class="field-description" style="margin-bottom: 16px;">
+          Connect using your personal Google account. You'll need to create OAuth credentials in Google Cloud Console.
+          <br><strong>Quick Setup:</strong>
+          <br>1. Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>
+          <br>2. Create a project or select existing one
+          <br>3. Enable <strong>Google Drive API</strong>
+          <br>4. Go to <strong>"APIs & Services" → "Credentials"</strong>
+          <br>5. Click <strong>"Create Credentials" → "OAuth client ID"</strong>
+          <br>6. Choose <strong>"Web application"</strong>
+          <br>7. Add authorized redirect URI: <code id="redirectUriDisplay">https://yourdomain.com/api/google-drive/callback</code>
+          <br>8. Copy your Client ID and Client Secret below
+        </p>
+        
+        <form id="googleDriveOAuthForm" class="settings-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="googleDriveClientId">Client ID</label>
+              <input type="text" id="googleDriveClientId" name="google_drive_client_id" 
+                     placeholder="xxxxx.apps.googleusercontent.com">
+              <small>Your OAuth 2.0 Client ID from Google Cloud Console</small>
+            </div>
+            <div class="form-group">
+              <label for="googleDriveClientSecret">Client Secret</label>
+              <input type="password" id="googleDriveClientSecret" name="google_drive_client_secret" 
+                     placeholder="GOCSPX-xxxxx">
+              <small>Your OAuth 2.0 Client Secret</small>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="googleDriveRedirectUri">Redirect URI</label>
+            <input type="text" id="googleDriveRedirectUri" name="google_drive_redirect_uri" 
+                   placeholder="https://yourdomain.com/api/google-drive/callback">
+            <small>Must match exactly what you set in Google Cloud Console. Use your actual domain, not localhost.</small>
+          </div>
+          <button type="submit" class="btn approve">
+            <span class="ico"></span> Save OAuth Credentials
+          </button>
+        </form>
+      </div>
+      
+      <!-- Service Account Configuration -->
+      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bd);">
+        <h4>Service Account (Recommended for Automation)</h4>
+        <p class="field-description" style="margin-bottom: 16px;">
+          Upload a service account JSON key file for automated access without user interaction.
+          <br><strong>How to create a Service Account:</strong>
+          <br>1. Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>
+          <br>2. Navigate to <strong>"IAM & Admin" → "Service Accounts"</strong>
+          <br>3. Click <strong>"Create Service Account"</strong>
+          <br>4. Grant <strong>"Editor"</strong> role (or specific Drive permissions)
+          <br>5. Create and download a JSON key
+          <br>6. Upload the JSON file below
+        </p>
+        
+        <form id="googleDriveServiceAccountForm" class="settings-form">
+          <div class="form-group">
+            <label for="serviceAccountFile">Service Account JSON Key</label>
+            <input type="file" id="serviceAccountFile" accept=".json" style="margin-bottom: 12px;">
+            <small>Upload the JSON key file downloaded from Google Cloud Console</small>
+          </div>
+          <button type="submit" class="btn approve">
+            <span class="ico"></span> Upload Service Account
+          </button>
+        </form>
+      </div>
+      
+      <!-- Folder Selection -->
+      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bd);">
+        <h4>Folder Selection</h4>
+        <p class="field-description" style="margin-bottom: 16px;">
+          Select a specific Google Drive folder to use for images. Only images from this folder will be available.
+        </p>
+        
+        <form id="googleDriveFolderForm" class="settings-form">
+          <div class="form-group">
+            <label for="googleDriveFolderLink">Folder Link or ID</label>
+            <div style="display: flex; gap: 8px;">
+              <input type="text" id="googleDriveFolderLink" name="google_drive_folder_id" 
+                     placeholder="https://drive.google.com/drive/folders/... or folder ID">
+              <button type="button" id="btnBrowseFolders" class="btn clear">
+                <span class="ico"></span> Browse
+              </button>
+            </div>
+            <small id="googleDriveFolderStatus" style="margin-top: 8px; display: block; color: #666;">
+              No folder selected. Images will be fetched from all folders.
+            </small>
+          </div>
+          <div class="form-group" style="display: flex; gap: 8px;">
+            <button type="submit" class="btn approve">
+              <span class="ico"></span> Save Folder
+            </button>
+            <button type="button" id="btnClearFolder" class="btn clear">
+                <span class="ico clear-icon"></span> Clear
+            </button>
+          </div>
+        </form>
+        
+        <!-- Folder Browser Modal -->
+        <dialog id="folderBrowserModal" style="max-width: 600px; width: 90%; border-radius: 8px; border: 1px solid var(--bd);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+            <h3 style="margin: 0;">Select Google Drive Folder</h3>
+            <button id="folderBrowserClose" class="btn clear" style="padding: 4px 8px;"><span class="close-icon"></span></button>
+          </div>
+          <div id="folderBrowserBreadcrumb" style="margin-bottom: 12px; padding: 8px; background: var(--bg-alt); border-radius: 4px; font-size: 13px;">
+            <button class="btn-link" data-folder-id="root" style="text-decoration: none; color: var(--fg);">Root</button>
+          </div>
+          <div id="folderBrowserList" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--bd); border-radius: 4px; padding: 8px;">
+            <p style="text-align: center; color: #666; padding: 20px;">Loading folders...</p>
+          </div>
+          <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;">
+            <button id="folderBrowserCancel" class="btn clear">Cancel</button>
+            <button id="folderBrowserSelect" class="btn approve" disabled>Select Folder</button>
+          </div>
+        </dialog>
+      </div>
+    </section>
+  </div>
+</div>

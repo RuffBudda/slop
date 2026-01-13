@@ -1,0 +1,43 @@
+<div class="settings-container">
+  <nav class="settings-breadcrumbs" aria-label="Breadcrumb">
+    <a href="#/settings" class="breadcrumb-link">Settings</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Storage (S3/Spaces)</span>
+  </nav>
+  <div class="settings-group settings-section-content" id="settingsSectionStorage" data-section="storage">
+    <h2 class="settings-group-title">Storage (S3/DigitalOcean Spaces)</h2>
+    
+    <section class="settings-section">
+      <h3>DigitalOcean Spaces Configuration</h3>
+      <p class="section-description">
+        Configure DigitalOcean Spaces (S3-compatible) for image storage. Get your credentials from the DigitalOcean Spaces dashboard.
+      </p>
+      <form id="storageSettingsForm" class="settings-form">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="spacesName">Space Name</label>
+            <input type="text" id="spacesName" name="spaces_name" placeholder="my-space">
+          </div>
+          <div class="form-group">
+            <label for="spacesRegion">Region</label>
+            <input type="text" id="spacesRegion" name="spaces_region" placeholder="blr1">
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="spacesKey">Access Key</label>
+          <input type="password" id="spacesKey" name="spaces_key">
+        </div>
+        <div class="form-group">
+          <label for="spacesSecret">Secret Key</label>
+          <div class="input-with-action">
+            <input type="password" id="spacesSecret" name="spaces_secret">
+            <button type="button" class="btn clear btn-sm" data-test="spaces">Test</button>
+          </div>
+        </div>
+        <button type="submit" class="btn approve">
+          <span class="ico"></span> Save Storage Settings
+        </button>
+      </form>
+    </section>
+  </div>
+</div>

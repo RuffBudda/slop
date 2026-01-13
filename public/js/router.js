@@ -86,24 +86,23 @@ const Router = {
       
       // Handle settings pages
       let html;
-      let settingsSection = null;
       if (pagePath.startsWith('settings/')) {
         const settingsPage = pagePath.replace('settings/', '');
         if (settingsPage === 'index' || settingsPage === '') {
           const response = await fetch(`/pages/settings/index.html`);
           if (!response.ok) throw new Error(`Failed to load settings index`);
           html = await response.text();
-        } else if (settingsPage === 'admin') {
-          // Admin has its own page
-          const response = await fetch(`/pages/settings/admin.html`);
-          if (!response.ok) throw new Error(`Failed to load admin page`);
-          html = await response.text();
         } else {
-          // For other settings sections, load index and show the section
-          const response = await fetch(`/pages/settings/index.html`);
-          if (!response.ok) throw new Error(`Failed to load settings index`);
-          html = await response.text();
-          settingsSection = settingsPage; // Store section name to show after load
+          // Try to load specific settings page
+          const response = await fetch(`/pages/settings/${settingsPage}.html`);
+          if (!response.ok) {
+            // Fallback to index if specific page doesn't exist
+            const indexResponse = await fetch(`/pages/settings/index.html`);
+            if (!indexResponse.ok) throw new Error(`Failed to load settings page`);
+            html = await indexResponse.text();
+          } else {
+            html = await response.text();
+          }
         }
       } else {
         // Load regular page
@@ -119,13 +118,6 @@ const Router = {
       // Initialize icons after page loads
       if (window.Icons && window.Icons.init) {
         window.Icons.init();
-      }
-      
-      // If we're loading a settings section, show it after a brief delay
-      if (settingsSection && typeof window.showSettingsSection === 'function') {
-        setTimeout(() => {
-          window.showSettingsSection(settingsSection);
-        }, 100);
       }
       
       // Initialize page-specific scripts

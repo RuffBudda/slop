@@ -1,0 +1,44 @@
+<div class="settings-container">
+  <nav class="settings-breadcrumbs" aria-label="Breadcrumb">
+    <a href="#/settings" class="breadcrumb-link">Settings</a>
+    <span class="breadcrumb-separator">/</span>
+    <span class="breadcrumb-current">Account & Security</span>
+  </nav>
+  <div class="settings-group settings-section-content" id="settingsSectionAccount" data-section="account">
+    <h2 class="settings-group-title">Account & Security</h2>
+    
+    <!-- Password Change Section -->
+    <section class="settings-section">
+      <h3>Change Password</h3>
+      <form id="passwordForm" class="settings-form">
+        <div class="form-group">
+          <label for="currentPassword">Current Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="currentPassword" name="currentPassword" required autocomplete="current-password">
+            <button type="button" class="password-toggle" aria-label="Toggle password visibility"></button>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="newPassword">New Password</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="newPassword" name="newPassword" required minlength="6" autocomplete="new-password">
+              <button type="button" class="password-toggle" aria-label="Toggle password visibility"></button>
+            </div>
+            <small>Minimum 6 characters</small>
+          </div>
+          <div class="form-group">
+            <label for="confirmPassword">Confirm New Password</label>
+            <div class="password-input-wrapper">
+              <input type="password" id="confirmPassword" name="confirmPassword" required minlength="6" autocomplete="new-password">
+              <button type="button" class="password-toggle" aria-label="Toggle password visibility"></button>
+            </div>
+          </div>
+        </div>
+        <button type="submit" class="btn approve">
+          <span class="ico"></span> Change Password
+        </button>
+      </form>
+    </section>
+  </div>
+</div>
