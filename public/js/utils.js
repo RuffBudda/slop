@@ -444,10 +444,17 @@ window.updateBadges = async function() {
 // ============================================================
 
 window.initGlobalSearch = function() {
-  const searchInput = document.getElementById('globalSearch');
-  const searchResults = document.getElementById('searchResults');
+  const searchModal = document.getElementById('searchModal');
+  const searchInput = document.getElementById('searchModalInput');
+  const searchResults = document.getElementById('searchResultsModal');
+  const searchIcon = document.querySelector('.search-modal-icon');
   
-  if (!searchInput || !searchResults) return;
+  if (!searchModal || !searchInput || !searchResults) return;
+  
+  // Initialize search icon
+  if (searchIcon && window.Icons && window.Icons.get) {
+    searchIcon.innerHTML = window.Icons.get('search', '', { size: '16px' });
+  }
   
   // Debounced search
   const performSearch = debounce(async (query) => {
@@ -492,6 +499,11 @@ window.initGlobalSearch = function() {
             const postId = item.dataset.postId;
             const status = item.dataset.status;
             
+            // Close modal
+            searchModal.close();
+            searchInput.value = '';
+            searchResults.classList.add('hidden');
+            
             // Navigate to appropriate tab
             if (status === 'generated') {
               activateTab('content');
@@ -502,9 +514,6 @@ window.initGlobalSearch = function() {
             } else {
               activateTab('settings');
             }
-            
-            searchResults.classList.add('hidden');
-            searchInput.value = '';
             
             // Scroll to post after tab loads
             setTimeout(() => {
@@ -535,21 +544,44 @@ window.initGlobalSearch = function() {
     }
   });
   
-  // Close on outside click
-  document.addEventListener('click', (e) => {
-    if (!e.target.closest('.search-container')) {
+  // Close modal on Escape
+  searchModal.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      searchModal.close();
+      searchInput.value = '';
       searchResults.classList.add('hidden');
     }
   });
   
-  // Ctrl+K shortcut
+  // Close modal on backdrop click
+  searchModal.addEventListener('click', (e) => {
+    if (e.target === searchModal) {
+      searchModal.close();
+      searchInput.value = '';
+      searchResults.classList.add('hidden');
+    }
+  });
+  
+  // Ctrl+K shortcut to open modal
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
-      searchInput.focus();
-      searchInput.select();
+      searchModal.showModal();
+      setTimeout(() => {
+        searchInput.focus();
+        searchInput.select();
+      }, 100);
     }
   });
+  
+  // Expose function to open search modal
+  window.openSearchModal = function() {
+    searchModal.showModal();
+    setTimeout(() => {
+      searchInput.focus();
+      searchInput.select();
+    }, 100);
+  };
 };
 
 // ============================================================

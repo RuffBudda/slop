@@ -27,10 +27,8 @@ async function loadSettings() {
     // Load posts for sheet view
     await loadSheetData();
     
-    // Load users (admin only) - but don't show sections here, let showSection handle it
-    if (window.AppState.user?.role === 'admin') {
-      await loadUsers();
-    }
+    // Note: Users are loaded when admin section is displayed (handled by router)
+    // This prevents loading users unnecessarily when other settings sections are accessed
     
     // Initialize tiles and password toggles when settings tab is activated
     initSettingsTiles();
@@ -1398,28 +1396,6 @@ function initClearInstanceOptions() {
   document.querySelectorAll('[data-clear-action="users"]').forEach(btn => {
     btn.addEventListener('click', () => clearAllUsers());
   });
-  
-  // Full reset form
-  const form = document.getElementById('instanceRefreshForm');
-  if (form) {
-    form.addEventListener('submit', async (e) => {
-      e.preventDefault();
-      await fullInstanceReset();
-    });
-  }
-  
-  // Copy confirmation text button
-  const copyBtn = document.getElementById('btnCopyConfirmation');
-  if (copyBtn) {
-    copyBtn.addEventListener('click', () => {
-      const text = "Humpty Dumpty sat on a wall. Humpty Dumpty had a great fall. All the king's horses and all the king's men couldn't put Humpty together again.";
-      navigator.clipboard.writeText(text).then(() => {
-        showToast('Confirmation text copied to clipboard', 'ok');
-      }).catch(() => {
-        showToast('Failed to copy text', 'bad');
-      });
-    });
-  }
 }
 
 async function clearAllPosts() {
@@ -1487,34 +1463,188 @@ async function clearAllUsers() {
   }
 }
 
-async function fullInstanceReset() {
-  const form = document.getElementById('instanceRefreshForm');
-  if (!form) return;
+/**
+ * Instance Refresh Workflow - Multi-step password-gated process
+ */
+const CONFIRMATION_TEXT = "Humpty Dumpty sat on a wall. Humpty Dumpty had a great fall. All the king's horses and all the king's men couldn't put Humpty together again.";
+
+let currentRefreshStep = 1;
+let refreshData = {};
+
+function initInstanceRefreshWorkflow() {
+  const modal = document.getElementById('instanceRefreshModal');
+  const startBtn = document.getElementById('btnStartInstanceRefresh');
+  const closeBtn = document.getElementById('instanceRefreshClose');
   
-  const data = {
-    adminUsername: form.refreshAdminUsername.value.trim(),
-    adminPassword: form.refreshAdminPassword.value,
-    confirmationText: form.refreshConfirmationText.value.trim()
-  };
+  if (!modal || !startBtn) return;
   
-  if (!data.adminUsername || !data.adminPassword || !data.confirmationText) {
-    showToast('All fields are required', 'bad');
-    return;
+  // Start button
+  startBtn.addEventListener('click', () => {
+    currentRefreshStep = 1;
+    refreshData = {};
+    showRefreshStep(1);
+    modal.showModal();
+    initPasswordVisibilityToggles(); // Initialize password toggles in modal
+  });
+  
+  // Close button
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      modal.close();
+      resetRefreshWorkflow();
+    });
   }
   
+  // Close on backdrop click
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) {
+      modal.close();
+      resetRefreshWorkflow();
+    }
+  });
+  
+  // Step 1: Continue
+  const continue1 = document.getElementById('refreshContinue1');
+  const cancel1 = document.getElementById('refreshCancel1');
+  if (continue1) continue1.addEventListener('click', () => showRefreshStep(2));
+  if (cancel1) cancel1.addEventListener('click', () => { modal.close(); resetRefreshWorkflow(); });
+  
+  // Step 2: Password verification
+  const continue2 = document.getElementById('refreshContinue2');
+  const cancel2 = document.getElementById('refreshCancel2');
+  if (continue2) {
+    continue2.addEventListener('click', async () => {
+      const username = document.getElementById('refreshAdminUsername')?.value.trim();
+      const password = document.getElementById('refreshAdminPassword')?.value;
+      
+      if (!username || !password) {
+        showToast('Username and password are required', 'bad');
+        return;
+      }
+      
+      refreshData.adminUsername = username;
+      refreshData.adminPassword = password;
+      showRefreshStep(3);
+    });
+  }
+  if (cancel2) cancel2.addEventListener('click', () => { modal.close(); resetRefreshWorkflow(); });
+  
+  // Step 3: Confirmation text
+  const continue3 = document.getElementById('refreshContinue3');
+  const cancel3 = document.getElementById('refreshCancel3');
+  const confirmationText = document.getElementById('refreshConfirmationText');
+  const copyBtn = document.getElementById('btnCopyConfirmation');
+  
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      navigator.clipboard.writeText(CONFIRMATION_TEXT).then(() => {
+        showToast('Confirmation text copied to clipboard', 'ok');
+      }).catch(() => {
+        const source = document.getElementById('refreshConfirmationSource');
+        if (source) {
+          source.select();
+          document.execCommand('copy');
+          showToast('Confirmation text copied', 'ok');
+        }
+      });
+    });
+  }
+  
+  if (confirmationText) {
+    confirmationText.addEventListener('input', () => {
+      const continueBtn = document.getElementById('refreshContinue3');
+      if (continueBtn) {
+        continueBtn.disabled = confirmationText.value.trim() !== CONFIRMATION_TEXT;
+      }
+    });
+  }
+  
+  if (continue3) {
+    continue3.addEventListener('click', () => {
+      const text = confirmationText?.value.trim();
+      if (text !== CONFIRMATION_TEXT) {
+        showToast('Confirmation text does not match', 'bad');
+        return;
+      }
+      refreshData.confirmationText = text;
+      showRefreshStep(4);
+    });
+  }
+  if (cancel3) cancel3.addEventListener('click', () => { modal.close(); resetRefreshWorkflow(); });
+  
+  // Step 4: Final confirmation
+  const continue4 = document.getElementById('refreshContinue4');
+  const cancel4 = document.getElementById('refreshCancel4');
+  const finalCheckbox = document.getElementById('refreshFinalConfirm');
+  
+  if (finalCheckbox) {
+    finalCheckbox.addEventListener('change', () => {
+      if (continue4) {
+        continue4.disabled = !finalCheckbox.checked;
+      }
+    });
+  }
+  
+  if (continue4) {
+    continue4.addEventListener('click', async () => {
+      if (!finalCheckbox?.checked) {
+        showToast('Please confirm that you understand the consequences', 'bad');
+        return;
+      }
+      await executeInstanceReset();
+    });
+  }
+  if (cancel4) cancel4.addEventListener('click', () => { modal.close(); resetRefreshWorkflow(); });
+}
+
+function showRefreshStep(step) {
+  document.querySelectorAll('.refresh-step').forEach(el => el.classList.add('hidden'));
+  const stepEl = document.getElementById(`refreshStep${step}`);
+  if (stepEl) {
+    stepEl.classList.remove('hidden');
+  }
+  currentRefreshStep = step;
+}
+
+function resetRefreshWorkflow() {
+  currentRefreshStep = 1;
+  refreshData = {};
+  document.querySelectorAll('.refresh-step').forEach(el => el.classList.add('hidden'));
+  showRefreshStep(1);
+  
+  const username = document.getElementById('refreshAdminUsername');
+  const password = document.getElementById('refreshAdminPassword');
+  const confirmation = document.getElementById('refreshConfirmationText');
+  const checkbox = document.getElementById('refreshFinalConfirm');
+  
+  if (username) username.value = '';
+  if (password) password.value = '';
+  if (confirmation) confirmation.value = '';
+  if (checkbox) checkbox.checked = false;
+  
+  const continue3 = document.getElementById('refreshContinue3');
+  const continue4 = document.getElementById('refreshContinue4');
+  if (continue3) continue3.disabled = true;
+  if (continue4) continue4.disabled = true;
+}
+
+async function executeInstanceReset() {
+  showRefreshStep(5);
+  
   try {
-    showLoader();
-    const result = await API.call('/settings/reset-instance', { method: 'POST', body: data });
+    const result = await API.call('/settings/reset-instance', { 
+      method: 'POST', 
+      body: refreshData 
+    });
+    
     showToast(result.message || 'Instance reset successfully', 'ok');
     
-    // Redirect to login after a delay
     setTimeout(() => {
       window.location.href = '/';
     }, 2000);
   } catch (error) {
     showToast(error.message || 'Failed to reset instance', 'bad');
-  } finally {
-    hideLoader();
+    showRefreshStep(4);
   }
 }
 
@@ -1689,49 +1819,236 @@ function formatEnergy(wh) {
 }
 
 /**
+ * Calculator constants (from OG)
+ */
+const CALCULATOR_CONSTANTS = {
+  CO2_PER_POST_MIN: 3,      // grams
+  CO2_PER_POST_MAX: 13,     // grams
+  CO2_PER_POST_AVG: 8,      // grams (average)
+  WATER_PER_POST_MIN: 10,    // milliliters
+  WATER_PER_POST_MAX: 500,  // milliliters
+  WATER_PER_POST_AVG: 255,  // milliliters (average)
+  TREES_PER_POST: 0.000008,  // trees cut down per post (3 variations + images)
+  UAE_POPULATION: 10000000,  // 10 million
+  WORLD_POPULATION: 8000000000  // 8 billion
+};
+
+/**
+ * Comparison constants for real-world comparisons
+ */
+const COMPARISON_CONSTANTS = {
+  DRIVE_DUBAI_ABU_DHABI_CO2: 25000,  // 25 kg CO2 for 140km drive
+  STEAK_CO2: 5400,                    // 5.4 kg CO2 for 200g steak
+  TOWNHOUSE_ELECTRICITY_CO2_PER_YEAR: 1200000,  // 1,200 kg CO2 per year
+  CARBON_CREDIT_COST_PER_TONNE_USD: 20,  // $20 per tonne CO2 (average voluntary market, nature-based removal)
+  USD_TO_AED_RATE: 3.67  // 1 USD = 3.67 AED
+};
+
+/**
+ * Formats a number with appropriate units and commas.
+ */
+function formatImpact(value, type) {
+  if (type === 'CO2') {
+    if (value >= 1000) {
+      const kgValue = value / 1000;
+      return formatNumber(kgValue.toFixed(2)) + ' kg CO₂';
+    } else {
+      return value.toFixed(2) + ' g CO₂';
+    }
+  } else if (type === 'WATER') {
+    const litres = value / 1000;
+    if (litres >= 1) {
+      return formatNumber(litres.toFixed(2)) + ' L';
+    } else {
+      return litres.toFixed(3) + ' L';
+    }
+  } else if (type === 'TREES') {
+    if (value >= 1000000) {
+      return (value / 1000000).toFixed(2) + ' million trees';
+    } else if (value >= 1000) {
+      return (value / 1000).toFixed(2) + ' thousand trees';
+    } else if (value >= 1) {
+      return value.toFixed(3) + ' trees';
+    } else {
+      return value.toFixed(6) + ' trees';
+    }
+  }
+  return value.toString();
+}
+
+/**
+ * Formats large numbers with commas.
+ */
+function formatNumber(num) {
+  return new Intl.NumberFormat('en-US').format(num);
+}
+
+/**
+ * Updates the calculator display with current values (from OG).
+ */
+window.updateCalculator = function() {
+  const slider = document.getElementById('postsPerWeek');
+  const valueDisplay = document.getElementById('postsPerWeekValue');
+  
+  if (!slider || !valueDisplay) return;
+  
+  const postsPerWeek = parseInt(slider.value, 10);
+  valueDisplay.textContent = postsPerWeek;
+  
+  // Calculate individual impact
+  const postsPerDay = postsPerWeek / 7;
+  const postsPerMonth = postsPerWeek * 4.33; // Average weeks per month
+  const postsPerYear = postsPerWeek * 52;
+  
+  // CO2 calculations (using average 8g per post)
+  const co2PerDay = postsPerDay * CALCULATOR_CONSTANTS.CO2_PER_POST_AVG;
+  const co2PerMonth = postsPerMonth * CALCULATOR_CONSTANTS.CO2_PER_POST_AVG;
+  const co2PerYear = postsPerYear * CALCULATOR_CONSTANTS.CO2_PER_POST_AVG;
+  
+  // Water calculations (using average 255ml per post)
+  const waterPerDay = postsPerDay * CALCULATOR_CONSTANTS.WATER_PER_POST_AVG;
+  const waterPerMonth = postsPerMonth * CALCULATOR_CONSTANTS.WATER_PER_POST_AVG;
+  const waterPerYear = postsPerYear * CALCULATOR_CONSTANTS.WATER_PER_POST_AVG;
+  
+  // Tree calculations (using 0.000008 trees per post)
+  const treesPerDay = postsPerDay * CALCULATOR_CONSTANTS.TREES_PER_POST;
+  const treesPerMonth = postsPerMonth * CALCULATOR_CONSTANTS.TREES_PER_POST;
+  const treesPerYear = postsPerYear * CALCULATOR_CONSTANTS.TREES_PER_POST;
+  
+  // Update individual results
+  const resultDayCO2 = document.getElementById('resultDayCO2');
+  const resultDayWater = document.getElementById('resultDayWater');
+  const resultDayTrees = document.getElementById('resultDayTrees');
+  const resultMonthCO2 = document.getElementById('resultMonthCO2');
+  const resultMonthWater = document.getElementById('resultMonthWater');
+  const resultMonthTrees = document.getElementById('resultMonthTrees');
+  const resultYearCO2 = document.getElementById('resultYearCO2');
+  const resultYearWater = document.getElementById('resultYearWater');
+  const resultYearTrees = document.getElementById('resultYearTrees');
+  
+  if (resultDayCO2) resultDayCO2.textContent = formatImpact(co2PerDay, 'CO2');
+  if (resultDayWater) resultDayWater.textContent = formatImpact(waterPerDay, 'WATER');
+  if (resultDayTrees) resultDayTrees.textContent = formatImpact(treesPerDay, 'TREES');
+  if (resultMonthCO2) resultMonthCO2.textContent = formatImpact(co2PerMonth, 'CO2');
+  if (resultMonthWater) resultMonthWater.textContent = formatImpact(waterPerMonth, 'WATER');
+  if (resultMonthTrees) resultMonthTrees.textContent = formatImpact(treesPerMonth, 'TREES');
+  if (resultYearCO2) resultYearCO2.textContent = formatImpact(co2PerYear, 'CO2');
+  if (resultYearWater) resultYearWater.textContent = formatImpact(waterPerYear, 'WATER');
+  if (resultYearTrees) resultYearTrees.textContent = formatImpact(treesPerYear, 'TREES');
+  
+  // Calculate population impact (100% of population)
+  const uaeCO2PerYear = co2PerYear * CALCULATOR_CONSTANTS.UAE_POPULATION;
+  const uaeWaterPerYear = waterPerYear * CALCULATOR_CONSTANTS.UAE_POPULATION;
+  const uaeTreesPerYear = treesPerYear * CALCULATOR_CONSTANTS.UAE_POPULATION;
+  const worldCO2PerYear = co2PerYear * CALCULATOR_CONSTANTS.WORLD_POPULATION;
+  const worldWaterPerYear = waterPerYear * CALCULATOR_CONSTANTS.WORLD_POPULATION;
+  const worldTreesPerYear = treesPerYear * CALCULATOR_CONSTANTS.WORLD_POPULATION;
+  
+  // Update population results
+  const resultUAE_CO2 = document.getElementById('resultUAE_CO2');
+  const resultUAE_Water = document.getElementById('resultUAE_Water');
+  const resultUAE_Trees = document.getElementById('resultUAE_Trees');
+  const resultWorld_CO2 = document.getElementById('resultWorld_CO2');
+  const resultWorld_Water = document.getElementById('resultWorld_Water');
+  const resultWorld_Trees = document.getElementById('resultWorld_Trees');
+  
+  if (resultUAE_CO2) resultUAE_CO2.textContent = formatImpact(uaeCO2PerYear, 'CO2');
+  if (resultUAE_Water) resultUAE_Water.textContent = formatImpact(uaeWaterPerYear, 'WATER');
+  if (resultUAE_Trees) resultUAE_Trees.textContent = formatImpact(uaeTreesPerYear, 'TREES');
+  if (resultWorld_CO2) resultWorld_CO2.textContent = formatImpact(worldCO2PerYear, 'CO2');
+  if (resultWorld_Water) resultWorld_Water.textContent = formatImpact(worldWaterPerYear, 'WATER');
+  if (resultWorld_Trees) resultWorld_Trees.textContent = formatImpact(worldTreesPerYear, 'TREES');
+  
+  // Calculate and display comparison values
+  const drivesCount = co2PerYear / COMPARISON_CONSTANTS.DRIVE_DUBAI_ABU_DHABI_CO2;
+  const resultDrives = document.getElementById('resultDrives');
+  if (resultDrives) {
+    resultDrives.textContent = formatNumber(drivesCount.toFixed(1)) + ' drives';
+  }
+  
+  const steaksCount = co2PerYear / COMPARISON_CONSTANTS.STEAK_CO2;
+  const resultSteaks = document.getElementById('resultSteaks');
+  if (resultSteaks) {
+    resultSteaks.textContent = formatNumber(steaksCount.toFixed(1)) + ' steaks';
+  }
+  
+  const townhouseYears = co2PerYear / COMPARISON_CONSTANTS.TOWNHOUSE_ELECTRICITY_CO2_PER_YEAR;
+  const resultTownhouse = document.getElementById('resultTownhouse');
+  if (resultTownhouse) {
+    resultTownhouse.textContent = formatNumber(townhouseYears.toFixed(2)) + ' years';
+  }
+  
+  // Carbon credit costs
+  const tonnesCO2 = co2PerYear / 1000000; // Convert grams to tonnes
+  const usdCost = tonnesCO2 * COMPARISON_CONSTANTS.CARBON_CREDIT_COST_PER_TONNE_USD;
+  const aedCost = usdCost * COMPARISON_CONSTANTS.USD_TO_AED_RATE;
+  
+  const resultCarbonUSD = document.getElementById('resultCarbonUSD');
+  const resultCarbonAED = document.getElementById('resultCarbonAED');
+  
+  if (resultCarbonUSD) {
+    resultCarbonUSD.textContent = '$' + formatNumber(usdCost.toFixed(2));
+  }
+  if (resultCarbonAED) {
+    resultCarbonAED.textContent = 'د.إ ' + formatNumber(aedCost.toFixed(2));
+  }
+  
+  // Update comparison bar visualizations
+  updateComparisonBars(co2PerYear);
+};
+
+/**
+ * Updates comparison bar visualizations
+ */
+function updateComparisonBars(annualCO2) {
+  const drivesBar = document.getElementById('drivesBar');
+  const steaksBar = document.getElementById('steaksBar');
+  const townhouseBar = document.getElementById('townhouseBar');
+  
+  if (drivesBar) {
+    const drivesCount = annualCO2 / COMPARISON_CONSTANTS.DRIVE_DUBAI_ABU_DHABI_CO2;
+    const percentage = Math.min(100, (drivesCount / 10) * 100); // Scale: 10 drives = 100%
+    drivesBar.style.width = percentage + '%';
+  }
+  
+  if (steaksBar) {
+    const steaksCount = annualCO2 / COMPARISON_CONSTANTS.STEAK_CO2;
+    const percentage = Math.min(100, (steaksCount / 20) * 100); // Scale: 20 steaks = 100%
+    steaksBar.style.width = percentage + '%';
+  }
+  
+  if (townhouseBar) {
+    const townhouseYears = annualCO2 / COMPARISON_CONSTANTS.TOWNHOUSE_ELECTRICITY_CO2_PER_YEAR;
+    const percentage = Math.min(100, townhouseYears * 100); // Scale: 1 year = 100%
+    townhouseBar.style.width = percentage + '%';
+  }
+}
+
+/**
  * Initialize calculator form
  */
 function initCalculatorForm() {
-  const form = document.getElementById('calculatorForm');
-  const calculateBtn = document.getElementById('btnCalculateImpact');
+  const slider = document.getElementById('postsPerWeek');
+  const valueDisplay = document.getElementById('postsPerWeekValue');
   
-  // Initialize slider value displays
-  const postsSlider = document.getElementById('calcPosts');
-  const variantsSlider = document.getElementById('calcVariants');
-  const imagesSlider = document.getElementById('calcImages');
-  const postsValue = document.getElementById('calcPostsValue');
-  const variantsValue = document.getElementById('calcVariantsValue');
-  const imagesValue = document.getElementById('calcImagesValue');
-  
-  if (postsSlider && postsValue) {
-    postsValue.textContent = postsSlider.value;
-    postsSlider.addEventListener('input', () => {
-      postsValue.textContent = postsSlider.value;
+  if (slider && valueDisplay) {
+    // Attach slider handlers
+    slider.addEventListener('input', () => {
+      if (typeof window.updateCalculator === 'function') {
+        window.updateCalculator();
+      }
     });
-  }
-  
-  if (variantsSlider && variantsValue) {
-    variantsValue.textContent = variantsSlider.value;
-    variantsSlider.addEventListener('input', () => {
-      variantsValue.textContent = variantsSlider.value;
+    
+    slider.addEventListener('change', () => {
+      if (typeof window.updateCalculator === 'function') {
+        window.updateCalculator();
+      }
     });
-  }
-  
-  if (imagesSlider && imagesValue) {
-    imagesValue.textContent = imagesSlider.value;
-    imagesSlider.addEventListener('input', () => {
-      imagesValue.textContent = imagesSlider.value;
-    });
-  }
-  
-  if (calculateBtn) {
-    calculateBtn.addEventListener('click', () => {
-      const posts = parseInt(postsSlider?.value || 0) || 0;
-      const variants = parseInt(variantsSlider?.value || 1) || 1;
-      const images = parseInt(imagesSlider?.value || 0) || 0;
-      
-      calculateManualImpact(posts, variants, images);
-    });
+    
+    // Initial calculation
+    if (typeof window.updateCalculator === 'function') {
+      window.updateCalculator();
+    }
   }
 }
 
@@ -1833,6 +2150,8 @@ function initSettingsModule() {
   initCsvButtons();
   initUserEditModal();
   initClearInstanceOptions();
+  initCalculatorForm();
+  initInstanceRefreshWorkflow();
 }
 
 // Initialize on DOM ready
@@ -1840,3 +2159,7 @@ document.addEventListener('DOMContentLoaded', initSettingsModule);
 
 // Make functions globally available
 window.loadSettings = loadSettings;
+window.initCalculator = initCalculator;
+window.updateCalculator = window.updateCalculator; // Already defined above
+window.loadUsers = loadUsers;
+window.initUserEditModal = initUserEditModal;

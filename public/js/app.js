@@ -15,10 +15,14 @@ async function initApp() {
     window.Icons.init();
   }
   
-  // Initialize search icon
-  const searchIcon = document.querySelector('.search-icon');
-  if (searchIcon && window.Icons && window.Icons.get) {
-    searchIcon.innerHTML = window.Icons.get('search', 'search-icon-flaticon', { size: '14px' });
+  // Initialize search button click handler
+  const searchBtn = document.getElementById('btnSearch');
+  if (searchBtn) {
+    searchBtn.addEventListener('click', () => {
+      if (typeof window.openSearchModal === 'function') {
+        window.openSearchModal();
+      }
+    });
   }
   
   // Logo click handler - navigate to content

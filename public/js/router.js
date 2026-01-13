@@ -186,13 +186,23 @@ const Router = {
         }, 200);
       },
       'settings/admin': () => { 
-        if (typeof loadSettings === 'function') loadSettings(); 
-        // Load users if admin and initialize password toggles
+        if (typeof loadSettings === 'function') loadSettings();
+        // Ensure users are loaded when admin section is displayed and modal is initialized
         setTimeout(() => {
-          if (window.AppState.user?.role === 'admin' && typeof loadUsers === 'function') {
-            loadUsers();
+          if (window.AppState?.user?.role === 'admin') {
+            // Initialize user edit modal first
+            if (typeof initUserEditModal === 'function') {
+              initUserEditModal();
+            }
+            // Then load users
+            if (typeof loadUsers === 'function') {
+              loadUsers();
+            }
           }
-          if (typeof initPasswordVisibilityToggles === 'function') initPasswordVisibilityToggles();
+          // Initialize password toggles
+          if (typeof initPasswordVisibilityToggles === 'function') {
+            initPasswordVisibilityToggles();
+          }
         }, 200);
       }
     };

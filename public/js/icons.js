@@ -53,27 +53,139 @@ const FLATICON_ICONS = {
   export: 'fi fi-rr-export',
   refresh: 'fi fi-rr-refresh',
   clear: 'fi fi-rr-trash-xmark',
+  logout: 'fi fi-rr-sign-out',
+};
+
+// Font Awesome fallback icon mappings
+const FONT_AWESOME_ICONS = {
+  // Password visibility
+  eye: 'fa-solid fa-eye',
+  eyeSlash: 'fa-solid fa-eye-slash',
+  
+  // Navigation
+  content: 'fa-solid fa-file-lines',
+  calendar: 'fa-solid fa-calendar',
+  list: 'fa-solid fa-list',
+  bin: 'fa-solid fa-trash',
+  settings: 'fa-solid fa-gear',
+  
+  // UI elements
+  check: 'fa-solid fa-check',
+  close: 'fa-solid fa-xmark',
+  warning: 'fa-solid fa-triangle-exclamation',
+  copy: 'fa-solid fa-copy',
+  folder: 'fa-solid fa-folder',
+  lightning: 'fa-solid fa-bolt',
+  search: 'fa-solid fa-magnifying-glass',
+  
+  // Settings tiles
+  account: 'fa-solid fa-user',
+  openai: 'fa-solid fa-brain',
+  googledrive: 'fa-solid fa-cloud',
+  linkedin: 'fa-brands fa-linkedin',
+  storage: 'fa-solid fa-database',
+  ai: 'fa-solid fa-robot',
+  contentManagement: 'fa-solid fa-file-pen',
+  calculator: 'fa-solid fa-calculator',
+  admin: 'fa-solid fa-shield-halved',
+  
+  // Status
+  processing: 'fa-solid fa-spinner fa-spin',
+  success: 'fa-solid fa-circle-check',
+  error: 'fa-solid fa-circle-exclamation',
+  
+  // Other
+  back: 'fa-solid fa-arrow-left',
+  add: 'fa-solid fa-plus',
+  edit: 'fa-solid fa-pen',
+  view: 'fa-solid fa-eye',
+  delete: 'fa-solid fa-trash',
+  disconnect: 'fa-solid fa-link-slash',
+  save: 'fa-solid fa-floppy-disk',
+  import: 'fa-solid fa-file-import',
+  export: 'fa-solid fa-file-export',
+  refresh: 'fa-solid fa-arrow-rotate-right',
+  clear: 'fa-solid fa-trash-can',
+  logout: 'fa-solid fa-right-from-bracket',
 };
 
 /**
- * Get Flaticon icon HTML
+ * Check if Flaticon is loaded
+ * @returns {boolean} True if Flaticon CSS is loaded
+ */
+function isFlaticonLoaded() {
+  try {
+    const testEl = document.createElement('i');
+    testEl.className = 'fi fi-rr-eye';
+    testEl.style.position = 'absolute';
+    testEl.style.visibility = 'hidden';
+    document.body.appendChild(testEl);
+    const computed = window.getComputedStyle(testEl);
+    const isLoaded = computed.fontFamily && computed.fontFamily.includes('Flaticon');
+    document.body.removeChild(testEl);
+    return isLoaded;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Check if Font Awesome is loaded
+ * @returns {boolean} True if Font Awesome CSS is loaded
+ */
+function isFontAwesomeLoaded() {
+  try {
+    const testEl = document.createElement('i');
+    testEl.className = 'fa-solid fa-eye';
+    testEl.style.position = 'absolute';
+    testEl.style.visibility = 'hidden';
+    document.body.appendChild(testEl);
+    const computed = window.getComputedStyle(testEl);
+    const isLoaded = computed.fontFamily && (computed.fontFamily.includes('Font Awesome') || computed.fontFamily.includes('FontAwesome'));
+    document.body.removeChild(testEl);
+    return isLoaded;
+  } catch (e) {
+    return false;
+  }
+}
+
+/**
+ * Get icon HTML with Flaticon fallback to Font Awesome
  * @param {string} name - Icon name
  * @param {string} className - Optional CSS class name
  * @param {object} options - Optional settings (size, color)
- * @returns {string} HTML string with Flaticon icon
+ * @returns {string} HTML string with icon
  */
 function getIcon(name, className = '', options = {}) {
-  const iconClass = FLATICON_ICONS[name];
-  if (!iconClass) {
-    console.warn(`Icon "${name}" not found`);
-    return '';
-  }
-  
   const size = options.size || '1em';
   const color = options.color || 'currentColor';
   const additionalClasses = className ? ` ${className}` : '';
+  const style = `font-size: ${size}; color: ${color};`;
   
-  return `<i class="${iconClass}${additionalClasses}" style="font-size: ${size}; color: ${color};"></i>`;
+  // Try Flaticon first
+  const flaticonClass = FLATICON_ICONS[name];
+  if (flaticonClass && isFlaticonLoaded()) {
+    return `<i class="${flaticonClass}${additionalClasses}" style="${style}"></i>`;
+  }
+  
+  // Fallback to Font Awesome
+  const fontAwesomeClass = FONT_AWESOME_ICONS[name];
+  if (fontAwesomeClass && isFontAwesomeLoaded()) {
+    return `<i class="${fontAwesomeClass}${additionalClasses}" style="${style}"></i>`;
+  }
+  
+  // If neither is available, try Flaticon anyway (might load later)
+  if (flaticonClass) {
+    return `<i class="${flaticonClass}${additionalClasses}" style="${style}"></i>`;
+  }
+  
+  // Last resort: try Font Awesome
+  if (fontAwesomeClass) {
+    return `<i class="${fontAwesomeClass}${additionalClasses}" style="${style}"></i>`;
+  }
+  
+  console.warn(`Icon "${name}" not found in Flaticon or Font Awesome`);
+  return '';
 }
 
 /**
@@ -97,7 +209,9 @@ function initNavigationIcons() {
     navIconCalendar: 'calendar',
     navIconList: 'list',
     navIconBin: 'bin',
-    navIconSettings: 'settings'
+    navIconSettings: 'settings',
+    navIconLogout: 'logout',
+    navIconSearch: 'search'
   };
   
   Object.keys(iconMap).forEach(id => {
@@ -116,31 +230,17 @@ if (typeof window !== 'undefined') {
     init: function(retryCount = 0) {
       const MAX_RETRIES = 20; // Increased retries for slower connections
       
-      // Check if Flaticon CSS is loaded by checking if a Flaticon class exists in stylesheets
-      let flaticonLoaded = false;
-      try {
-        const flaticonLink = document.querySelector('link[href*="flaticon"]');
-        if (flaticonLink) {
-          // Check if stylesheet is loaded by trying to compute style
-          const testEl = document.createElement('i');
-          testEl.className = 'fi fi-rr-eye';
-          document.body.appendChild(testEl);
-          const computed = window.getComputedStyle(testEl);
-          flaticonLoaded = computed.fontFamily && computed.fontFamily.includes('Flaticon') || 
-                          computed.getPropertyValue('--flaticon-loaded') !== '';
-          document.body.removeChild(testEl);
-        }
-      } catch (e) {
-        // If check fails, assume not loaded yet
-      }
+      // Check if Flaticon or Font Awesome CSS is loaded
+      const flaticonLoaded = isFlaticonLoaded();
+      const fontAwesomeLoaded = isFontAwesomeLoaded();
       
-      if (!flaticonLoaded && retryCount < MAX_RETRIES) {
+      if (!flaticonLoaded && !fontAwesomeLoaded && retryCount < MAX_RETRIES) {
         setTimeout(() => this.init(retryCount + 1), 150);
         return;
       }
       
-      if (retryCount >= MAX_RETRIES) {
-        console.warn('Flaticon CSS may not be loaded. Icons may not display correctly.');
+      if (retryCount >= MAX_RETRIES && !flaticonLoaded && !fontAwesomeLoaded) {
+        console.warn('Neither Flaticon nor Font Awesome CSS loaded. Icons may not display correctly.');
       }
       
       // Initialize navigation icons
@@ -168,7 +268,7 @@ if (typeof window !== 'undefined') {
       
       // Initialize password toggle icons
       document.querySelectorAll('.password-toggle').forEach(toggle => {
-        if (!toggle.innerHTML.trim() || !toggle.querySelector('.fi')) {
+        if (!toggle.innerHTML.trim() || (!toggle.querySelector('.fi') && !toggle.querySelector('.fa'))) {
           toggle.innerHTML = this.get('eye', 'password-toggle-icon');
         }
       });
@@ -190,6 +290,7 @@ if (typeof window !== 'undefined') {
         populateSettingsTileIcons();
       }
     },
-    FLATICON_ICONS
+    FLATICON_ICONS,
+    FONT_AWESOME_ICONS
   };
 }

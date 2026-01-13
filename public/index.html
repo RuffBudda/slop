@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-regular-rounded/css/uicons-regular-rounded.css">
   <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-solid-rounded/css/uicons-solid-rounded.css">
   <link rel="stylesheet" href="https://cdn-uicons.flaticon.com/2.1.0/uicons-bold-rounded/css/uicons-bold-rounded.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" integrity="sha512-DTOQO9RWCH3ppGqcWaEA1BIZOC6xxalwEsw9c2QQeAIftl+Vegovlnee1c9QX4TctnWMn13TZye+giMm8e2LwA==" crossorigin="anonymous" referrerpolicy="no-referrer">
   <link rel="stylesheet" href="/css/styles.css">
   <link rel="icon" type="image/svg+xml" href="https://cdweya.blr1.cdn.digitaloceanspaces.com/logo.svg">
 </head>
@@ -111,16 +112,16 @@
             <span class="badge" id="badgeBin" style="display: none;">0</span>
           </button>
         </nav>
-        <div class="search-container" id="searchContainer">
-          <span class="search-icon"></span>
-          <input type="text" class="search-input" id="globalSearch" placeholder="Search posts... (Ctrl+K)">
-          <div class="search-results hidden" id="searchResults"></div>
-        </div>
         <div class="user-menu">
+          <button class="navBtn icon-only" id="btnSearch" title="Search (Ctrl+K)">
+            <span class="nav-icon" id="navIconSearch"></span>
+          </button>
           <button class="navBtn icon-only" id="btnSettings" data-tab="settings" title="Settings">
             <span class="nav-icon" id="navIconSettings"></span>
           </button>
-          <button class="navBtn" id="btnLogout">Logout</button>
+          <button class="navBtn icon-only" id="btnLogout" title="Logout">
+            <span class="nav-icon" id="navIconLogout"></span>
+          </button>
         </div>
       </div>
     </header>
@@ -986,6 +987,139 @@
         </button>
       </div>
     </form>
+  </dialog>
+
+  <!-- Search Modal (macOS-style) -->
+  <dialog id="searchModal" class="search-modal">
+    <div class="search-modal-content">
+      <div class="search-modal-input-wrapper">
+        <span class="search-modal-icon"></span>
+        <input type="text" class="search-modal-input" id="searchModalInput" placeholder="Search posts... (Ctrl+K)">
+      </div>
+      <div class="search-results-modal hidden" id="searchResultsModal"></div>
+    </div>
+  </dialog>
+
+  <!-- Instance Refresh Workflow Modal -->
+  <dialog id="instanceRefreshModal" class="instance-refresh-modal">
+    <div class="instance-refresh-content">
+      <button class="closeBtn" id="instanceRefreshClose"><span class="close-icon"></span></button>
+      <h3 style="color: var(--bad); margin-bottom: 24px;">Instance Refresh</h3>
+      
+      <!-- Step 1: Warning -->
+      <div class="refresh-step" id="refreshStep1" data-step="1">
+        <div class="warning-box" style="background: var(--bad-bg); border: 2px solid var(--bad); border-radius: var(--radius); padding: 20px; margin-bottom: 24px;">
+          <h4 style="margin: 0 0 12px 0; color: var(--bad); font-size: 18px; font-weight: 600;">⚠️ DANGER ZONE</h4>
+          <p style="margin: 0 0 12px 0; color: var(--ink); font-size: 14px; line-height: 1.6;">
+            This action will <strong>permanently delete ALL data</strong> from the instance including:
+          </p>
+          <ul style="margin: 12px 0; padding-left: 24px; color: var(--ink); font-size: 14px; line-height: 1.8;">
+            <li>All posts and content</li>
+            <li>All settings and API keys</li>
+            <li>All workflow sessions</li>
+            <li>All users (except your admin account)</li>
+          </ul>
+          <p style="margin: 12px 0 0 0; color: var(--bad); font-size: 14px; font-weight: 600;">
+            This action is <strong>IRREVERSIBLE</strong> and cannot be undone.
+          </p>
+        </div>
+        <div class="btns" style="display: flex; gap: 12px; justify-content: flex-end;">
+          <button type="button" class="btn clear" id="refreshCancel1">Cancel</button>
+          <button type="button" class="btn reject" id="refreshContinue1">Continue</button>
+        </div>
+      </div>
+      
+      <!-- Step 2: Password Verification -->
+      <div class="refresh-step hidden" id="refreshStep2" data-step="2">
+        <h4 style="margin-bottom: 16px;">Verify Your Identity</h4>
+        <p class="section-description" style="margin-bottom: 20px;">
+          Enter your admin username and password to continue.
+        </p>
+        <div class="form-group">
+          <label for="refreshAdminUsername">Admin Username</label>
+          <input type="text" id="refreshAdminUsername" name="adminUsername" required 
+                 placeholder="Enter your admin username" autocomplete="username">
+        </div>
+        <div class="form-group">
+          <label for="refreshAdminPassword">Admin Password</label>
+          <div class="password-input-wrapper">
+            <input type="password" id="refreshAdminPassword" name="adminPassword" required 
+                   placeholder="Enter your admin password" autocomplete="current-password">
+            <button type="button" class="password-toggle" aria-label="Toggle password visibility"></button>
+          </div>
+        </div>
+        <div class="btns" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+          <button type="button" class="btn clear" id="refreshCancel2">Cancel</button>
+          <button type="button" class="btn reject" id="refreshContinue2">Continue</button>
+        </div>
+      </div>
+      
+      <!-- Step 3: Confirmation Text -->
+      <div class="refresh-step hidden" id="refreshStep3" data-step="3">
+        <h4 style="margin-bottom: 16px;">Confirm Action</h4>
+        <p class="section-description" style="margin-bottom: 20px;">
+          Copy and paste the exact confirmation text below to proceed.
+        </p>
+        <div class="form-group">
+          <label for="refreshConfirmationText">Confirmation Text</label>
+          <textarea id="refreshConfirmationText" name="confirmationText" rows="3" required 
+                    placeholder="Copy and paste the confirmation text here..." 
+                    style="font-family: monospace; font-size: 13px;"></textarea>
+          <div style="background: var(--bg-alt); border: 1px solid var(--bd); border-radius: var(--radius); padding: 12px; margin-top: 12px;">
+            <strong style="font-size: 12px; color: var(--ink); display: block; margin-bottom: 8px;">Copy this text exactly:</strong>
+            <code id="refreshConfirmationSource" style="font-size: 11px; color: var(--ink-muted); line-height: 1.6; display: block; user-select: all; cursor: text; padding: 8px; background: var(--bg-card); border-radius: 4px;">
+              Humpty Dumpty sat on a wall. Humpty Dumpty had a great fall. All the king's horses and all the king's men couldn't put Humpty together again.
+            </code>
+            <button type="button" class="btn clear btn-sm" id="btnCopyConfirmation" 
+                    style="width: 100%; margin-top: 12px;">
+              <span class="ico"></span> Copy Confirmation Text
+            </button>
+          </div>
+        </div>
+        <div class="btns" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+          <button type="button" class="btn clear" id="refreshCancel3">Cancel</button>
+          <button type="button" class="btn reject" id="refreshContinue3" disabled>Continue</button>
+        </div>
+      </div>
+      
+      <!-- Step 4: Final Confirmation -->
+      <div class="refresh-step hidden" id="refreshStep4" data-step="4">
+        <h4 style="margin-bottom: 16px;">Final Confirmation</h4>
+        <div style="background: var(--bg-alt); border: 1px solid var(--bd); border-radius: var(--radius); padding: 16px; margin-bottom: 20px;">
+          <p style="margin: 0 0 12px 0; color: var(--ink); font-size: 14px; line-height: 1.6;">
+            You are about to reset the entire instance. This will:
+          </p>
+          <ul style="margin: 12px 0; padding-left: 24px; color: var(--ink); font-size: 14px; line-height: 1.8;">
+            <li>Delete all posts and content</li>
+            <li>Delete all settings and API keys</li>
+            <li>Delete all workflow sessions</li>
+            <li>Delete all users except your admin account</li>
+          </ul>
+          <p style="margin: 12px 0 0 0; color: var(--bad); font-size: 14px; font-weight: 600;">
+            This action cannot be undone.
+          </p>
+        </div>
+        <div class="form-group">
+          <label style="display: flex; align-items: center; gap: 8px; cursor: pointer;">
+            <input type="checkbox" id="refreshFinalConfirm" style="width: 18px; height: 18px; cursor: pointer;">
+            <span style="color: var(--ink); font-size: 14px;">I understand this action is irreversible and will delete all data</span>
+          </label>
+        </div>
+        <div class="btns" style="display: flex; gap: 12px; justify-content: flex-end; margin-top: 24px;">
+          <button type="button" class="btn clear" id="refreshCancel4">Cancel</button>
+          <button type="button" class="btn reject" id="refreshContinue4" disabled>Reset Instance</button>
+        </div>
+      </div>
+      
+      <!-- Step 5: Executing -->
+      <div class="refresh-step hidden" id="refreshStep5" data-step="5">
+        <div style="text-align: center; padding: 40px 20px;">
+          <div class="spinner" style="margin: 0 auto 20px;"></div>
+          <p style="color: var(--ink); font-size: 16px; font-weight: 600;">Resetting instance...</p>
+          <p style="color: var(--ink-muted); font-size: 14px; margin-top: 8px;">This may take a few moments</p>
+        </div>
+      </div>
+    </div>
   </dialog>
 
   <!-- Scripts -->

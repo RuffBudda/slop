@@ -9,7 +9,6 @@
     
     <!-- User Management Section (Admin only) -->
     <section class="settings-section" id="userManagementSection">
-      <h3>User Management</h3>
       <p class="section-description">
         Manage user accounts, roles, and permissions. Only administrators can access this section.
       </p>
@@ -21,7 +20,6 @@
     
     <!-- Instance Refresh Section (Admin only) -->
     <section class="settings-section" id="instanceRefreshSection">
-      <h3>Instance Refresh</h3>
       <p class="section-description">
         Reset the entire instance to a clean state. This action is irreversible and will delete all data.
       </p>
@@ -73,63 +71,13 @@
       </div>
       
       <div style="margin-top: 32px; padding-top: 24px; border-top: 2px solid var(--bad);">
-        <h3 style="color: var(--bad); margin-bottom: 16px;">Full Instance Reset</h3>
+        <h4 style="color: var(--bad); margin-bottom: 16px;">Full Instance Reset</h4>
         <p class="section-description" style="margin-bottom: 20px;">
           Reset the entire instance to a clean state. This action is irreversible and will delete all data.
         </p>
-        <form id="instanceRefreshForm" class="settings-form" style="max-width: 600px;">
-          <div class="form-group">
-            <label for="refreshAdminUsername">Admin Username</label>
-            <input type="text" id="refreshAdminUsername" name="adminUsername" required 
-                   placeholder="Enter your admin username" autocomplete="username">
-            <small style="color: var(--ink-muted); font-size: 12px; display: block; margin-top: 4px;">
-              Must match your current admin username
-            </small>
-          </div>
-          
-          <div class="form-group">
-            <label for="refreshAdminPassword">Admin Password</label>
-            <div class="password-input-wrapper">
-              <input type="password" id="refreshAdminPassword" name="adminPassword" required 
-                     placeholder="Enter your admin password" autocomplete="current-password">
-              <button type="button" class="password-toggle" aria-label="Toggle password visibility"></button>
-            </div>
-            <small style="color: var(--ink-muted); font-size: 12px; display: block; margin-top: 4px;">
-              Must match your current admin password
-            </small>
-          </div>
-          
-          <div class="form-group">
-            <label for="refreshConfirmationText">Confirmation Text</label>
-            <textarea id="refreshConfirmationText" name="confirmationText" rows="3" required 
-                      placeholder="Copy and paste the confirmation text here..." 
-                      style="font-family: monospace; font-size: 13px;"></textarea>
-            <div style="background: var(--bg-alt); border: 1px solid var(--bd); border-radius: var(--radius); padding: 12px; margin-top: 8px;">
-              <div style="display: flex; align-items: start; gap: 8px; margin-bottom: 8px;">
-                <span class="copy-icon-small"></span>
-                <div style="flex: 1;">
-                  <strong style="font-size: 12px; color: var(--ink); display: block; margin-bottom: 4px;">Copy this text exactly:</strong>
-                  <code style="font-size: 11px; color: var(--ink-muted); line-height: 1.6; display: block; user-select: all; cursor: text;">
-                    Humpty Dumpty sat on a wall. Humpty Dumpty had a great fall. All the king's horses and all the king's men couldn't put Humpty together again.
-                  </code>
-                </div>
-              </div>
-              <button type="button" class="btn clear btn-sm" id="btnCopyConfirmation" 
-                      style="width: 100%; margin-top: 8px;">
-                <span class="ico"></span> Copy Confirmation Text
-              </button>
-            </div>
-            <small style="color: var(--ink-muted); font-size: 12px; display: block; margin-top: 4px;">
-              You must copy and paste the exact text above to confirm this action
-            </small>
-          </div>
-          
-          <div class="btns" style="margin-top: 24px;">
-            <button type="submit" class="btn reject" id="btnResetInstance">
-              <span class="ico"></span> Reset Instance
-            </button>
-          </div>
-        </form>
+        <button type="button" class="btn reject" id="btnStartInstanceRefresh">
+          <span class="ico"></span> Start Instance Refresh Process
+        </button>
       </div>
     </section>
   </div>

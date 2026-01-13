@@ -79,9 +79,9 @@ a {
 .top-inner {
   max-width: var(--maxw);
   margin: 0 auto;
-  display: grid;
-  grid-template-columns: auto auto 1fr auto;
+  display: flex;
   align-items: center;
+  justify-content: space-between;
   height: 58px;
   padding: 0 var(--g);
   gap: 16px;
@@ -89,25 +89,22 @@ a {
 }
 
 .brand {
-  grid-column: 1;
+  flex-shrink: 0;
 }
 
 .navBtns {
-  grid-column: 2;
-}
-
-.search-container {
-  grid-column: 3;
+  flex: 1;
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 0 auto;
-  width: 100%;
-  max-width: 400px;
+  gap: 8px;
 }
 
 .user-menu {
-  grid-column: 4;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .brand {
@@ -2248,8 +2245,256 @@ dialog::backdrop {
 }
 
 /* Ensure Flaticon icons inherit color */
-.fi {
+.fi,
+.fa {
   color: inherit;
+}
+
+/* Calculator Slider Styles (from OG) */
+.slider-container {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.posts-slider {
+  flex: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--bd);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.posts-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.posts-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.posts-slider::-moz-range-thumb {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s, box-shadow 0.1s;
+}
+
+.posts-slider::-moz-range-thumb:hover {
+  transform: scale(1.1);
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3);
+}
+
+.slider-value {
+  min-width: 40px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: var(--accent);
+  background: var(--bg-alt);
+  padding: 4px 12px;
+  border-radius: 8px;
+}
+
+/* Calculator Results */
+.calculator-results,
+.calculator-population {
+  margin-top: 24px;
+  padding: 16px;
+  background: var(--bg-alt);
+  border-radius: 12px;
+  border: 1px solid var(--bd);
+}
+
+.result-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+  margin-top: 12px;
+}
+
+.result-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: var(--bg-card);
+  border-radius: 8px;
+  border: 1px solid var(--bd);
+}
+
+.result-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.result-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--ink);
+  line-height: 1.2;
+}
+
+.result-unit {
+  font-size: 11px;
+  color: var(--ink-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Instance Refresh Modal */
+.instance-refresh-modal {
+  max-width: 600px;
+  width: 90%;
+  border-radius: 12px;
+  border: 1px solid var(--bd);
+  background: var(--bg-card);
+  padding: 0;
+}
+
+.instance-refresh-modal::backdrop {
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+}
+
+.instance-refresh-content {
+  padding: 24px;
+  position: relative;
+}
+
+.instance-refresh-content .closeBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+}
+
+.refresh-step {
+  animation: fadeIn 0.2s ease-in;
+}
+
+.refresh-step.hidden {
+  display: none;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Search Modal (macOS-style) */
+.search-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+  z-index: 10000;
+}
+
+.search-modal::backdrop {
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.search-modal-content {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 90%;
+  max-width: 600px;
+  background: var(--bg-card);
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  padding: 0;
+  overflow: hidden;
+}
+
+.search-modal-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--bd);
+}
+
+.search-modal-icon {
+  position: absolute;
+  left: 20px;
+  color: #666;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.search-modal-input {
+  width: 100%;
+  padding: 12px 16px 12px 48px;
+  border: none;
+  background: transparent;
+  color: var(--ink);
+  font-size: 16px;
+  font-family: inherit;
+  outline: none;
+}
+
+.search-modal-input::placeholder {
+  color: #666;
+}
+
+.search-results-modal {
+  max-height: 400px;
+  overflow-y: auto;
+  background: var(--bg-card);
+}
+
+.search-results-modal .search-result-item {
+  padding: 12px 20px;
+  border-bottom: 1px solid var(--bd);
+  cursor: pointer;
+  transition: background 0.1s;
+  color: var(--ink);
+}
+
+.search-results-modal .search-result-item:hover {
+  background: var(--bg-elevated);
+}
+
+.search-results-modal .search-result-item:last-child {
+  border-bottom: none;
 }
 
 .search-results {

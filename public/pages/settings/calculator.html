@@ -8,108 +8,166 @@
     <h2 class="settings-group-title">Environmental Impact Calculator</h2>
     
     <section class="settings-section">
-      <h3>Environmental Impact Calculator</h3>
       <p class="section-description">
         Estimate the environmental impact of your AI content generation. This calculator helps you understand the energy consumption and carbon footprint of your content creation workflow.
       </p>
       
-      <!-- Current Statistics -->
-      <div class="calc-stats-grid" id="calcStatsGrid">
-        <div class="calc-stat-card">
-          <div class="calc-stat-label">Total Generations</div>
-          <div class="calc-stat-value" id="calcTotalGenerations">0</div>
-        </div>
-        <div class="calc-stat-card">
-          <div class="calc-stat-label">Energy Used</div>
-          <div class="calc-stat-value" id="calcEnergyUsed">0 Wh</div>
-        </div>
-        <div class="calc-stat-card">
-          <div class="calc-stat-label">CO₂ Equivalent</div>
-          <div class="calc-stat-value" id="calcCO2Equivalent">0 kg</div>
-        </div>
-        <div class="calc-stat-card">
-          <div class="calc-stat-label">Trees to Offset</div>
-          <div class="calc-stat-value" id="calcTreesOffset">0</div>
+      <!-- Calculator Input -->
+      <div class="calculator-input" style="margin-top: 24px;">
+        <label for="postsPerWeek">Posts per week:</label>
+        <div class="slider-container">
+          <input type="range" id="postsPerWeek" min="1" max="100" value="10" class="posts-slider">
+          <span class="slider-value" id="postsPerWeekValue">10</span>
         </div>
       </div>
       
-      <!-- Usage Breakdown -->
-      <div style="margin-top: 24px;">
-        <h4>Usage Breakdown</h4>
-        <div id="calcUsageBreakdown" style="margin-top: 12px; padding: 16px; background: var(--bg-alt); border-radius: 8px; font-size: 14px; line-height: 1.6;">
-          <p>GPT Content Generations: <span id="calcGptCount">0</span></p>
-          <p>Stability AI Image Generations: <span id="calcImageCount">0</span></p>
-          <p>Estimated GPT Energy (0.03 Wh/request): <span id="calcGptEnergy">0 Wh</span></p>
-          <p>Estimated Image Energy (0.1 Wh/image): <span id="calcImageEnergy">0 Wh</span></p>
-        </div>
-      </div>
-      
-      <!-- Manual Calculator -->
-      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bd);">
-        <h4>Estimate Future Impact</h4>
-        <p class="field-description" style="margin-bottom: 16px;">
-          Estimate the environmental impact of your planned content generation.
-        </p>
-        <form id="calculatorForm" class="settings-form">
-          <div class="form-row">
-            <div class="form-group calculator-input">
-              <label for="calcPosts">Number of Posts</label>
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <input type="range" id="calcPosts" name="posts" min="0" max="100" value="10" step="1" style="flex: 1;">
-                <span id="calcPostsValue" style="min-width: 40px; text-align: right; font-weight: 600; color: var(--accent);">10</span>
-              </div>
-            </div>
-            <div class="form-group calculator-input">
-              <label for="calcVariants">Variants per Post</label>
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <input type="range" id="calcVariants" name="variants" min="1" max="10" value="3" step="1" style="flex: 1;">
-                <span id="calcVariantsValue" style="min-width: 40px; text-align: right; font-weight: 600; color: var(--accent);">3</span>
-              </div>
-            </div>
-            <div class="form-group calculator-input">
-              <label for="calcImages">Images per Post</label>
-              <div style="display: flex; align-items: center; gap: 12px;">
-                <input type="range" id="calcImages" name="images" min="0" max="10" value="3" step="1" style="flex: 1;">
-                <span id="calcImagesValue" style="min-width: 40px; text-align: right; font-weight: 600; color: var(--accent);">3</span>
-              </div>
-            </div>
+      <!-- Individual Impact -->
+      <div class="calculator-results" style="margin-top: 24px;">
+        <h4>Your Impact</h4>
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-label">Per Day</div>
+            <div class="result-value" id="resultDayCO2">-</div>
+            <div class="result-unit">CO₂</div>
+            <div class="result-value" id="resultDayWater">-</div>
+            <div class="result-unit">Water</div>
+            <div class="result-value" id="resultDayTrees">-</div>
+            <div class="result-unit">Trees</div>
           </div>
-          <button type="button" class="btn approve" id="btnCalculateImpact">
-            <span class="ico"></span> Calculate Impact
-          </button>
-        </form>
-        
-        <div id="calcManualResults" style="margin-top: 20px; padding: 16px; background: var(--bg-alt); border-radius: 8px; display: none;">
-          <h5 style="margin-top: 0;">Estimated Impact:</h5>
-          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; margin-top: 12px;">
-            <div>
-              <div style="font-size: 12px; color: #888; margin-bottom: 4px;">Energy</div>
-              <div style="font-size: 18px; font-weight: 600;" id="calcManualEnergy">0 Wh</div>
-            </div>
-            <div>
-              <div style="font-size: 12px; color: #888; margin-bottom: 4px;">CO₂</div>
-              <div style="font-size: 18px; font-weight: 600;" id="calcManualCO2">0 kg</div>
-            </div>
-            <div>
-              <div style="font-size: 12px; color: #888; margin-bottom: 4px;">Trees</div>
-              <div style="font-size: 18px; font-weight: 600;" id="calcManualTrees">0</div>
-            </div>
+          <div class="result-item">
+            <div class="result-label">Per Month</div>
+            <div class="result-value" id="resultMonthCO2">-</div>
+            <div class="result-unit">CO₂</div>
+            <div class="result-value" id="resultMonthWater">-</div>
+            <div class="result-unit">Water</div>
+            <div class="result-value" id="resultMonthTrees">-</div>
+            <div class="result-unit">Trees</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">Per Annum</div>
+            <div class="result-value" id="resultYearCO2">-</div>
+            <div class="result-unit">CO₂</div>
+            <div class="result-value" id="resultYearWater">-</div>
+            <div class="result-unit">Water</div>
+            <div class="result-value" id="resultYearTrees">-</div>
+            <div class="result-unit">Trees</div>
           </div>
         </div>
+        <div class="population-sources" style="margin-top: 16px;">
+          <small style="color: #666; font-size: 11px;">
+            Sources: 
+            <a href="https://www.nature.com/articles/s41586-023-06083-8" target="_blank" rel="noopener">Nature - AI Carbon Footprint</a> (CO₂); 
+            <a href="https://www.sciencedirect.com/science/article/pii/S0306261922002063" target="_blank" rel="noopener">ScienceDirect - Data Center Water Usage</a> (Water); 
+            <a href="https://www.epa.gov/energy/greenhouse-gas-equivalencies-calculator" target="_blank" rel="noopener">EPA - GHG Equivalencies</a> (Trees)
+          </small>
+        </div>
       </div>
       
-      <!-- Information Section -->
-      <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bd);">
-        <h4>How we calculate:</h4>
-        <ul style="margin-top: 12px; padding-left: 20px; line-height: 1.8; font-size: 14px; color: #aaa;">
-          <li>GPT-4 inference: ~0.03 Wh per request (based on industry estimates)</li>
-          <li>Stable Diffusion image: ~0.1 Wh per image</li>
-          <li>CO₂ conversion: 0.4 kg CO₂ per kWh (global average grid)</li>
-          <li>Tree offset: 1 tree absorbs ~21 kg CO₂ per year</li>
-        </ul>
-        <p style="margin-top: 16px; font-size: 13px; color: #888; font-style: italic;">
-          Note: These are estimates based on publicly available research. Actual values may vary based on data center efficiency and location.
-        </p>
+      <!-- Population Impact -->
+      <div class="calculator-population" style="margin-top: 24px;">
+        <h4>If 100% of Population Used This</h4>
+        <div class="population-warning" style="background: var(--bad-bg); border: 1px solid var(--bad); border-radius: 8px; padding: 12px; margin-bottom: 16px;">
+          <strong style="color: var(--bad);">⚠️ This automation is adding to a bigger problem</strong>
+        </div>
+        <div class="result-grid">
+          <div class="result-item">
+            <div class="result-label">UAE (10M users)</div>
+            <div class="result-value" id="resultUAE_CO2">-</div>
+            <div class="result-unit">CO₂ per annum</div>
+            <div class="result-value" id="resultUAE_Water">-</div>
+            <div class="result-unit">Water per annum</div>
+            <div class="result-value" id="resultUAE_Trees">-</div>
+            <div class="result-unit">Trees per annum</div>
+          </div>
+          <div class="result-item">
+            <div class="result-label">World (8B users)</div>
+            <div class="result-value" id="resultWorld_CO2">-</div>
+            <div class="result-unit">CO₂ per annum</div>
+            <div class="result-value" id="resultWorld_Water">-</div>
+            <div class="result-unit">Water per annum</div>
+            <div class="result-value" id="resultWorld_Trees">-</div>
+            <div class="result-unit">Trees per annum</div>
+          </div>
+        </div>
+        <div class="population-sources" style="margin-top: 16px;">
+          <small style="color: #666; font-size: 11px;">
+            Sources: 
+            <a href="https://www.uaestatistics.gov.ae/" target="_blank" rel="noopener">UAE Statistics Centre</a> / 
+            <a href="https://data.worldbank.org/" target="_blank" rel="noopener">World Bank</a> (UAE population); 
+            <a href="https://www.un.org/development/desa/pd/" target="_blank" rel="noopener">UN World Population Prospects</a> / 
+            <a href="https://www.worldometers.info/world-population/" target="_blank" rel="noopener">Worldometer</a> (World population)
+          </small>
+        </div>
+      </div>
+      
+      <!-- Real-World Comparisons -->
+      <div class="calculator-comparison" style="margin-top: 24px;">
+        <h4>Real-World Comparisons</h4>
+        <p class="calculator-info" style="margin-bottom: 16px; color: var(--ink-muted);">Your annual CO₂ emissions are equivalent to:</p>
+        <div class="comparison-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px;">
+          <div class="comparison-card" style="border: 1px solid var(--bd); border-radius: 8px; padding: 16px; background: var(--bg-card);">
+            <div class="comparison-icon" style="font-size: 32px; text-align: center; margin-bottom: 8px;">🚗</div>
+            <div class="comparison-value" id="resultDrives" style="font-size: 20px; font-weight: 700; text-align: center; color: var(--accent); margin-bottom: 4px;">-</div>
+            <div class="comparison-description" style="text-align: center; font-size: 13px; color: var(--ink-muted); margin-bottom: 12px;">Drives from Dubai to Abu Dhabi</div>
+            <div class="comparison-bar-container" style="height: 8px; background: var(--bg-alt); border-radius: 4px; overflow: hidden;">
+              <div class="comparison-bar" id="drivesBar" style="height: 100%; background: var(--accent); width: 0%; transition: width 0.3s;"></div>
+            </div>
+            <div class="comparison-sources" style="margin-top: 8px;">
+              <small style="color: #666; font-size: 10px;">
+                Source: 
+                <a href="https://www.epa.gov/energy/greenhouse-gas-equivalencies-calculator" target="_blank" rel="noopener">EPA GHG Calculator</a>
+              </small>
+            </div>
+          </div>
+          <div class="comparison-card" style="border: 1px solid var(--bd); border-radius: 8px; padding: 16px; background: var(--bg-card);">
+            <div class="comparison-icon" style="font-size: 32px; text-align: center; margin-bottom: 8px;">🥩</div>
+            <div class="comparison-value" id="resultSteaks" style="font-size: 20px; font-weight: 700; text-align: center; color: var(--accent); margin-bottom: 4px;">-</div>
+            <div class="comparison-description" style="text-align: center; font-size: 13px; color: var(--ink-muted); margin-bottom: 12px;">Steaks eaten</div>
+            <div class="comparison-bar-container" style="height: 8px; background: var(--bg-alt); border-radius: 4px; overflow: hidden;">
+              <div class="comparison-bar" id="steaksBar" style="height: 100%; background: var(--accent); width: 0%; transition: width 0.3s;"></div>
+            </div>
+            <div class="comparison-sources" style="margin-top: 8px;">
+              <small style="color: #666; font-size: 10px;">
+                Source: 
+                <a href="https://www.nature.com/articles/s41586-021-03265-0" target="_blank" rel="noopener">Nature - Food Carbon Footprint</a>
+              </small>
+            </div>
+          </div>
+          <div class="comparison-card" style="border: 1px solid var(--bd); border-radius: 8px; padding: 16px; background: var(--bg-card);">
+            <div class="comparison-icon" style="font-size: 32px; text-align: center; margin-bottom: 8px;">⚡</div>
+            <div class="comparison-value" id="resultTownhouse" style="font-size: 20px; font-weight: 700; text-align: center; color: var(--accent); margin-bottom: 4px;">-</div>
+            <div class="comparison-description" style="text-align: center; font-size: 13px; color: var(--ink-muted); margin-bottom: 12px;">Years of electricity for a 4-bedroom townhouse</div>
+            <div class="comparison-bar-container" style="height: 8px; background: var(--bg-alt); border-radius: 4px; overflow: hidden;">
+              <div class="comparison-bar" id="townhouseBar" style="height: 100%; background: var(--accent); width: 0%; transition: width 0.3s;"></div>
+            </div>
+            <div class="comparison-sources" style="margin-top: 8px;">
+              <small style="color: #666; font-size: 10px;">
+                Source: 
+                <a href="https://www.eia.gov/tools/faqs/faq.php?id=97&t=3" target="_blank" rel="noopener">EIA - Residential Energy Use</a>
+              </small>
+            </div>
+          </div>
+        </div>
+        <div class="comparison-card carbon-credit-card full-width" style="margin-top: 16px; border: 1px solid var(--bd); border-radius: 8px; padding: 16px; background: var(--bg-card);">
+          <div class="comparison-icon" style="font-size: 32px; text-align: center; margin-bottom: 8px;">🌍</div>
+          <div class="carbon-credit-costs" style="display: flex; gap: 24px; justify-content: center; margin-bottom: 8px;">
+            <div class="currency-display" style="text-align: center;">
+              <span class="currency-label" style="display: block; font-size: 12px; color: var(--ink-muted); margin-bottom: 4px;">USD:</span>
+              <span class="currency-value" id="resultCarbonUSD" style="font-size: 20px; font-weight: 700; color: var(--accent);">-</span>
+            </div>
+            <div class="currency-display" style="text-align: center;">
+              <span class="currency-label" style="display: block; font-size: 12px; color: var(--ink-muted); margin-bottom: 4px;">AED:</span>
+              <span class="currency-value dirham-symbol" id="resultCarbonAED" style="font-size: 20px; font-weight: 700; color: var(--accent);">-</span>
+            </div>
+          </div>
+          <div class="comparison-description" style="text-align: center; font-size: 13px; color: var(--ink-muted); margin-bottom: 8px;">Carbon credits needed to offset your annual emissions</div>
+          <div class="comparison-sources" style="text-align: center;">
+            <small style="color: #666; font-size: 10px;">
+              Source: 
+              <a href="https://www.sustainable-markets.com/2024/07/16/an-overview-of-global-carbon-pricing-in-2024/" target="_blank" rel="noopener">Sustainable Markets - Carbon Pricing 2024</a>
+            </small>
+          </div>
+        </div>
       </div>
     </section>
   </div>
