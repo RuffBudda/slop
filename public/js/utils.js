@@ -133,10 +133,21 @@ window.activateTab = function(tabName, subSection = null) {
 };
 
 // Handle hash-based routing
-// Hash change handler - let router handle it
+// Hash change handler - use router if available, fallback to activateTab
 window.addEventListener('hashchange', () => {
-  if (window.Router) {
+  if (window.Router && typeof window.Router.handleRoute === 'function') {
+    // Use router if available
     window.Router.handleRoute();
+  } else {
+    // Fallback: parse hash and activate tab directly
+    const hash = window.location.hash.replace('#/', '');
+    const parts = hash.split('/');
+    const tabName = parts[0] || 'content';
+    const subSection = parts[1] || null;
+    
+    if (tabName && ['content', 'calendar', 'timeline', 'bin', 'settings'].includes(tabName)) {
+      activateTab(tabName, subSection);
+    }
   }
 });
 
