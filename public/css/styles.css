@@ -100,6 +100,9 @@ a {
   display: flex;
   justify-content: center;
   align-items: center;
+  margin: 0 auto;
+  width: 100%;
+  max-width: 400px;
 }
 
 .user-menu {
@@ -1486,6 +1489,35 @@ dialog::backdrop {
 .settings-container {
   max-width: 900px;
   margin: 0 auto;
+}
+
+.settings-breadcrumbs {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: #999;
+}
+
+.settings-breadcrumbs .breadcrumb-link {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.settings-breadcrumbs .breadcrumb-link:hover {
+  color: var(--ink);
+  text-decoration: underline;
+}
+
+.settings-breadcrumbs .breadcrumb-separator {
+  color: #666;
+}
+
+.settings-breadcrumbs .breadcrumb-current {
+  color: var(--ink);
+  font-weight: 500;
 }
 
 .settings-container h2 {

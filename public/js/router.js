@@ -33,6 +33,12 @@ const Router = {
    * Handle current route
    */
   async handleRoute() {
+    // Don't handle routes if we're on login/setup page
+    const loginPage = document.getElementById('loginPage');
+    const setupPage = document.getElementById('setupPage');
+    if (loginPage && !loginPage.classList.contains('hidden')) return;
+    if (setupPage && !setupPage.classList.contains('hidden')) return;
+    
     const hash = window.location.hash.slice(1) || '/content';
     const [path, ...params] = hash.split('/').filter(p => p);
     
@@ -80,23 +86,24 @@ const Router = {
       
       // Handle settings pages
       let html;
+      let settingsSection = null;
       if (pagePath.startsWith('settings/')) {
         const settingsPage = pagePath.replace('settings/', '');
         if (settingsPage === 'index' || settingsPage === '') {
           const response = await fetch(`/pages/settings/index.html`);
           if (!response.ok) throw new Error(`Failed to load settings index`);
           html = await response.text();
+        } else if (settingsPage === 'admin') {
+          // Admin has its own page
+          const response = await fetch(`/pages/settings/admin.html`);
+          if (!response.ok) throw new Error(`Failed to load admin page`);
+          html = await response.text();
         } else {
-          // Try to load specific settings page
-          const response = await fetch(`/pages/settings/${settingsPage}.html`);
-          if (!response.ok) {
-            // Fallback to index if specific page doesn't exist
-            const indexResponse = await fetch(`/pages/settings/index.html`);
-            if (!indexResponse.ok) throw new Error(`Failed to load settings page`);
-            html = await indexResponse.text();
-          } else {
-            html = await response.text();
-          }
+          // For other settings sections, load index and show the section
+          const response = await fetch(`/pages/settings/index.html`);
+          if (!response.ok) throw new Error(`Failed to load settings index`);
+          html = await response.text();
+          settingsSection = settingsPage; // Store section name to show after load
         }
       } else {
         // Load regular page
@@ -109,11 +116,30 @@ const Router = {
       
       mainContent.innerHTML = html;
       
+      // Initialize icons after page loads
+      if (window.Icons && window.Icons.init) {
+        window.Icons.init();
+      }
+      
+      // If we're loading a settings section, show it after a brief delay
+      if (settingsSection && typeof window.showSettingsSection === 'function') {
+        setTimeout(() => {
+          window.showSettingsSection(settingsSection);
+        }, 100);
+      }
+      
       // Initialize page-specific scripts
       this.initPage(pagePath);
       
     } catch (error) {
       console.error('Error loading page:', error);
+      // Only show toast if we're in the main app, not on login page
+      const mainApp = document.getElementById('mainApp');
+      if (mainApp && !mainApp.classList.contains('hidden')) {
+        if (typeof showToast === 'function') {
+          showToast('Failed to load page', 'bad');
+        }
+      }
       mainContent.innerHTML = `
         <div class="emptyState">
           <h2>Error Loading Page</h2>

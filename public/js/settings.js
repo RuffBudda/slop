@@ -1548,89 +1548,29 @@ function initSettingsTiles(retryCount = 0) {
   populateSettingsTileIcons();
   
   if (!tilesInitialized) {
-    // Add click handlers to tiles
+    // Add click handlers to tiles - use router navigation
     tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
       tile.addEventListener('click', () => {
         const section = tile.dataset.section;
-        if (section) {
-          showSection(section);
+        if (section && window.Router) {
+          window.Router.navigate(`/settings/${section}`);
         }
       });
     });
-    
-    // Handle back button
-    if (backBtn) {
-      backBtn.addEventListener('click', () => {
-        showTiles();
-      });
-    }
     
     tilesInitialized = true;
   }
   
-  // Always show tiles by default when settings tab is activated
-  showTiles();
+  // Update active tile based on current route
+  const currentHash = window.location.hash;
+  const match = currentHash.match(/#\/settings\/([^\/]+)/);
+  const currentSection = match ? match[1] : null;
   
-  function showTiles() {
-    // Show tiles grid
-    if (tilesGrid) tilesGrid.classList.remove('hidden');
-    // Hide back button
-    if (backContainer) backContainer.classList.add('hidden');
-    // Hide all sections
-    document.querySelectorAll('.settings-section-content').forEach(section => {
-      section.classList.add('hidden');
+  if (tilesGrid) {
+    tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
+      tile.classList.toggle('active', tile.dataset.section === currentSection);
     });
-    // Remove active state from all tiles
-    if (tilesGrid) {
-      tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
-        tile.classList.remove('active');
-      });
-    }
   }
-  
-  function showSection(sectionName) {
-    // Hide tiles grid
-    if (tilesGrid) tilesGrid.classList.add('hidden');
-    // Show back button
-    if (backContainer) backContainer.classList.remove('hidden');
-    // Hide all sections
-    document.querySelectorAll('.settings-section-content').forEach(section => {
-      section.classList.add('hidden');
-    });
-    // Show target section
-    const targetSection = document.querySelector(`.settings-section-content[data-section="${sectionName}"]`);
-    if (targetSection) {
-      targetSection.classList.remove('hidden');
-      
-      // Update URL hash
-      window.location.hash = `#/settings/${sectionName}`;
-      
-      // Load users if admin section is shown
-      if (sectionName === 'admin') {
-        if (window.AppState.user?.role === 'admin') {
-          loadUsers();
-          // Explicitly show admin sections
-          const userMgmtSection = document.getElementById('userManagementSection');
-          const instanceRefreshSection = document.getElementById('instanceRefreshSection');
-          if (userMgmtSection) userMgmtSection.classList.remove('hidden');
-          if (instanceRefreshSection) instanceRefreshSection.classList.remove('hidden');
-        } else {
-          // Hide admin sections for non-admin users
-          document.getElementById('userManagementSection')?.classList.add('hidden');
-          document.getElementById('instanceRefreshSection')?.classList.add('hidden');
-        }
-      }
-    }
-    // Update active tile
-    if (tilesGrid) {
-      tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
-        tile.classList.toggle('active', tile.dataset.section === sectionName);
-      });
-    }
-  }
-  
-  // Make showSection available globally for other code
-  window.showSettingsSection = showSection;
 }
 
 /**
