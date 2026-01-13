@@ -1486,59 +1486,7 @@ const CALC_CONSTANTS = {
   TREE_ABSORPTION: 21,         // kg CO2 absorbed per tree per year
 };
 
-async function loadCalculatorStats() {
-  try {
-    const result = await API.workflow.stats();
-    const stats = result.stats || { totalGenerations: 0, totalImages: 0 };
-    
-    updateCalculatorDisplay(stats.totalGenerations || 0, stats.totalImages || 0);
-  } catch (error) {
-    console.error('Failed to load calculator stats:', error);
-    updateCalculatorDisplay(0, 0);
-  }
-}
-
-function updateCalculatorDisplay(gptCount, imageCount) {
-  // Calculate energy usage
-  const gptEnergy = gptCount * CALC_CONSTANTS.GPT_ENERGY_WH;
-  const imageEnergy = imageCount * CALC_CONSTANTS.IMAGE_ENERGY_WH;
-  const totalEnergy = gptEnergy + imageEnergy;
-  
-  // Calculate CO2 equivalent (convert Wh to kWh first)
-  const co2Kg = (totalEnergy / 1000) * CALC_CONSTANTS.CO2_PER_KWH;
-  
-  // Calculate trees needed to offset
-  const treesNeeded = co2Kg / CALC_CONSTANTS.TREE_ABSORPTION;
-  
-  // Get display elements
-  const totalGen = document.getElementById('calcTotalGenerations');
-  const energyUsed = document.getElementById('calcEnergyUsed');
-  const co2Saved = document.getElementById('calcCO2Saved');
-  const treesEquiv = document.getElementById('calcTreesEquiv');
-  const gptCountEl = document.getElementById('calcGptCount');
-  const imageCountEl = document.getElementById('calcImageCount');
-  const gptEnergyEl = document.getElementById('calcGptEnergy');
-  const imageEnergyEl = document.getElementById('calcImageEnergy');
-  
-  // Store actual values as data attributes for manual calculator to use
-  if (totalGen) {
-    totalGen.dataset.actualGpt = gptCount;
-    totalGen.dataset.actualImages = imageCount;
-  }
-  if (energyUsed) {
-    energyUsed.dataset.actualEnergy = totalEnergy;
-  }
-  if (co2Saved) {
-    co2Saved.dataset.actualCO2 = co2Kg;
-  }
-  if (treesEquiv) {
-    treesEquiv.dataset.actualTrees = treesNeeded;
-  }
-  
-  // Don't update display here - let calculateManualImpact handle it
-  // This ensures manual calculator values are always included
-  calculateManualImpact();
-}
+// Removed loadCalculatorStats and updateCalculatorDisplay - calculator is now slider-based only
 
 function formatEnergy(wh) {
   if (wh < 1000) {
@@ -1570,9 +1518,6 @@ function initCalculator() {
       }
     });
   }
-  
-  // Load actual stats
-  loadCalculatorStats();
   
   // Calculate initial impact (with a small delay to ensure DOM is ready)
   setTimeout(() => {
@@ -1639,45 +1584,24 @@ function calculateManualImpact() {
   const co2El = document.getElementById('calcResultCO2');
   const equivEl = document.getElementById('calcResultEquiv');
   
-  // Get actual stats from data attributes (set by updateCalculatorDisplay)
-  const actualGpt = parseInt(totalGenEl?.dataset.actualGpt || '0');
-  const actualImages = parseInt(totalGenEl?.dataset.actualImages || '0');
-  const actualEnergy = parseFloat(energyUsedEl?.dataset.actualEnergy || '0');
-  const actualCO2 = parseFloat(co2SavedEl?.dataset.actualCO2 || '0');
-  const actualTrees = parseFloat(treesEquivEl?.dataset.actualTrees || '0');
+  // Update usage breakdown (slider-based only)
+  if (gptCountEl) gptCountEl.textContent = totalGptRequests;
+  if (imageCountEl) imageCountEl.textContent = totalImages;
+  if (gptEnergyEl) gptEnergyEl.textContent = formatEnergy(gptEnergy);
+  if (imageEnergyEl) imageEnergyEl.textContent = formatEnergy(imageEnergy);
   
-  // Calculate combined totals (actual + manual)
-  const combinedGpt = actualGpt + totalGptRequests;
-  const combinedImages = actualImages + totalImages;
-  const combinedTotalGen = combinedGpt + combinedImages;
-  const combinedEnergy = actualEnergy + totalEnergy;
-  const combinedCO2 = actualCO2 + co2Kg;
-  const combinedTrees = actualTrees + treesNeeded;
-  
-  // Calculate combined energy breakdown
-  const actualGptEnergy = actualGpt * CALC_CONSTANTS.GPT_ENERGY_WH;
-  const actualImageEnergy = actualImages * CALC_CONSTANTS.IMAGE_ENERGY_WH;
-  const combinedGptEnergy = actualGptEnergy + gptEnergy;
-  const combinedImageEnergy = actualImageEnergy + imageEnergy;
-  
-  // Update usage breakdown (show combined actual + manual)
-  if (gptCountEl) gptCountEl.textContent = combinedGpt;
-  if (imageCountEl) imageCountEl.textContent = combinedImages;
-  if (gptEnergyEl) gptEnergyEl.textContent = formatEnergy(combinedGptEnergy);
-  if (imageEnergyEl) imageEnergyEl.textContent = formatEnergy(combinedImageEnergy);
-  
-  // Update main stats (show combined actual + manual)
+  // Update main stats (slider-based only)
   if (totalGenEl) {
-    totalGenEl.textContent = combinedTotalGen;
+    totalGenEl.textContent = totalRequests;
   }
   if (energyUsedEl) {
-    energyUsedEl.textContent = formatEnergy(combinedEnergy);
+    energyUsedEl.textContent = formatEnergy(totalEnergy);
   }
   if (co2SavedEl) {
-    co2SavedEl.textContent = combinedCO2.toFixed(4) + ' kg';
+    co2SavedEl.textContent = co2Kg.toFixed(4) + ' kg';
   }
   if (treesEquivEl) {
-    treesEquivEl.textContent = (Math.ceil(combinedTrees * 100) / 100).toFixed(2);
+    treesEquivEl.textContent = (Math.ceil(treesNeeded * 100) / 100).toFixed(2);
   }
   
   // Update manual calculator result
@@ -1788,6 +1712,13 @@ function initSettingsTiles() {
         setTimeout(() => {
           initCalculator();
         }, 100);
+      }
+      
+      // Load users if admin section is shown
+      if (sectionName === 'admin' && window.AppState.user?.role === 'admin') {
+        loadUsers();
+        document.getElementById('userManagementSection')?.classList.remove('hidden');
+        document.getElementById('instanceRefreshSection')?.classList.remove('hidden');
       }
     }
     // Update active tile
