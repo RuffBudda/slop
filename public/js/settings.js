@@ -1736,19 +1736,29 @@ function calculateManualImpact(posts, variants, images) {
 }
 
 function initPasswordVisibilityToggles() {
-  // Add toggle buttons to all password fields in settings
-  const passwordFields = document.querySelectorAll('#settingsView input[type="password"]');
+  // Add toggle buttons to all password fields in settings pages
+  // Updated selector to work with separate HTML files loaded into mainContent
+  const passwordFields = document.querySelectorAll('.settings-container input[type="password"], .settings-section input[type="password"], #refreshAdminPassword');
   
   passwordFields.forEach(field => {
     // Skip if already has a toggle
     if (field.parentElement.classList.contains('password-input-wrapper')) {
       const toggle = field.parentElement.querySelector('.password-toggle');
       if (toggle) {
-        toggle.addEventListener('click', () => {
+        // Remove existing listeners by cloning
+        const newToggle = toggle.cloneNode(true);
+        toggle.parentNode.replaceChild(newToggle, toggle);
+        newToggle.addEventListener('click', () => {
           const isPassword = field.type === 'password';
           field.type = isPassword ? 'text' : 'password';
-          toggle.innerHTML = isPassword ? (window.Icons ? window.Icons.get('eyeSlash') : '👁️') : (window.Icons ? window.Icons.get('eye') : '👁️');
+          if (window.Icons && window.Icons.get) {
+            newToggle.innerHTML = isPassword ? window.Icons.get('eyeSlash', 'password-toggle-icon') : window.Icons.get('eye', 'password-toggle-icon');
+          }
         });
+        // Initialize icon
+        if (window.Icons && window.Icons.get) {
+          newToggle.innerHTML = window.Icons.get('eye', 'password-toggle-icon');
+        }
       }
       return;
     }
@@ -1762,7 +1772,11 @@ function initPasswordVisibilityToggles() {
     toggle.type = 'button';
     toggle.className = 'password-toggle';
     toggle.setAttribute('aria-label', 'Toggle password visibility');
-    toggle.innerHTML = window.Icons ? window.Icons.get('eye') : '👁️';
+    if (window.Icons && window.Icons.get) {
+      toggle.innerHTML = window.Icons.get('eye', 'password-toggle-icon');
+    } else {
+      toggle.innerHTML = '👁️';
+    }
     
     // Wrap the field
     field.parentNode.insertBefore(wrapper, field);
@@ -1773,7 +1787,9 @@ function initPasswordVisibilityToggles() {
     toggle.addEventListener('click', () => {
       const isPassword = field.type === 'password';
       field.type = isPassword ? 'text' : 'password';
-      toggle.innerHTML = isPassword ? (window.Icons ? window.Icons.get('eyeSlash') : '👁️') : (window.Icons ? window.Icons.get('eye') : '👁️');
+      if (window.Icons && window.Icons.get) {
+        toggle.innerHTML = isPassword ? window.Icons.get('eyeSlash', 'password-toggle-icon') : window.Icons.get('eye', 'password-toggle-icon');
+      }
     });
   });
 }

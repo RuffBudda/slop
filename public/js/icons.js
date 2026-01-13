@@ -114,23 +114,44 @@ if (typeof window !== 'undefined') {
     get: getIcon,
     render: renderIcon,
     init: function(retryCount = 0) {
-      const MAX_RETRIES = 10;
+      const MAX_RETRIES = 20; // Increased retries for slower connections
       
-      // Check if Flaticon CSS is loaded
-      const flaticonLoaded = document.querySelector('link[href*="flaticon"]') && 
-                            (document.styleSheets.length > 0 || window.getComputedStyle);
+      // Check if Flaticon CSS is loaded by checking if a Flaticon class exists in stylesheets
+      let flaticonLoaded = false;
+      try {
+        const flaticonLink = document.querySelector('link[href*="flaticon"]');
+        if (flaticonLink) {
+          // Check if stylesheet is loaded by trying to compute style
+          const testEl = document.createElement('i');
+          testEl.className = 'fi fi-rr-eye';
+          document.body.appendChild(testEl);
+          const computed = window.getComputedStyle(testEl);
+          flaticonLoaded = computed.fontFamily && computed.fontFamily.includes('Flaticon') || 
+                          computed.getPropertyValue('--flaticon-loaded') !== '';
+          document.body.removeChild(testEl);
+        }
+      } catch (e) {
+        // If check fails, assume not loaded yet
+      }
       
       if (!flaticonLoaded && retryCount < MAX_RETRIES) {
-        setTimeout(() => this.init(retryCount + 1), 100);
+        setTimeout(() => this.init(retryCount + 1), 150);
         return;
       }
       
+      if (retryCount >= MAX_RETRIES) {
+        console.warn('Flaticon CSS may not be loaded. Icons may not display correctly.');
+      }
+      
+      // Initialize navigation icons
       initNavigationIcons();
       
       // Initialize search icon
       const searchIcon = document.querySelector('.search-icon');
-      if (searchIcon && !searchIcon.innerHTML.trim()) {
-        searchIcon.innerHTML = this.get('search', 'search-icon-flaticon', { size: '14px' });
+      if (searchIcon) {
+        if (!searchIcon.innerHTML.trim() || !searchIcon.querySelector('.fi')) {
+          searchIcon.innerHTML = this.get('search', 'search-icon-flaticon', { size: '14px' });
+        }
       }
       
       // Replace all elements with data-icon attribute
@@ -139,7 +160,29 @@ if (typeof window !== 'undefined') {
         const className = el.dataset.iconClass || '';
         const size = el.dataset.iconSize;
         const color = el.dataset.iconColor;
-        el.innerHTML = this.get(iconName, className, { size, color });
+        const iconHtml = this.get(iconName, className, { size, color });
+        if (iconHtml) {
+          el.innerHTML = iconHtml;
+        }
+      });
+      
+      // Initialize password toggle icons
+      document.querySelectorAll('.password-toggle').forEach(toggle => {
+        if (!toggle.innerHTML.trim() || !toggle.querySelector('.fi')) {
+          toggle.innerHTML = this.get('eye', 'password-toggle-icon');
+        }
+      });
+      
+      // Initialize button icons with .ico class
+      document.querySelectorAll('.btn .ico, .btn span.ico').forEach(ico => {
+        if (!ico.innerHTML.trim() && ico.parentElement) {
+          const btn = ico.closest('.btn');
+          if (btn && btn.classList.contains('approve')) {
+            ico.innerHTML = this.get('check', '', { size: '14px' });
+          } else if (btn && btn.classList.contains('reject')) {
+            ico.innerHTML = this.get('close', '', { size: '14px' });
+          }
+        }
       });
       
       // Initialize settings tile icons if on settings page

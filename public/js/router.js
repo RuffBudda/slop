@@ -157,7 +157,12 @@ const Router = {
       'timeline': () => { if (typeof loadTimeline === 'function') loadTimeline(); },
       'bin': () => { if (typeof loadBin === 'function') loadBin(); },
       'settings/index': () => { if (typeof loadSettings === 'function') loadSettings(); },
-      'settings/account': () => { if (typeof loadSettings === 'function') loadSettings(); },
+      'settings/account': () => { 
+        if (typeof loadSettings === 'function') loadSettings(); 
+        setTimeout(() => {
+          if (typeof initPasswordVisibilityToggles === 'function') initPasswordVisibilityToggles();
+        }, 150);
+      },
       'settings/openai': () => { if (typeof loadSettings === 'function') loadSettings(); },
       'settings/googledrive': () => { if (typeof loadSettings === 'function') loadSettings(); },
       'settings/linkedin': () => { if (typeof loadSettings === 'function') loadSettings(); },
@@ -175,11 +180,12 @@ const Router = {
       },
       'settings/admin': () => { 
         if (typeof loadSettings === 'function') loadSettings(); 
-        // Load users if admin
+        // Load users if admin and initialize password toggles
         setTimeout(() => {
           if (window.AppState.user?.role === 'admin' && typeof loadUsers === 'function') {
             loadUsers();
           }
+          if (typeof initPasswordVisibilityToggles === 'function') initPasswordVisibilityToggles();
         }, 200);
       }
     };
