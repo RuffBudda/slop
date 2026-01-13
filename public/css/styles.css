@@ -2357,6 +2357,8 @@ dialog::backdrop {
   }
   
   .search-container {
+    position: static;
+    transform: none;
     width: 100%;
     max-width: none;
     margin-top: 8px;
