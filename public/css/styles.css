@@ -169,6 +169,19 @@ a {
   gap: 8px;
 }
 
+.user-menu .navBtn {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.user-menu .navBtn.icon-only {
+  height: 40px;
+  width: 40px;
+  padding: 0;
+}
+
 /* Badge counters on nav buttons */
 .navBtn {
   position: relative;
@@ -1453,7 +1466,7 @@ dialog::backdrop {
 /* Settings Tiles Navigation */
 .settings-tiles-grid {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
   margin-bottom: 32px;
 }

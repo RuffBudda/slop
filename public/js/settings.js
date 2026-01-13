@@ -44,10 +44,6 @@ async function loadSettings() {
       document.getElementById('instanceRefreshSection')?.classList.add('hidden');
     }
     
-    // Re-initialize calculator when settings tab is loaded
-    // This ensures sliders work even if tab wasn't visible on page load
-    initCalculator();
-    
     // Re-initialize password toggles after content loads (in case of dynamic content)
     setTimeout(() => {
       initPasswordVisibilityToggles();
@@ -1715,10 +1711,16 @@ function initSettingsTiles() {
       }
       
       // Load users if admin section is shown
-      if (sectionName === 'admin' && window.AppState.user?.role === 'admin') {
-        loadUsers();
-        document.getElementById('userManagementSection')?.classList.remove('hidden');
-        document.getElementById('instanceRefreshSection')?.classList.remove('hidden');
+      if (sectionName === 'admin') {
+        if (window.AppState.user?.role === 'admin') {
+          loadUsers();
+          document.getElementById('userManagementSection')?.classList.remove('hidden');
+          document.getElementById('instanceRefreshSection')?.classList.remove('hidden');
+        } else {
+          // Hide admin sections for non-admin users
+          document.getElementById('userManagementSection')?.classList.add('hidden');
+          document.getElementById('instanceRefreshSection')?.classList.add('hidden');
+        }
       }
     }
     // Update active tile
@@ -1833,7 +1835,7 @@ function initSettingsModule() {
   initPostEditModal();
   initCsvButtons();
   initUserEditModal();
-  initCalculator();
+  // Calculator is only initialized when environmental section is shown
 }
 
 // Initialize on DOM ready

@@ -165,9 +165,9 @@ Open `http://localhost:3000` in your browser and create your admin account.
 
 </details>
 
-## ⚙️ Configuration
+### Configuration
 
-### Environment Variables
+#### Environment Variables
 
 Create a `.env` file:
 
@@ -192,7 +192,7 @@ GOOGLE_REDIRECT_URI=http://localhost:3000/api/google-drive/callback
 
 > **Note**: API keys can be configured either via environment variables or through the Settings UI after logging in.
 
-### Google Drive Setup
+#### Google Drive Setup
 
 1. Create a [Google Cloud Project](https://console.cloud.google.com/)
 2. Enable the Google Drive API
