@@ -707,6 +707,83 @@
             </button>
             <div id="usersList" class="users-list"></div>
           </section>
+          
+          <!-- Instance Refresh Section (Admin only) -->
+          <section class="settings-section hidden" id="instanceRefreshSection">
+            <h3>Instance Refresh</h3>
+            <div class="warning-box" style="background: #fee2e2; border: 2px solid #dc2626; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
+              <div style="display: flex; align-items: start; gap: 12px;">
+                <span style="font-size: 24px; line-height: 1;">⚠️</span>
+                <div style="flex: 1;">
+                  <h4 style="margin: 0 0 8px 0; color: #dc2626; font-size: 16px; font-weight: 600;">DANGER ZONE</h4>
+                  <p style="margin: 0; color: #991b1b; font-size: 14px; line-height: 1.5;">
+                    This action will <strong>permanently delete ALL data</strong> from the instance including:
+                  </p>
+                  <ul style="margin: 8px 0 0 0; padding-left: 20px; color: #991b1b; font-size: 14px; line-height: 1.6;">
+                    <li>All posts and content</li>
+                    <li>All settings and API keys</li>
+                    <li>All workflow sessions</li>
+                    <li>All users (except your admin account)</li>
+                  </ul>
+                  <p style="margin: 12px 0 0 0; color: #991b1b; font-size: 14px; font-weight: 600;">
+                    This action is <strong>IRREVERSIBLE</strong> and cannot be undone.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <form id="instanceRefreshForm" style="max-width: 600px;">
+              <div class="form-group">
+                <label for="refreshAdminUsername">Admin Username</label>
+                <input type="text" id="refreshAdminUsername" name="adminUsername" required 
+                       placeholder="Enter your admin username" autocomplete="username">
+                <small style="color: #666; font-size: 12px; display: block; margin-top: 4px;">
+                  Must match your current admin username
+                </small>
+              </div>
+              
+              <div class="form-group">
+                <label for="refreshAdminPassword">Admin Password</label>
+                <input type="password" id="refreshAdminPassword" name="adminPassword" required 
+                       placeholder="Enter your admin password" autocomplete="current-password">
+                <small style="color: #666; font-size: 12px; display: block; margin-top: 4px;">
+                  Must match your current admin password
+                </small>
+              </div>
+              
+              <div class="form-group">
+                <label for="refreshConfirmationText">Confirmation Text</label>
+                <textarea id="refreshConfirmationText" name="confirmationText" rows="3" required 
+                          placeholder="Copy and paste the confirmation text here..." 
+                          style="font-family: monospace; font-size: 13px;"></textarea>
+                <div style="background: #f3f4f6; border: 1px solid #d1d5db; border-radius: 6px; padding: 12px; margin-top: 8px;">
+                  <div style="display: flex; align-items: start; gap: 8px; margin-bottom: 8px;">
+                    <span style="font-size: 14px;">📋</span>
+                    <div style="flex: 1;">
+                      <strong style="font-size: 12px; color: #374151; display: block; margin-bottom: 4px;">Copy this text exactly:</strong>
+                      <code style="font-size: 11px; color: #6b7280; line-height: 1.6; display: block; user-select: all; cursor: text;">
+                        Humpty Dumpty sat on a wall. Humpty Dumpty had a great fall. All the king's horses and all the king's men couldn't put Humpty together again.
+                      </code>
+                    </div>
+                  </div>
+                  <button type="button" class="btn clear btn-sm" id="btnCopyConfirmation" 
+                          style="width: 100%; margin-top: 8px;">
+                    📋 Copy Confirmation Text
+                  </button>
+                </div>
+                <small style="color: #666; font-size: 12px; display: block; margin-top: 4px;">
+                  You must copy and paste the exact text above to confirm this action
+                </small>
+              </div>
+              
+              <div class="btns" style="margin-top: 24px;">
+                <button type="submit" class="btn reject" id="btnResetInstance" 
+                        style="background: #dc2626; border-color: #dc2626;">
+                  ⚠️ Reset Instance
+                </button>
+              </div>
+            </form>
+          </section>
         </div>
       </div>
     </main>

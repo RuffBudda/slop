@@ -27,9 +27,6 @@ async function loadSettings() {
     // Load Google Drive folder selection
     await loadGoogleDriveFolder();
     
-    // Load LinkedIn settings
-    await loadLinkedInSettings();
-    
     // Load posts for sheet view
     await loadSheetData();
     
@@ -37,8 +34,10 @@ async function loadSettings() {
     if (window.AppState.user?.role === 'admin') {
       await loadUsers();
       document.getElementById('userManagementSection')?.classList.remove('hidden');
+      document.getElementById('instanceRefreshSection')?.classList.remove('hidden');
     } else {
       document.getElementById('userManagementSection')?.classList.add('hidden');
+      document.getElementById('instanceRefreshSection')?.classList.add('hidden');
     }
     
     // Re-initialize calculator when settings tab is loaded
@@ -199,16 +198,16 @@ function initApiSettingsForm() {
     e.preventDefault();
     
     const formData = new FormData(form);
-    const settings = {};
+    const settings = [];
     
     // Only include non-empty values (don't override with empty)
     for (const [key, value] of formData.entries()) {
       if (value.trim()) {
-        settings[key] = value.trim();
+        settings.push({ key, value: value.trim() });
       }
     }
     
-    if (Object.keys(settings).length === 0) {
+    if (settings.length === 0) {
       showToast('No settings to save', 'neutral');
       return;
     }
@@ -858,158 +857,6 @@ function initGoogleDrive() {
 }
 
 // ============================================================
-// LINKEDIN SETTINGS
-// ============================================================
-
-async function loadLinkedInSettings() {
-  try {
-    const result = await API.settings.getAll();
-    const settings = result.settings || {};
-    
-    // Load LinkedIn credentials (masked for sensitive fields)
-    const clientIdInput = document.getElementById('linkedInClientId');
-    const clientSecretInput = document.getElementById('linkedInClientSecret');
-    const accessTokenInput = document.getElementById('linkedInAccessToken');
-    const refreshTokenInput = document.getElementById('linkedInRefreshToken');
-    
-    if (clientIdInput) {
-      const clientId = settings.linkedin_client_id;
-      clientIdInput.value = clientId && typeof clientId === 'string' ? clientId : '';
-    }
-    
-    if (clientSecretInput) {
-      const clientSecret = settings.linkedin_client_secret;
-      if (clientSecret && typeof clientSecret === 'object' && clientSecret.isSet) {
-        // Sensitive field - already masked
-        clientSecretInput.placeholder = clientSecret.isSet ? '••••••••' : '';
-        clientSecretInput.value = '';
-      } else {
-        clientSecretInput.value = clientSecret && typeof clientSecret === 'string' ? clientSecret : '';
-      }
-    }
-    
-    if (accessTokenInput) {
-      const accessToken = settings.linkedin_access_token;
-      if (accessToken && typeof accessToken === 'object' && accessToken.isSet) {
-        accessTokenInput.placeholder = accessToken.isSet ? '••••••••' : '';
-        accessTokenInput.value = '';
-      } else {
-        accessTokenInput.value = accessToken && typeof accessToken === 'string' ? accessToken : '';
-      }
-    }
-    
-    if (refreshTokenInput) {
-      const refreshToken = settings.linkedin_refresh_token;
-      if (refreshToken && typeof refreshToken === 'object' && refreshToken.isSet) {
-        refreshTokenInput.placeholder = refreshToken.isSet ? '••••••••' : '';
-        refreshTokenInput.value = '';
-      } else {
-        refreshTokenInput.value = refreshToken && typeof refreshToken === 'string' ? refreshToken : '';
-      }
-    }
-    
-    await updateLinkedInStatus();
-  } catch (error) {
-    console.error('Failed to load LinkedIn settings:', error);
-  }
-}
-
-async function updateLinkedInStatus() {
-  const statusText = document.getElementById('linkedInStatusText');
-  const testBtn = document.getElementById('btnTestLinkedIn');
-  
-  try {
-    const result = await API.settings.getAll();
-    const settings = result.settings || {};
-    
-    const hasClientId = settings.linkedin_client_id && 
-      (typeof settings.linkedin_client_id === 'string' || settings.linkedin_client_id.isSet);
-    const hasClientSecret = settings.linkedin_client_secret && 
-      (typeof settings.linkedin_client_secret === 'object' ? settings.linkedin_client_secret.isSet : true);
-    const hasAccessToken = settings.linkedin_access_token && 
-      (typeof settings.linkedin_access_token === 'object' ? settings.linkedin_access_token.isSet : true);
-    
-    const isConfigured = hasClientId && hasClientSecret && hasAccessToken;
-    
-    if (statusText) {
-      statusText.textContent = isConfigured 
-        ? '✓ LinkedIn API is configured' 
-        : 'LinkedIn API is not configured';
-    }
-    
-    if (testBtn) {
-      testBtn.style.display = isConfigured ? 'inline-flex' : 'none';
-    }
-  } catch (error) {
-    console.error('Failed to update LinkedIn status:', error);
-    if (statusText) {
-      statusText.textContent = 'Failed to check LinkedIn status';
-    }
-  }
-}
-
-function initLinkedIn() {
-  const form = document.getElementById('linkedInSettingsForm');
-  const testBtn = document.getElementById('btnTestLinkedIn');
-  
-  if (!form) return;
-  
-  // Form submission
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const formData = new FormData(form);
-    const settings = {};
-    
-    // Only include non-empty values
-    for (const [key, value] of formData.entries()) {
-      if (value.trim()) {
-        settings[key] = value.trim();
-      }
-    }
-    
-    if (Object.keys(settings).length === 0) {
-      showToast('No settings to save', 'neutral');
-      return;
-    }
-    
-    try {
-      showLoader();
-      await API.settings.setBulk(settings);
-      showToast('LinkedIn settings saved successfully', 'ok');
-      
-      // Reload to show updated status
-      await loadLinkedInSettings();
-    } catch (error) {
-      showToast('Failed to save LinkedIn settings', 'bad');
-    } finally {
-      hideLoader();
-    }
-  });
-  
-  // Test button
-  testBtn?.addEventListener('click', async () => {
-    try {
-      showLoader();
-      const result = await API.settings.test('linkedin');
-      
-      if (result.success) {
-        showToast('LinkedIn connection successful!', 'ok');
-        if (result.profile) {
-          showToast(`Connected as: ${result.profile.name || result.profile.email || 'LinkedIn User'}`, 'ok');
-        }
-      } else {
-        showToast(`LinkedIn test failed: ${result.error}`, 'bad');
-      }
-    } catch (error) {
-      showToast(`LinkedIn test failed: ${error.message}`, 'bad');
-    } finally {
-      hideLoader();
-    }
-  });
-}
-
-// ============================================================
 // SHEET MANAGEMENT (Content Ideas)
 // ============================================================
 
@@ -1025,22 +872,21 @@ async function loadSheetData() {
     renderSheetRows(posts);
   } catch (error) {
     console.error('Failed to load sheet data:', error);
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px;">Failed to load data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">Failed to load data</td></tr>';
   }
 }
 
 function renderSheetRows(posts) {
   const tbody = document.getElementById('sheetBody');
   
-    if (posts.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">No posts yet. Click "Add New Post" to create one.</td></tr>';
+  if (posts.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #666;">No posts yet. Click "Add New Post" to create one.</td></tr>';
     return;
   }
   
   tbody.innerHTML = posts.map(post => `
     <tr data-post-id="${post.id}">
       <td class="col-id">${escapeHtml(post.post_id)}</td>
-      <td class="col-identification">${escapeHtml(post.identification || '-')}</td>
       <td class="col-instruction" title="${escapeHtml(post.instruction || '')}">${escapeHtml(post.instruction || '-')}</td>
       <td class="col-type">${escapeHtml(post.type || '-')}</td>
       <td class="col-template">${escapeHtml(post.template || '-')}</td>
@@ -1098,60 +944,76 @@ function initPostEditModal() {
   // Form submit
   form?.addEventListener('submit', handlePostFormSubmit);
   
+  // Add post button
+  document.getElementById('btnAddPost')?.addEventListener('click', () => {
+    openPostEditModal(null);
+  });
+  
   // File import handlers
-  const templateImportBtn = document.getElementById('btnImportTemplate');
+  const btnImportTemplate = document.getElementById('btnImportTemplate');
   const templateFileInput = document.getElementById('templateFileInput');
-  const sampleImportBtn = document.getElementById('btnImportSample');
+  const btnImportSample = document.getElementById('btnImportSample');
   const sampleFileInput = document.getElementById('sampleFileInput');
   
-  if (templateImportBtn && templateFileInput) {
-    templateImportBtn.addEventListener('click', () => {
+  if (btnImportTemplate && templateFileInput) {
+    btnImportTemplate.addEventListener('click', () => {
       templateFileInput.click();
     });
     
     templateFileInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
-      if (file && file.type === 'text/plain' || file.name.endsWith('.txt')) {
+      if (!file) return;
+      
+      // Validate file type with proper parentheses to avoid operator precedence issues
+      if (file && (file.type === 'text/plain' || file.name.endsWith('.txt'))) {
         try {
           const text = await file.text();
-          document.getElementById('postTemplate').value = text.trim();
+          const templateField = document.getElementById('postTemplate');
+          if (templateField) {
+            templateField.value = text.trim();
+          }
           showToast('Template imported successfully', 'ok');
         } catch (error) {
-          showToast('Failed to read template file', 'bad');
+          showToast('Failed to read file', 'bad');
         }
       } else {
         showToast('Please select a .txt file', 'bad');
       }
-      e.target.value = ''; // Reset file input
+      
+      // Reset input
+      e.target.value = '';
     });
   }
   
-  if (sampleImportBtn && sampleFileInput) {
-    sampleImportBtn.addEventListener('click', () => {
+  if (btnImportSample && sampleFileInput) {
+    btnImportSample.addEventListener('click', () => {
       sampleFileInput.click();
     });
     
     sampleFileInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
-      if (file && file.type === 'text/plain' || file.name.endsWith('.txt')) {
+      if (!file) return;
+      
+      // Validate file type with proper parentheses to avoid operator precedence issues
+      if (file && (file.type === 'text/plain' || file.name.endsWith('.txt'))) {
         try {
           const text = await file.text();
-          document.getElementById('postSample').value = text.trim();
+          const sampleField = document.getElementById('postSample');
+          if (sampleField) {
+            sampleField.value = text.trim();
+          }
           showToast('Sample imported successfully', 'ok');
         } catch (error) {
-          showToast('Failed to read sample file', 'bad');
+          showToast('Failed to read file', 'bad');
         }
       } else {
         showToast('Please select a .txt file', 'bad');
       }
-      e.target.value = ''; // Reset file input
+      
+      // Reset input
+      e.target.value = '';
     });
   }
-  
-  // Add post button
-  document.getElementById('btnAddPost')?.addEventListener('click', () => {
-    openPostEditModal(null);
-  });
 }
 
 function openPostEditModal(postId) {
@@ -1162,10 +1024,6 @@ function openPostEditModal(postId) {
   form.reset();
   document.getElementById('postEditId').value = postId || '';
   
-  // Reset file inputs
-  document.getElementById('templateFileInput').value = '';
-  document.getElementById('sampleFileInput').value = '';
-  
   if (postId) {
     title.textContent = 'Edit Post';
     
@@ -1173,7 +1031,6 @@ function openPostEditModal(postId) {
     API.posts.get(postId).then(data => {
       const post = data.post;
       if (post) {
-        form.identification.value = post.identification || '';
         form.instruction.value = post.instruction || '';
         form.type.value = post.type || '';
         form.template.value = post.template || '';
@@ -1198,7 +1055,6 @@ async function handlePostFormSubmit(e) {
   const postId = document.getElementById('postEditId').value;
   
   const data = {
-    identification: form.identification.value.trim() || null,
     instruction: form.instruction.value.trim(),
     type: form.type.value.trim() || null,
     template: form.template.value.trim() || null,
@@ -1505,28 +1361,10 @@ const CALC_CONSTANTS = {
 
 async function loadCalculatorStats() {
   try {
-    // Get scheduled posts count
-    const scheduledResult = await API.posts.getScheduled();
-    const scheduledCount = scheduledResult.posts?.length || 0;
+    const result = await API.workflow.stats();
+    const stats = result.stats || { totalGenerations: 0, totalImages: 0 };
     
-    // Get workflow stats for actual generations
-    let totalGenerations = 0;
-    let totalImages = 0;
-    try {
-      const workflowResult = await API.workflow.stats();
-      const stats = workflowResult.stats || {};
-      totalGenerations = stats.totalGenerations || 0;
-      totalImages = stats.totalImages || 0;
-    } catch (workflowError) {
-      console.warn('Could not load workflow stats:', workflowError);
-    }
-    
-    // Use scheduled posts count if available, otherwise use workflow stats
-    // Scheduled posts represent planned content generation
-    const gptCount = scheduledCount > 0 ? scheduledCount : totalGenerations;
-    const imageCount = scheduledCount > 0 ? scheduledCount * 3 : totalImages; // Assume 3 images per post
-    
-    updateCalculatorDisplay(gptCount, imageCount);
+    updateCalculatorDisplay(stats.totalGenerations || 0, stats.totalImages || 0);
   } catch (error) {
     console.error('Failed to load calculator stats:', error);
     updateCalculatorDisplay(0, 0);
@@ -1752,6 +1590,100 @@ function getEnergyComparison(wh) {
 // INITIALIZATION
 // ============================================================
 
+function initInstanceRefresh() {
+  const form = document.getElementById('instanceRefreshForm');
+  const copyBtn = document.getElementById('btnCopyConfirmation');
+  
+  if (!form) return;
+  
+  // Copy confirmation text button
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const confirmationText = "Humpty Dumpty sat on a wall. Humpty Dumpty had a great fall. All the king's horses and all the king's men couldn't put Humpty together again.";
+      navigator.clipboard.writeText(confirmationText).then(() => {
+        showToast('Confirmation text copied to clipboard', 'ok');
+        copyBtn.textContent = '✓ Copied!';
+        setTimeout(() => {
+          copyBtn.textContent = '📋 Copy Confirmation Text';
+        }, 2000);
+      }).catch(() => {
+        showToast('Failed to copy text', 'bad');
+      });
+    });
+  }
+  
+  // Form submission
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const adminUsername = form.refreshAdminUsername.value.trim();
+    const adminPassword = form.refreshAdminPassword.value;
+    const confirmationText = form.refreshConfirmationText.value.trim();
+    
+    // Validate inputs
+    if (!adminUsername || !adminPassword || !confirmationText) {
+      showToast('All fields are required', 'bad');
+      return;
+    }
+    
+    // Final confirmation dialog
+    const confirmed = confirm(
+      '⚠️ FINAL WARNING ⚠️\n\n' +
+      'You are about to PERMANENTLY DELETE ALL DATA from this instance.\n\n' +
+      'This includes:\n' +
+      '• All posts and content\n' +
+      '• All settings and API keys\n' +
+      '• All workflow sessions\n' +
+      '• All users (except your admin account)\n\n' +
+      'This action is IRREVERSIBLE.\n\n' +
+      'Are you absolutely sure you want to proceed?'
+    );
+    
+    if (!confirmed) {
+      return;
+    }
+    
+    try {
+      showLoader();
+      
+      const response = await fetch('/api/settings/reset-instance', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          adminUsername,
+          adminPassword,
+          confirmationText
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to reset instance');
+      }
+      
+      if (result.reset) {
+        // Show success message and redirect to login
+        showToast('Instance has been reset. Redirecting to login...', 'ok');
+        
+        setTimeout(() => {
+          // Clear session and redirect
+          window.location.href = '/login';
+        }, 2000);
+      }
+      
+    } catch (error) {
+      console.error('Reset instance error:', error);
+      showToast(error.message || 'Failed to reset instance', 'bad');
+    } finally {
+      hideLoader();
+    }
+  });
+}
+
 function initSettingsModule() {
   initProfileSettingsForm();
   initPasswordForm();
@@ -1759,11 +1691,11 @@ function initSettingsModule() {
   initPromptsSection();
   initStabilitySettings();
   initGoogleDrive();
-  initLinkedIn();
   initPostEditModal();
   initCsvButtons();
   initUserEditModal();
   initCalculator();
+  initInstanceRefresh();
 }
 
 // Initialize on DOM ready

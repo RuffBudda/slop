@@ -6,7 +6,7 @@
 const express = require('express');
 const crypto = require('crypto');
 const db = require('../database/db');
-const { requireAuth } = require('../middleware/auth');
+const { requireAuth, requireAdmin } = require('../middleware/auth');
 
 const router = express.Router();
 
@@ -778,6 +778,96 @@ router.post('/test/linkedin', async (req, res) => {
     console.error('LinkedIn test error:', error);
     res.status(400).json({ 
       error: 'LinkedIn API test failed',
+      details: error.message 
+    });
+  }
+});
+
+/**
+ * Reset/Refresh entire instance
+ * POST /api/settings/reset-instance
+ * Requires admin authentication and confirmation text
+ */
+router.post('/reset-instance', requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { adminUsername, adminPassword, confirmationText } = req.body;
+    
+    // Validate inputs
+    if (!adminUsername || !adminPassword || !confirmationText) {
+      return res.status(400).json({ 
+        error: 'Admin username, password, and confirmation text are required' 
+      });
+    }
+    
+    // Expected confirmation text
+    const expectedText = "Humpty Dumpty sat on a wall. Humpty Dumpty had a great fall. All the king's horses and all the king's men couldn't put Humpty together again.";
+    
+    // Verify confirmation text matches exactly
+    if (confirmationText.trim() !== expectedText) {
+      return res.status(400).json({ 
+        error: 'Confirmation text does not match. Please copy and paste the exact text.' 
+      });
+    }
+    
+    // Verify admin username matches current user
+    const currentUser = db.prepare('SELECT id, username, password_hash FROM users WHERE id = ?').get(req.user.id);
+    
+    if (!currentUser) {
+      return res.status(404).json({ error: 'Current user not found' });
+    }
+    
+    if (currentUser.username !== adminUsername) {
+      return res.status(400).json({ error: 'Admin username does not match' });
+    }
+    
+    // Verify password
+    const bcrypt = require('bcrypt');
+    const isValidPassword = await bcrypt.compare(adminPassword, currentUser.password_hash);
+    
+    if (!isValidPassword) {
+      return res.status(400).json({ error: 'Admin password is incorrect' });
+    }
+    
+    // All validations passed - proceed with reset
+    // Clear all data from all tables (but keep schema)
+    const resetTransaction = db.transaction(() => {
+      // Delete all posts
+      db.prepare('DELETE FROM posts').run();
+      
+      // Delete all settings
+      db.prepare('DELETE FROM settings').run();
+      
+      // Delete all workflow sessions
+      db.prepare('DELETE FROM workflow_sessions').run();
+      
+      // Delete all users except the current admin
+      db.prepare('DELETE FROM users WHERE id != ?').run(req.user.id);
+      
+      // Reset sequences/indexes if needed (SQLite handles this automatically)
+    });
+    
+    resetTransaction();
+    
+    // Send response first
+    res.json({ 
+      success: true, 
+      message: 'Instance has been completely reset. All data has been cleared. You will need to log in again.',
+      reset: true
+    });
+    
+    // Destroy session after response is sent to force re-login
+    setTimeout(() => {
+      req.session.destroy((err) => {
+        if (err) {
+          console.error('Error destroying session:', err);
+        }
+      });
+    }, 100);
+
+  } catch (error) {
+    console.error('Reset instance error:', error);
+    res.status(500).json({ 
+      error: 'Failed to reset instance',
       details: error.message 
     });
   }
