@@ -3,6 +3,9 @@
  * Handles all API calls to the backend
  */
 
+// Track if we're already handling an auth redirect to prevent multiple toasts/redirects
+let isHandlingAuthRedirect = false;
+
 const API = {
   /**
    * Base API call method
@@ -47,6 +50,41 @@ const API = {
       // #endregion
       
       if (!response.ok) {
+        // Handle 401 (Unauthorized) globally - session expired
+        if (response.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/status' && endpoint !== '/auth/setup') {
+          // Only handle redirect once to prevent multiple toasts/redirects
+          if (!isHandlingAuthRedirect) {
+            isHandlingAuthRedirect = true;
+            
+            // Clear user state
+            window.AppState = window.AppState || {};
+            window.AppState.user = null;
+            
+            // Clear any cached data
+            if (typeof clearCache === 'function') {
+              clearCache();
+            }
+            
+            // Only redirect if not already on login/setup page
+            const currentPath = window.location.pathname;
+            if (!currentPath.includes('/login') && !currentPath.includes('/setup') && currentPath !== '/') {
+              // Show one toast and redirect
+              if (typeof showToast === 'function') {
+                showToast('Session expired. Please log in again.', 'bad');
+              }
+              setTimeout(() => {
+                window.location.href = '/login';
+              }, 1000);
+            } else {
+              // Reset flag if we're already on login page
+              isHandlingAuthRedirect = false;
+            }
+          }
+          
+          // Throw error to stop further processing
+          throw new Error('Authentication required');
+        }
+        
         throw new Error(data.error || `HTTP ${response.status}`);
       }
       

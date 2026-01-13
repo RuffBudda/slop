@@ -69,7 +69,6 @@ SLOP is an intelligent content automation platform designed to streamline Linked
 - API Keys (can be configured later):
   - OpenAI API Key
   - Stability AI API Key
-  - DigitalOcean Spaces credentials (optional, for image storage)
 
 ## 🚀 Quick Start
 
@@ -130,13 +129,7 @@ DATABASE_PATH=./data/slop.db
 OPENAI_API_KEY=sk-your-openai-api-key
 STABILITY_API_KEY=sk-your-stability-api-key
 
-# DigitalOcean Spaces (for image storage)
-SPACES_NAME=your-space-name
-SPACES_REGION=blr1
-SPACES_KEY=your-access-key
-SPACES_SECRET=your-secret-key
-
-# Google Drive OAuth (optional)
+# Google Drive OAuth (optional - can also be configured in UI)
 GOOGLE_CLIENT_ID=your-google-client-id.apps.googleusercontent.com
 GOOGLE_CLIENT_SECRET=your-google-client-secret
 GOOGLE_REDIRECT_URI=http://localhost:3000/api/google-drive/callback
@@ -149,9 +142,7 @@ GOOGLE_REDIRECT_URI=http://localhost:3000/api/google-drive/callback
 1. Create a [Google Cloud Project](https://console.cloud.google.com/)
 2. Enable the Google Drive API
 3. Create OAuth 2.0 credentials or a Service Account
-4. Add credentials to `.env` or configure via Settings UI
-
-For detailed setup instructions, see [DIGITALOCEAN-SETUP.md](DIGITALOCEAN-SETUP.md)
+4. Configure credentials via Settings UI (recommended) or add to `.env`
 
 ## 🔧 Advanced Configuration
 
@@ -276,20 +267,7 @@ The application uses SQLite with the following tables:
 
 ## 🚢 Deployment
 
-### DigitalOcean Deployment
-
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions.
-
-**Quick Deploy:**
-
-```bash
-# On your Ubuntu server
-curl -sSL https://raw.githubusercontent.com/RuffBudda/slop/main/standalone/deploy.sh | bash
-```
-
-### Docker (Coming Soon)
-
-Docker support is planned for future releases.
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed deployment instructions on Ubuntu servers.
 
 ## Environment Variables
 
@@ -301,10 +279,9 @@ Docker support is planned for future releases.
 | `DATABASE_PATH` | SQLite database path | No |
 | `OPENAI_API_KEY` | OpenAI API key | No* |
 | `STABILITY_API_KEY` | Stability AI key | No* |
-| `SPACES_NAME` | DO Spaces bucket name | No* |
-| `SPACES_REGION` | DO Spaces region | No* |
-| `SPACES_KEY` | DO Spaces access key | No* |
-| `SPACES_SECRET` | DO Spaces secret key | No* |
+| `GOOGLE_CLIENT_ID` | Google OAuth Client ID | No* |
+| `GOOGLE_CLIENT_SECRET` | Google OAuth Client Secret | No* |
+| `GOOGLE_REDIRECT_URI` | Google OAuth Redirect URI | No* |
 
 *Can be configured via Settings UI instead
 
@@ -384,7 +361,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 - Built with [OpenAI GPT](https://openai.com/)
 - Image generation powered by [Stability AI](https://stability.ai/)
-- Storage via [DigitalOcean Spaces](https://www.digitalocean.com/products/spaces)
 
 ---
 

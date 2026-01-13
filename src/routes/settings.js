@@ -63,6 +63,8 @@ const SENSITIVE_KEYS = [
   'google_drive_refresh_token',
   'google_drive_access_token',
   'google_drive_service_account',
+  'google_drive_client_id',
+  'google_drive_client_secret',
   'linkedin_client_id',
   'linkedin_client_secret',
   'linkedin_access_token',

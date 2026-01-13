@@ -26,8 +26,9 @@ router.get('/callback', async (req, res) => {
       return res.redirect('/login?redirect=/settings&googleDrive=error');
     }
 
-    // Exchange code for tokens
-    const tokens = await googleDriveService.getTokensFromCode(code);
+    // Exchange code for tokens (use userId if available)
+    const userId = req.session.userId;
+    const tokens = await googleDriveService.getTokensFromCode(code, userId);
     
     // Save tokens for current user
     googleDriveService.saveTokens(userId, tokens);
@@ -49,11 +50,11 @@ router.use(requireAuth);
  */
 router.get('/auth-url', (req, res) => {
   try {
-    const authUrl = googleDriveService.getAuthUrl();
+    const authUrl = googleDriveService.getAuthUrl(req.user.id);
     res.json({ authUrl });
   } catch (error) {
     console.error('Get auth URL error:', error);
-    res.status(500).json({ error: 'Failed to get authorization URL' });
+    res.status(500).json({ error: 'Failed to get authorization URL', details: error.message });
   }
 });
 

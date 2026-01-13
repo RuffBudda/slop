@@ -9,6 +9,11 @@
 
 async function loadSettings() {
   try {
+    // Reset to tiles view when settings tab is opened
+    if (typeof window.showSettingsTiles === 'function') {
+      window.showSettingsTiles();
+    }
+    
     // Load profile settings
     await loadProfileSettings();
     
@@ -368,6 +373,28 @@ async function loadGoogleDriveStatus() {
     if (disconnectBtn) {
       disconnectBtn.style.display = isConnected ? 'inline-flex' : 'none';
     }
+    
+    // Load OAuth credentials if they exist
+    try {
+      const settings = await API.settings.get(['google_drive_client_id', 'google_drive_client_secret', 'google_drive_redirect_uri']);
+      
+      const clientIdInput = document.getElementById('googleDriveClientId');
+      const clientSecretInput = document.getElementById('googleDriveClientSecret');
+      const redirectUriInput = document.getElementById('googleDriveRedirectUri');
+      
+      if (clientIdInput && settings.google_drive_client_id) {
+        clientIdInput.value = settings.google_drive_client_id.value || '';
+      }
+      if (clientSecretInput && settings.google_drive_client_secret) {
+        clientSecretInput.value = settings.google_drive_client_secret.value || '';
+      }
+      if (redirectUriInput && settings.google_drive_redirect_uri) {
+        redirectUriInput.value = settings.google_drive_redirect_uri.value || redirectUriInput.value;
+      }
+    } catch (error) {
+      // OAuth credentials not set yet, that's okay
+      console.log('OAuth credentials not loaded:', error);
+    }
   } catch (error) {
     console.error('Failed to load Google Drive status:', error);
     const statusText = document.getElementById('googleDriveStatusText');
@@ -610,8 +637,60 @@ function selectFolderInBrowser(folderId, folderName) {
 function initGoogleDrive() {
   const connectBtn = document.getElementById('btnConnectGoogleDrive');
   const disconnectBtn = document.getElementById('btnDisconnectGoogleDrive');
+  const oauthForm = document.getElementById('googleDriveOAuthForm');
   const serviceAccountForm = document.getElementById('serviceAccountForm');
   const folderForm = document.getElementById('googleDriveFolderForm');
+  
+  // Update redirect URI display based on current window location
+  const redirectUriDisplay = document.getElementById('redirectUriDisplay');
+  const redirectUriInput = document.getElementById('googleDriveRedirectUri');
+  if (redirectUriDisplay && redirectUriInput) {
+    const currentOrigin = window.location.origin;
+    const defaultRedirectUri = `${currentOrigin}/api/google-drive/callback`;
+    redirectUriDisplay.textContent = defaultRedirectUri;
+    if (!redirectUriInput.value || redirectUriInput.value.includes('localhost')) {
+      redirectUriInput.value = defaultRedirectUri;
+    }
+  }
+  
+  // OAuth credentials form
+  if (oauthForm) {
+    oauthForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const clientId = document.getElementById('googleDriveClientId').value.trim();
+      const clientSecret = document.getElementById('googleDriveClientSecret').value.trim();
+      const redirectUri = document.getElementById('googleDriveRedirectUri').value.trim();
+      
+      if (!clientId || !clientSecret) {
+        showToast('Please enter both Client ID and Client Secret', 'bad');
+        return;
+      }
+      
+      if (!redirectUri) {
+        showToast('Please enter a Redirect URI', 'bad');
+        return;
+      }
+      
+      try {
+        showLoader();
+        
+        // Save OAuth credentials
+        await API.settings.set('google_drive_client_id', clientId);
+        await API.settings.set('google_drive_client_secret', clientSecret);
+        await API.settings.set('google_drive_redirect_uri', redirectUri);
+        
+        showToast('OAuth credentials saved successfully', 'ok');
+        
+        // Reload status to update connection button
+        await loadGoogleDriveStatus();
+      } catch (error) {
+        showToast(error.message || 'Failed to save OAuth credentials', 'bad');
+      } finally {
+        hideLoader();
+      }
+    });
+  }
   const browseBtn = document.getElementById('btnBrowseFolders');
   const clearFolderBtn = document.getElementById('btnClearFolder');
   const folderBrowserModal = document.getElementById('folderBrowserModal');
@@ -1684,7 +1763,84 @@ function initInstanceRefresh() {
   });
 }
 
+function initSettingsTiles() {
+  const tiles = document.querySelectorAll('.settings-tile');
+  const sections = document.querySelectorAll('.settings-section-content');
+  const tilesGrid = document.getElementById('settingsTilesGrid');
+  const backButton = document.getElementById('settingsBack');
+  const btnBack = document.getElementById('btnSettingsBack');
+  
+  // Show tiles view by default (hide all sections)
+  showTiles();
+  
+  // Handle tile clicks
+  tiles.forEach(tile => {
+    tile.addEventListener('click', () => {
+      const section = tile.dataset.section;
+      if (section) {
+        showSection(section);
+      }
+    });
+  });
+  
+  // Handle back button
+  if (btnBack) {
+    btnBack.addEventListener('click', () => {
+      showTiles();
+    });
+  }
+  
+  function showSection(sectionName) {
+    // Hide all sections
+    sections.forEach(section => {
+      section.classList.add('hidden');
+    });
+    
+    // Show selected section
+    const targetSection = document.getElementById(`settingsSection${sectionName.charAt(0).toUpperCase() + sectionName.slice(1)}`);
+    if (targetSection) {
+      targetSection.classList.remove('hidden');
+    }
+    
+    // Hide tiles, show back button
+    if (tilesGrid) tilesGrid.classList.add('hidden');
+    if (backButton) backButton.classList.remove('hidden');
+    
+    // Update active tile
+    tiles.forEach(tile => {
+      tile.classList.toggle('active', tile.dataset.section === sectionName);
+    });
+    
+    // Scroll to top of settings container
+    const container = document.querySelector('.settings-container');
+    if (container) {
+      container.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+  
+  function showTiles() {
+    // Hide all sections
+    sections.forEach(section => {
+      section.classList.add('hidden');
+    });
+    
+    // Show tiles, hide back button
+    if (tilesGrid) tilesGrid.classList.remove('hidden');
+    if (backButton) backButton.classList.add('hidden');
+    
+    // Remove active state from tiles
+    tiles.forEach(tile => {
+      tile.classList.remove('active');
+    });
+  }
+  
+  // Make functions available globally for potential external use
+  window.showSettingsSection = showSection;
+  window.showSettingsTiles = showTiles;
+}
+
 function initSettingsModule() {
+  initSettingsTiles();
   initProfileSettingsForm();
   initPasswordForm();
   initApiSettingsForm();

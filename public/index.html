@@ -146,8 +146,58 @@
         <div class="settings-container">
           <h2>Settings</h2>
           
+          <!-- Settings Tiles Navigation -->
+          <div class="settings-tiles-grid" id="settingsTilesGrid">
+            <div class="settings-tile" data-section="account">
+              <div class="tile-icon">👤</div>
+              <div class="tile-content">
+                <h3>Account & Security</h3>
+                <p>Profile settings and password management</p>
+              </div>
+            </div>
+            
+            <div class="settings-tile" data-section="api">
+              <div class="tile-icon">🔑</div>
+              <div class="tile-content">
+                <h3>API & Integrations</h3>
+                <p>API keys and third-party integrations</p>
+              </div>
+            </div>
+            
+            <div class="settings-tile" data-section="ai">
+              <div class="tile-icon">🤖</div>
+              <div class="tile-content">
+                <h3>AI Configuration</h3>
+                <p>Prompts and AI generation settings</p>
+              </div>
+            </div>
+            
+            <div class="settings-tile" data-section="content">
+              <div class="tile-icon">📝</div>
+              <div class="tile-content">
+                <h3>Content Management</h3>
+                <p>Content ideas and environmental calculator</p>
+              </div>
+            </div>
+            
+            <div class="settings-tile" data-section="admin">
+              <div class="tile-icon">⚙️</div>
+              <div class="tile-content">
+                <h3>Administration</h3>
+                <p>User management and instance settings</p>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Back Button (shown when a section is selected) -->
+          <div class="settings-back hidden" id="settingsBack">
+            <button class="btn clear" id="btnSettingsBack">
+              <span class="ico">←</span> Back to Settings
+            </button>
+          </div>
+          
           <!-- Account & Security Section -->
-          <div class="settings-group">
+          <div class="settings-group settings-section-content" id="settingsSectionAccount" data-section="account">
             <h2 class="settings-group-title">Account & Security</h2>
             
             <!-- Profile Section -->
@@ -201,7 +251,7 @@
           </div>
           
           <!-- API & Integrations Section -->
-          <div class="settings-group">
+          <div class="settings-group settings-section-content hidden" id="settingsSectionApi" data-section="api">
             <h2 class="settings-group-title">API & Integrations</h2>
             
             <!-- API Keys Section -->
@@ -255,7 +305,7 @@
           </div>
           
           <!-- AI Configuration Section -->
-          <div class="settings-group">
+          <div class="settings-group settings-section-content hidden" id="settingsSectionAi" data-section="ai">
             <h2 class="settings-group-title">AI Configuration</h2>
             
             <!-- Prompts Section -->
@@ -375,7 +425,7 @@
               <h3>Google Drive Integration</h3>
             <p class="section-description">
               Connect your Google Drive account to browse and upload images directly from your Drive.
-              You can use either OAuth (requires verification) or a Service Account key (no verification needed).
+              Choose between OAuth (personal account) or Service Account (recommended for automation).
             </p>
             
             <div id="googleDriveStatus" class="google-drive-status">
@@ -391,17 +441,63 @@
               </div>
             </div>
             
-            <div style="margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--bd);">
-              <h4>Service Account Key (Recommended - No Verification Required)</h4>
+            <!-- OAuth Configuration -->
+            <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bd);">
+              <h4>OAuth Configuration (Personal Account)</h4>
               <p class="field-description" style="margin-bottom: 16px;">
-                Upload a Google Service Account JSON key file. This method doesn't require OAuth verification.
+                Connect using your personal Google account. You'll need to create OAuth credentials in Google Cloud Console.
+                <br><strong>Quick Setup:</strong>
+                <br>1. Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>
+                <br>2. Create a project or select existing one
+                <br>3. Enable <strong>Google Drive API</strong>
+                <br>4. Go to <strong>"APIs & Services" → "Credentials"</strong>
+                <br>5. Click <strong>"Create Credentials" → "OAuth client ID"</strong>
+                <br>6. Choose <strong>"Web application"</strong>
+                <br>7. Add authorized redirect URI: <code id="redirectUriDisplay">http://localhost:3000/api/google-drive/callback</code>
+                <br>8. Copy your Client ID and Client Secret below
+              </p>
+              
+              <form id="googleDriveOAuthForm" class="settings-form">
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="googleDriveClientId">Client ID</label>
+                    <input type="text" id="googleDriveClientId" name="google_drive_client_id" 
+                           placeholder="xxxxx.apps.googleusercontent.com">
+                    <small>Your OAuth 2.0 Client ID from Google Cloud Console</small>
+                  </div>
+                  <div class="form-group">
+                    <label for="googleDriveClientSecret">Client Secret</label>
+                    <input type="password" id="googleDriveClientSecret" name="google_drive_client_secret" 
+                           placeholder="GOCSPX-xxxxx">
+                    <small>Your OAuth 2.0 Client Secret</small>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label for="googleDriveRedirectUri">Redirect URI</label>
+                  <input type="text" id="googleDriveRedirectUri" name="google_drive_redirect_uri" 
+                         value="http://localhost:3000/api/google-drive/callback"
+                         placeholder="http://localhost:3000/api/google-drive/callback">
+                  <small>Must match exactly what you set in Google Cloud Console. Change if using a different domain.</small>
+                </div>
+                <button type="submit" class="btn approve">
+                  <span class="ico">💾</span> Save OAuth Credentials
+                </button>
+              </form>
+            </div>
+            
+            <!-- Service Account Configuration -->
+            <div style="margin-top: 32px; padding-top: 24px; border-top: 1px solid var(--bd);">
+              <h4>Service Account (Recommended for Automation)</h4>
+              <p class="field-description" style="margin-bottom: 16px;">
+                Service accounts don't require OAuth verification and work great for automated access.
                 <br><strong>How to get a Service Account key:</strong>
                 <br>1. Go to <a href="https://console.cloud.google.com/" target="_blank">Google Cloud Console</a>
                 <br>2. Create a project or select existing one
-                <br>3. Enable Google Drive API
-                <br>4. Go to "Credentials" → "Create Credentials" → "Service Account"
-                <br>5. Create a service account and download the JSON key file
-                <br>6. Upload the JSON file below
+                <br>3. Enable <strong>Google Drive API</strong>
+                <br>4. Go to <strong>"APIs & Services" → "Credentials"</strong>
+                <br>5. Click <strong>"Create Credentials" → "Service account"</strong>
+                <br>6. Create a service account and download the JSON key file
+                <br>7. Upload the JSON file below
               </p>
               <form id="serviceAccountForm" class="settings-form">
                 <div class="form-group">
@@ -411,7 +507,7 @@
                 </div>
                 <div class="form-group">
                   <label for="serviceAccountJson">Or paste JSON directly</label>
-                  <textarea id="serviceAccountJson" name="serviceAccountJson" rows="8" 
+                  <textarea id="serviceAccountJson" name="serviceAccountJson" rows="6" 
                             placeholder='{"type": "service_account", "project_id": "...", "private_key_id": "...", ...}' 
                             class="prompt-textarea"></textarea>
                   <small>Paste the entire JSON content from your service account key file</small>
@@ -540,7 +636,7 @@
           </div>
           
           <!-- Content Management Section -->
-          <div class="settings-group">
+          <div class="settings-group settings-section-content hidden" id="settingsSectionContent" data-section="content">
             <h2 class="settings-group-title">Content Management</h2>
             
             <!-- Sheet Management Section -->
@@ -696,7 +792,7 @@
           </div>
           
           <!-- Administration Section -->
-          <div class="settings-group">
+          <div class="settings-group settings-section-content hidden" id="settingsSectionAdmin" data-section="admin">
             <h2 class="settings-group-title">Administration</h2>
             
             <!-- User Management Section (Admin only) -->

@@ -1440,6 +1440,97 @@ dialog::backdrop {
   color: var(--ink);
 }
 
+/* Settings Tiles Navigation */
+.settings-tiles-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+  margin-bottom: 32px;
+}
+
+.settings-tile {
+  background: var(--bg-card);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius);
+  padding: 24px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+}
+
+.settings-tile:hover {
+  border-color: var(--accent);
+  background: var(--bg-elevated);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+.settings-tile.active {
+  border-color: var(--accent);
+  background: var(--accent-bg, rgba(16, 185, 129, 0.1));
+}
+
+.tile-icon {
+  font-size: 32px;
+  line-height: 1;
+  margin-bottom: 4px;
+}
+
+.tile-content h3 {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 4px;
+  color: var(--ink);
+}
+
+.tile-content p {
+  font-size: 13px;
+  margin: 0;
+  color: var(--ink-muted);
+  line-height: 1.4;
+}
+
+.settings-back {
+  margin-bottom: 24px;
+}
+
+.settings-section-content {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 768px) {
+  .settings-tiles-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .settings-tile {
+    flex-direction: row;
+    text-align: left;
+    align-items: center;
+  }
+  
+  .tile-icon {
+    font-size: 28px;
+    margin-bottom: 0;
+    margin-right: 16px;
+  }
+}
+
 .settings-group {
   margin-bottom: 48px;
 }

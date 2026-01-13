@@ -7,7 +7,7 @@ const { google } = require('googleapis');
 const db = require('../database/db');
 const { getSettingValue, encrypt, decrypt } = require('../routes/settings');
 
-// Google OAuth2 configuration
+// Google OAuth2 configuration (fallback to env vars if not set in user settings)
 const GOOGLE_CLIENT_ID = process.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || '';
 const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'http://localhost:3000/api/google-drive/callback';
@@ -18,10 +18,25 @@ const GOOGLE_REDIRECT_URI = process.env.GOOGLE_REDIRECT_URI || 'http://localhost
  * @returns {google.auth.OAuth2Client} OAuth2 client
  */
 function getOAuth2Client(userId = null) {
+  // Get user-specific OAuth credentials if available, otherwise use env vars
+  let clientId = GOOGLE_CLIENT_ID;
+  let clientSecret = GOOGLE_CLIENT_SECRET;
+  let redirectUri = GOOGLE_REDIRECT_URI;
+  
+  if (userId) {
+    const userClientId = getSettingValue(userId, 'google_drive_client_id');
+    const userClientSecret = getSettingValue(userId, 'google_drive_client_secret');
+    const userRedirectUri = getSettingValue(userId, 'google_drive_redirect_uri');
+    
+    if (userClientId) clientId = userClientId;
+    if (userClientSecret) clientSecret = userClientSecret;
+    if (userRedirectUri) redirectUri = userRedirectUri;
+  }
+  
   const oauth2Client = new google.auth.OAuth2(
-    GOOGLE_CLIENT_ID,
-    GOOGLE_CLIENT_SECRET,
-    GOOGLE_REDIRECT_URI
+    clientId,
+    clientSecret,
+    redirectUri
   );
 
   if (userId) {
@@ -41,10 +56,11 @@ function getOAuth2Client(userId = null) {
 
 /**
  * Get authorization URL for OAuth flow
+ * @param {number} userId - User ID (optional)
  * @returns {string} Authorization URL
  */
-function getAuthUrl() {
-  const oauth2Client = getOAuth2Client();
+function getAuthUrl(userId = null) {
+  const oauth2Client = getOAuth2Client(userId);
   
   const scopes = [
     'https://www.googleapis.com/auth/drive.readonly',
@@ -61,10 +77,11 @@ function getAuthUrl() {
 /**
  * Exchange authorization code for tokens
  * @param {string} code - Authorization code
+ * @param {number} userId - User ID (optional)
  * @returns {Object} Tokens
  */
-async function getTokensFromCode(code) {
-  const oauth2Client = getOAuth2Client();
+async function getTokensFromCode(code, userId = null) {
+  const oauth2Client = getOAuth2Client(userId);
   const { tokens } = await oauth2Client.getToken(code);
   return tokens;
 }
