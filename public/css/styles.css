@@ -27,6 +27,7 @@
   --bad-bg: rgba(239, 68, 68, 0.15);
   --bad-border: rgba(239, 68, 68, 0.3);
   --accent: #10b981;
+  --accent-rgb: 16, 185, 129;
   --accent-hover: #059669;
   
   /* Component Colors */
@@ -2279,7 +2280,7 @@ dialog::backdrop {
 .search-input:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 99, 102, 241), 0.1), 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb), 0.1), 0 2px 8px rgba(0, 0, 0, 0.15);
   background: var(--bg-card);
 }
 

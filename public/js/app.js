@@ -116,6 +116,7 @@ async function updateFabVisibility() {
     dock.classList.remove('hidden');
   } else {
     fab.style.display = 'none';
+    dock.classList.add('hidden');
   }
 }
 
