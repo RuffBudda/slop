@@ -880,6 +880,14 @@ function initPostEditModal() {
   const closeBtn = document.getElementById('postEditClose');
   const cancelBtn = document.getElementById('postEditCancel');
   
+  // Initialize close icon
+  if (closeBtn && window.Icons && window.Icons.get) {
+    const iconSpan = closeBtn.querySelector('.close-icon');
+    if (iconSpan && !iconSpan.innerHTML.trim()) {
+      iconSpan.innerHTML = window.Icons.get('close', '', { size: '16px' });
+    }
+  }
+  
   // Close handlers
   closeBtn?.addEventListener('click', () => modal.close());
   cancelBtn?.addEventListener('click', () => modal.close());
@@ -1207,6 +1215,14 @@ function initUserEditModal() {
   const passwordField = form?.querySelector('#userPassword');
   const passwordLabel = form?.querySelector('label[for="userPassword"]');
   
+  // Initialize close icon
+  if (closeBtn && window.Icons && window.Icons.get) {
+    const iconSpan = closeBtn.querySelector('.close-icon');
+    if (iconSpan && !iconSpan.innerHTML.trim()) {
+      iconSpan.innerHTML = window.Icons.get('close', '', { size: '16px' });
+    }
+  }
+  
   // Close handlers
   closeBtn?.addEventListener('click', () => {
     modal.close();
@@ -1498,6 +1514,14 @@ function initInstanceRefreshWorkflow() {
   const modal = document.getElementById('instanceRefreshModal');
   const startBtn = document.getElementById('btnStartInstanceRefresh');
   const closeBtn = document.getElementById('instanceRefreshClose');
+  
+  // Initialize close icon
+  if (closeBtn && window.Icons && window.Icons.get) {
+    const iconSpan = closeBtn.querySelector('.close-icon');
+    if (iconSpan && !iconSpan.innerHTML.trim()) {
+      iconSpan.innerHTML = window.Icons.get('close', '', { size: '16px' });
+    }
+  }
   
   if (!modal || !startBtn) return;
   

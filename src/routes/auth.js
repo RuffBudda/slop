@@ -179,18 +179,49 @@ router.post('/login', async (req, res) => {
     // Update last login
     db.prepare('UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?').run(user.id);
 
-    // Set session
-    req.session.userId = user.id;
-
-    res.json({
-      success: true,
-      message: 'Login successful',
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        display_name: user.display_name,
-        role: user.role
+    // Regenerate session to prevent session fixation attacks and ensure fresh session
+    return new Promise((resolve, reject) => {
+      req.session.regenerate((err) => {
+        if (err) {
+          console.error('Session regeneration error:', err);
+          // Fallback: just set session without regeneration
+          req.session.userId = user.id;
+          req.session.save((saveErr) => {
+            if (saveErr) {
+              console.error('Session save error:', saveErr);
+              return reject(saveErr);
+            }
+            return sendResponse();
+          });
+          return;
+        }
+        
+        // Set session after regeneration
+        req.session.userId = user.id;
+        
+        // Save session explicitly
+        req.session.save((saveErr) => {
+          if (saveErr) {
+            console.error('Session save error:', saveErr);
+            return reject(saveErr);
+          }
+          return sendResponse();
+        });
+      });
+      
+      function sendResponse() {
+        res.json({
+          success: true,
+          message: 'Login successful',
+          user: {
+            id: user.id,
+            username: user.username,
+            email: user.email,
+            display_name: user.display_name,
+            role: user.role
+          }
+        });
+        resolve();
       }
     });
 

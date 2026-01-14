@@ -451,9 +451,9 @@ window.initGlobalSearch = function() {
   
   if (!searchModal || !searchInput || !searchResults) return;
   
-  // Initialize search icon
+  // Initialize search icon with larger size for macOS Spotlight style
   if (searchIcon && window.Icons && window.Icons.get) {
-    searchIcon.innerHTML = window.Icons.get('search', '', { size: '16px' });
+    searchIcon.innerHTML = window.Icons.get('search', '', { size: '20px' });
   }
   
   // Debounced search
@@ -620,6 +620,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const modal = document.getElementById('previewModal');
   const closeBtn = document.getElementById('previewClose');
   
+  // Initialize close icon
+  if (closeBtn && window.Icons && window.Icons.get) {
+    const iconSpan = closeBtn.querySelector('.close-icon');
+    if (iconSpan && !iconSpan.innerHTML.trim()) {
+      iconSpan.innerHTML = window.Icons.get('close', '', { size: '16px' });
+    }
+  }
+  
   closeBtn?.addEventListener('click', () => modal.close());
   modal?.addEventListener('click', (e) => {
     if (e.target === modal) modal.close();
@@ -638,6 +646,14 @@ window.showShortcutsHelp = function() {
 document.addEventListener('DOMContentLoaded', () => {
   const modal = document.getElementById('shortcutsModal');
   const closeBtn = document.getElementById('shortcutsClose');
+  
+  // Initialize close icon
+  if (closeBtn && window.Icons && window.Icons.get) {
+    const iconSpan = closeBtn.querySelector('.close-icon');
+    if (iconSpan && !iconSpan.innerHTML.trim()) {
+      iconSpan.innerHTML = window.Icons.get('close', '', { size: '16px' });
+    }
+  }
   
   closeBtn?.addEventListener('click', () => modal.close());
   modal?.addEventListener('click', (e) => {

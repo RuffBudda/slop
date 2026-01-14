@@ -38,16 +38,36 @@ async function loadContent(forceRefresh = false) {
     let errorMessage = 'An unexpected error occurred.';
     let errorDetails = '';
     let showSettingsButton = false;
+    let isAuthError = false;
     
     // Check for specific error types
     if (error.message) {
       const errorMsg = error.message.toLowerCase();
       
-      // Authentication errors
-      if (errorMsg.includes('401') || errorMsg.includes('authentication') || errorMsg.includes('unauthorized')) {
-        errorTitle = 'Authentication Required';
-        errorMessage = 'Your session has expired. Please log in again.';
-        errorDetails = 'The server could not verify your identity.';
+      // Authentication errors - check if user is actually authenticated first
+      if (errorMsg.includes('401') || errorMsg.includes('authentication') || errorMsg.includes('unauthorized') || errorMsg.includes('authentication required')) {
+        isAuthError = true;
+        
+        // Check if user is actually authenticated
+        try {
+          const authStatus = await API.auth.status();
+          if (authStatus.authenticated) {
+            // User is authenticated but getting 401 - might be a session issue
+            errorTitle = 'Session Issue';
+            errorMessage = 'Your session may have expired. Please refresh the page.';
+            errorDetails = 'If the problem persists, please log out and log in again.';
+          } else {
+            // User is not authenticated
+            errorTitle = 'Authentication Required';
+            errorMessage = 'Please log in to access this content.';
+            errorDetails = 'You need to be logged in to view content.';
+          }
+        } catch (authCheckError) {
+          // If auth check fails, assume not authenticated
+          errorTitle = 'Authentication Required';
+          errorMessage = 'Please log in to access this content.';
+          errorDetails = 'You need to be logged in to view content.';
+        }
       }
       // Network errors
       else if (errorMsg.includes('network') || errorMsg.includes('fetch') || errorMsg.includes('timeout') || errorMsg.includes('failed to fetch')) {
@@ -119,6 +139,16 @@ async function loadContent(forceRefresh = false) {
             Go to Settings
           </button>
         `;
+      } else if (isAuthError) {
+        // For auth errors, show "Go to Login" button instead of retry
+        errorHTML += `
+          <p style="margin-top: 12px; color: var(--ink-muted); font-size: 14px;">
+            ${errorDetails}
+          </p>
+          <button class="btn approve" onclick="if(typeof showLoginPage === 'function') { showLoginPage(); } else { window.location.reload(); }" style="margin-top: 24px;">
+            Go to Login
+          </button>
+        `;
       } else {
         errorHTML += `
           <p style="margin-top: 12px; color: var(--ink-muted); font-size: 14px;">
@@ -130,11 +160,19 @@ async function loadContent(forceRefresh = false) {
         `;
       }
     } else {
-      errorHTML += `
-        <button class="btn approve" onclick="loadContent(true)" style="margin-top: 24px;">
-          Retry
-        </button>
-      `;
+      if (isAuthError) {
+        errorHTML += `
+          <button class="btn approve" onclick="if(typeof showLoginPage === 'function') { showLoginPage(); } else { window.location.reload(); }" style="margin-top: 24px;">
+            Go to Login
+          </button>
+        `;
+      } else {
+        errorHTML += `
+          <button class="btn approve" onclick="loadContent(true)" style="margin-top: 24px;">
+            Retry
+          </button>
+        `;
+      }
     }
     
     errorHTML += `</div>`;
