@@ -949,7 +949,7 @@ body.processing {
   left: 50%;
   bottom: 18px;
   transform: translateX(-50%);
-  z-index: 300;
+  z-index: 10000; /* High z-index to ensure toasts appear above login page and all other elements */
   display: grid;
   gap: 8px;
   pointer-events: none;
@@ -1325,9 +1325,9 @@ body.processing {
 .fab::after {
   content: attr(title);
   position: absolute;
-  bottom: calc(100% + 12px);
-  left: 50%;
-  transform: translateX(-50%);
+  left: calc(100% + 12px);
+  top: 50%;
+  transform: translateY(-50%) translateX(-4px);
   background: rgba(0, 0, 0, 0.9);
   color: #fff;
   padding: 8px 12px;
@@ -1337,14 +1337,14 @@ body.processing {
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.2s, transform 0.2s;
-  transform: translateX(-50%) translateY(-4px);
   font-weight: 500;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  z-index: 1000;
 }
 
 .fab:hover::after {
   opacity: 1;
-  transform: translateX(-50%) translateY(0);
+  transform: translateY(-50%) translateX(0);
 }
 
 .fab-icon {
@@ -2259,36 +2259,52 @@ dialog::backdrop {
 
 .search-input {
   width: 100%;
-  padding: 8px 12px 8px 36px;
-  border: 1px solid #333;
-  border-radius: 8px;
-  background: #1a1a1a;
-  color: #fff;
+  padding: 10px 16px 10px 40px;
+  border: 1px solid var(--bd);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  color: var(--ink);
   font-size: 14px;
   font-family: inherit;
-  text-align: center;
+  text-align: left;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .search-input::placeholder {
-  color: #666;
-  text-align: center;
+  color: var(--ink-faint);
+  text-align: left;
 }
 
 .search-input:focus {
   outline: none;
   border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(var(--accent-rgb, 99, 102, 241), 0.1), 0 2px 8px rgba(0, 0, 0, 0.15);
+  background: var(--bg-card);
+}
+
+.search-input:hover:not(:focus) {
+  border-color: var(--bd2);
+  background: var(--bg-card);
 }
 
 .search-icon {
   position: absolute;
-  left: 12px;
+  left: 14px;
   top: 50%;
   transform: translateY(-50%);
-  color: #666;
-  font-size: 14px;
+  color: var(--ink-muted);
+  font-size: 16px;
   display: flex;
   align-items: center;
   justify-content: center;
+  transition: color 0.2s ease;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.search-container:focus-within .search-icon {
+  color: var(--accent);
 }
 
 /* Flaticon icon styles */

@@ -56,11 +56,17 @@ async function initApp() {
   // Update badge counters
   updateBadges();
   
+  // Update FAB visibility based on API configuration
+  updateFabVisibility();
+  
   // Initial routing is handled by Router.init() which processes the current hash
   // Don't force 'content' here as it would override hash-based navigation
   
   console.log('SLOP initialized successfully');
 }
+
+// Make updateFabVisibility globally available
+window.updateFabVisibility = updateFabVisibility;
 
 // ============================================================
 // NAVIGATION
@@ -78,6 +84,41 @@ function initNavigation() {
 // DOCK
 // ============================================================
 
+/**
+ * Check if both OpenAI and Stability API keys are configured
+ */
+async function checkApiConfiguration() {
+  try {
+    const result = await API.settings.get(['openai_api_key', 'stability_api_key']);
+    const settings = result.settings || {};
+    const hasOpenAI = !!(settings.openai_api_key && settings.openai_api_key.trim());
+    const hasStability = !!(settings.stability_api_key && settings.stability_api_key.trim());
+    return hasOpenAI && hasStability;
+  } catch (error) {
+    console.error('Failed to check API configuration:', error);
+    return false;
+  }
+}
+
+/**
+ * Update FAB button visibility based on API configuration
+ */
+async function updateFabVisibility() {
+  const dock = document.getElementById('dock');
+  const fab = dock?.querySelector('.fab');
+  
+  if (!fab) return;
+  
+  const apisConfigured = await checkApiConfiguration();
+  
+  if (apisConfigured) {
+    fab.style.display = 'flex';
+    dock.classList.remove('hidden');
+  } else {
+    fab.style.display = 'none';
+  }
+}
+
 function initDock() {
   const dock = document.getElementById('dock');
   const fab = dock?.querySelector('.fab');
@@ -85,21 +126,30 @@ function initDock() {
   
   if (!fab) return;
   
-  // Initialize FAB icon
+  // Initialize FAB icon with lightning icon
   if (fabIcon && window.Icons && window.Icons.get) {
-    fabIcon.innerHTML = window.Icons.get('menu', '', { size: '24px' });
+    fabIcon.innerHTML = window.Icons.get('lightning', '', { size: '24px' });
   }
   
-  // Toggle dock on mobile
-  fab.addEventListener('click', () => {
-    dock.classList.toggle('open');
+  // Set FAB title/tooltip
+  fab.setAttribute('title', 'Generate new posts');
+  fab.setAttribute('aria-label', 'Generate new posts');
+  
+  // FAB click handler - trigger content generation
+  fab.addEventListener('click', async (e) => {
+    e.stopPropagation();
+    if (typeof triggerGeneration === 'function') {
+      await triggerGeneration();
+    }
   });
   
-  // Close dock when clicking outside
-  document.addEventListener('click', (e) => {
-    if (!dock.contains(e.target)) {
-      dock.classList.remove('open');
-    }
+  // Check API configuration and update visibility
+  updateFabVisibility();
+  
+  // Also update when settings change (listen for custom event or check periodically)
+  // We'll update visibility when settings page is loaded/changed
+  window.addEventListener('settingsUpdated', () => {
+    updateFabVisibility();
   });
 }
 

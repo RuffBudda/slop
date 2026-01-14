@@ -175,7 +175,18 @@ const Router = {
       'settings/linkedin': () => { if (typeof loadSettings === 'function') loadSettings(); },
       'settings/storage': () => { if (typeof loadSettings === 'function') loadSettings(); },
       'settings/ai': () => { if (typeof loadSettings === 'function') loadSettings(); },
-      'settings/content': () => { if (typeof loadSettings === 'function') loadSettings(); },
+      'settings/content': () => { 
+        if (typeof loadSettings === 'function') loadSettings(); 
+        // Ensure post edit modal is initialized for content management
+        setTimeout(() => {
+          if (typeof initPostEditModal === 'function') {
+            initPostEditModal();
+          }
+          if (typeof initCsvButtons === 'function') {
+            initCsvButtons();
+          }
+        }, 200);
+      },
       'settings/calculator': () => { 
         if (typeof loadSettings === 'function') loadSettings(); 
         // Initialize calculator
@@ -189,15 +200,15 @@ const Router = {
         if (typeof loadSettings === 'function') loadSettings();
         // Ensure users are loaded when admin section is displayed and modal is initialized
         setTimeout(() => {
-          if (window.AppState?.user?.role === 'admin') {
-            // Initialize user edit modal first
-            if (typeof initUserEditModal === 'function') {
-              initUserEditModal();
-            }
-            // Then load users
-            if (typeof loadUsers === 'function') {
-              loadUsers();
-            }
+          // Check if user is admin - if not, they shouldn't see this page anyway
+          // But we'll try to load users regardless and let the API handle auth
+          // Initialize user edit modal first
+          if (typeof initUserEditModal === 'function') {
+            initUserEditModal();
+          }
+          // Then load users - API will return 403 if not admin
+          if (typeof loadUsers === 'function') {
+            loadUsers();
           }
           // Initialize password toggles
           if (typeof initPasswordVisibilityToggles === 'function') {

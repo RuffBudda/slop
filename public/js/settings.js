@@ -157,6 +157,14 @@ function initApiSettingsForm() {
       
       // Reload to show updated placeholders
       loadApiSettings();
+      
+      // Update FAB visibility if API keys were changed
+      if (typeof updateFabVisibility === 'function') {
+        updateFabVisibility();
+      }
+      
+      // Dispatch event for other components that might need to react
+      window.dispatchEvent(new CustomEvent('settingsUpdated'));
     } catch (error) {
       showToast('Failed to save settings', 'bad');
     } finally {
@@ -1119,27 +1127,36 @@ async function handleCsvExport() {
 
 async function loadUsers() {
   const container = document.getElementById('usersList');
-  if (!container) return;
+  if (!container) {
+    console.warn('Users list container not found');
+    return;
+  }
   
   try {
+    showLoader();
     const result = await API.users.list();
     const users = result.users || [];
+    
+    if (users.length === 0) {
+      container.innerHTML = '<p style="color: var(--ink-muted); padding: 20px; text-align: center;">No users found.</p>';
+      return;
+    }
     
     container.innerHTML = users.map(user => {
       const createdDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
       const lastLogin = user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never';
-      const isCurrentUser = user.id === window.AppState.user.id;
+      const isCurrentUser = window.AppState?.user?.id === user.id;
       
       return `
       <div class="user-item" data-user-id="${user.id}">
         <div class="user-info">
           <div style="display: flex; align-items: center; gap: 12px;">
             <span class="user-name">${escapeHtml(user.display_name || user.username)}</span>
-            <span class="user-role ${user.role === 'admin' ? 'admin' : ''}">${user.role}</span>
+            <span class="user-role ${user.role === 'admin' ? 'admin' : ''}" style="background: ${user.role === 'admin' ? 'var(--accent)' : 'var(--chip)'}; color: ${user.role === 'admin' ? '#fff' : 'var(--ink)'}; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase;">${escapeHtml(user.role || 'user')}</span>
           </div>
           <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
-            <span class="user-email">${escapeHtml(user.email)}</span>
-            <div style="display: flex; gap: 16px; font-size: 12px; color: #888;">
+            <span class="user-email" style="color: var(--ink-muted);">${escapeHtml(user.email || 'No email')}</span>
+            <div style="display: flex; gap: 16px; font-size: 12px; color: var(--ink-faint);">
               <span>Created: ${createdDate}</span>
               <span>Last login: ${lastLogin}</span>
             </div>
@@ -1150,7 +1167,7 @@ async function loadUsers() {
             <button class="btn clear btn-sm" data-action="view-user" data-user-id="${user.id}">View</button>
             <button class="btn approve btn-sm" data-action="edit-user" data-user-id="${user.id}">Edit</button>
             <button class="btn reject btn-sm" data-action="delete-user" data-user-id="${user.id}">Delete</button>
-          ` : '<span style="color: #888; font-size: 12px;">Current user</span>'}
+          ` : '<span style="color: var(--ink-muted); font-size: 12px;">Current user</span>'}
         </div>
       </div>
     `;
@@ -1168,7 +1185,13 @@ async function loadUsers() {
     });
   } catch (error) {
     console.error('Failed to load users:', error);
-    container.innerHTML = '<p style="color: #666;">Failed to load users</p>';
+    if (error.message && error.message.includes('403')) {
+      container.innerHTML = '<p style="color: var(--bad); padding: 20px; text-align: center;">Access denied. Admin privileges required.</p>';
+    } else {
+      container.innerHTML = `<p style="color: var(--bad); padding: 20px; text-align: center;">Failed to load users: ${error.message || 'Unknown error'}</p>`;
+    }
+  } finally {
+    hideLoader();
   }
 }
 

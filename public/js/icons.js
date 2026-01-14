@@ -288,7 +288,7 @@ if (typeof window !== 'undefined') {
       // Initialize FAB icon
       const fabIcon = document.querySelector('.fab-icon');
       if (fabIcon && (!fabIcon.innerHTML.trim() || (!fabIcon.querySelector('.fi') && !fabIcon.querySelector('.fa')))) {
-        fabIcon.innerHTML = this.get('menu', '', { size: '24px' });
+        fabIcon.innerHTML = this.get('lightning', '', { size: '24px' });
       }
       
       // Initialize button icons with .ico class

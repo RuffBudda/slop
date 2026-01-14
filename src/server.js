@@ -73,11 +73,13 @@ app.use(session({
   secret: process.env.SESSION_SECRET || 'slop-secret-change-in-production',
   resave: false,
   saveUninitialized: false,
+  name: 'slop.sid', // Explicit session name
   cookie: {
     secure: process.env.NODE_ENV === 'production',
     httpOnly: true,
-    sameSite: 'strict',
-    maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax', // Use 'lax' in development for better compatibility
+    maxAge: 24 * 60 * 60 * 1000, // 24 hours
+    path: '/' // Ensure cookie is available for all paths
   }
 }));
 

@@ -34,14 +34,81 @@ async function loadContent(forceRefresh = false) {
   } catch (error) {
     console.error('Failed to load content:', error);
     
-    // Check if it's a settings/configuration issue
-    if (error.message && (error.message.includes('API') || error.message.includes('settings') || error.message.includes('401'))) {
-      container.innerHTML = `
-        <div class="emptyState">
-          <h2>Configuration Required</h2>
-          <p>Please configure your settings before generating content.</p>
+    let errorTitle = 'Error Loading Content';
+    let errorMessage = 'An unexpected error occurred.';
+    let errorDetails = '';
+    let showSettingsButton = false;
+    
+    // Check for specific error types
+    if (error.message) {
+      const errorMsg = error.message.toLowerCase();
+      
+      // Authentication errors
+      if (errorMsg.includes('401') || errorMsg.includes('authentication') || errorMsg.includes('unauthorized')) {
+        errorTitle = 'Authentication Required';
+        errorMessage = 'Your session has expired. Please log in again.';
+        errorDetails = 'The server could not verify your identity.';
+      }
+      // Network errors
+      else if (errorMsg.includes('network') || errorMsg.includes('fetch') || errorMsg.includes('timeout') || errorMsg.includes('failed to fetch')) {
+        errorTitle = 'Network Error';
+        errorMessage = 'Unable to connect to the server.';
+        errorDetails = 'Please check your internet connection and try again.';
+      }
+      // Server errors
+      else if (errorMsg.includes('500') || errorMsg.includes('internal server error')) {
+        errorTitle = 'Server Error';
+        errorMessage = 'The server encountered an error while processing your request.';
+        errorDetails = 'This may be a temporary issue. Please try again in a few moments.';
+      }
+      // Database errors
+      else if (errorMsg.includes('database') || errorMsg.includes('sql') || errorMsg.includes('query')) {
+        errorTitle = 'Database Error';
+        errorMessage = 'Unable to retrieve content from the database.';
+        errorDetails = 'There may be an issue with the database connection.';
+      }
+      // Configuration/API errors
+      else if (errorMsg.includes('api') || errorMsg.includes('settings') || errorMsg.includes('configuration') || errorMsg.includes('key')) {
+        errorTitle = 'Configuration Required';
+        errorMessage = 'Please configure your API settings before generating content.';
+        errorDetails = 'Go to Settings to configure:';
+        showSettingsButton = true;
+      }
+      // Permission errors
+      else if (errorMsg.includes('403') || errorMsg.includes('forbidden') || errorMsg.includes('permission')) {
+        errorTitle = 'Access Denied';
+        errorMessage = 'You do not have permission to access this content.';
+        errorDetails = 'Please contact an administrator if you believe this is an error.';
+      }
+      // Not found errors
+      else if (errorMsg.includes('404') || errorMsg.includes('not found')) {
+        errorTitle = 'Content Not Found';
+        errorMessage = 'The requested content could not be found.';
+        errorDetails = 'The content may have been deleted or moved.';
+      }
+      // Generic error with message
+      else {
+        errorTitle = 'Error Loading Content';
+        errorMessage = error.message;
+        errorDetails = 'Please try again or contact support if the problem persists.';
+      }
+    } else {
+      errorMessage = 'An unexpected error occurred while loading content.';
+      errorDetails = 'Please try refreshing the page or contact support if the problem persists.';
+    }
+    
+    // Build error display
+    let errorHTML = `
+      <div class="emptyState">
+        <h2>${errorTitle}</h2>
+        <p style="margin-bottom: 12px;">${errorMessage}</p>
+    `;
+    
+    if (errorDetails) {
+      if (showSettingsButton) {
+        errorHTML += `
           <p style="margin-top: 16px; color: var(--ink-muted);">
-            Go to <strong>Settings</strong> to set up:
+            ${errorDetails}
           </p>
           <ul style="text-align: left; margin: 16px auto; max-width: 400px; color: var(--ink-muted);">
             <li>OpenAI API Key</li>
@@ -51,11 +118,32 @@ async function loadContent(forceRefresh = false) {
           <button class="btn approve" onclick="window.activateTab('settings')" style="margin-top: 24px;">
             Go to Settings
           </button>
-        </div>
-      `;
+        `;
+      } else {
+        errorHTML += `
+          <p style="margin-top: 12px; color: var(--ink-muted); font-size: 14px;">
+            ${errorDetails}
+          </p>
+          <button class="btn approve" onclick="loadContent(true)" style="margin-top: 24px;">
+            Retry
+          </button>
+        `;
+      }
     } else {
-      showToast('Failed to load content', 'bad');
-      container.innerHTML = renderEmptyState('Error loading content', 'Please try again later.');
+      errorHTML += `
+        <button class="btn approve" onclick="loadContent(true)" style="margin-top: 24px;">
+          Retry
+        </button>
+      `;
+    }
+    
+    errorHTML += `</div>`;
+    
+    container.innerHTML = errorHTML;
+    
+    // Show toast for non-configuration errors
+    if (!showSettingsButton) {
+      showToast(errorMessage, 'bad');
     }
   }
 }
