@@ -33,13 +33,6 @@ const Router = {
    * Handle current route
    */
   async handleRoute() {
-    // Don't handle routes if auth hasn't been checked yet
-    // Use !== true to catch both undefined and false cases
-    if (window.authChecked !== true) {
-      console.log('Router: Waiting for auth check to complete...');
-      return;
-    }
-
     const hash = window.location.hash.slice(1) || '/content';
     const [path, ...params] = hash.split('/').filter(p => p);
     
@@ -94,6 +87,11 @@ const Router = {
       const html = await response.text();
       mainContent.innerHTML = html;
       
+      // Initialize icons for dynamically loaded pages
+      if (window.Icons && window.Icons.init) {
+        window.Icons.init();
+      }
+      
       // Initialize page-specific scripts
       this.initPage(pagePath);
       
@@ -126,8 +124,19 @@ const Router = {
       'settings/linkedin': () => { if (typeof loadSettings === 'function') loadSettings(); },
       'settings/storage': () => { if (typeof loadSettings === 'function') loadSettings(); },
       'settings/ai': () => { if (typeof loadSettings === 'function') loadSettings(); },
-      'settings/content': () => { if (typeof loadSettings === 'function') loadSettings(); },
-      'settings/admin': () => { if (typeof loadSettings === 'function') loadSettings(); }
+      'settings/content': () => { 
+        if (typeof loadSettings === 'function') loadSettings(); 
+        if (typeof initPostEditModal === 'function') initPostEditModal();
+        if (typeof initCsvButtons === 'function') initCsvButtons();
+      },
+      'settings/admin': () => { 
+        if (typeof loadSettings === 'function') loadSettings(); 
+        if (typeof loadUsers === 'function') loadUsers(); 
+      },
+      'settings/calculator': () => { 
+        if (typeof loadSettings === 'function') loadSettings(); 
+        if (typeof initCalculator === 'function') initCalculator(); 
+      }
     };
     
     const initFn = pageMap[pagePath];
