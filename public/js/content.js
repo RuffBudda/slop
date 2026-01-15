@@ -179,9 +179,16 @@ async function loadContent(forceRefresh = false) {
     
     container.innerHTML = errorHTML;
     
-    // Show toast for non-configuration errors
+    // Hide loader on error
+    if (loader) loader.style.display = 'none';
+    
+    // Show toast for non-configuration errors, but not if login page is visible
     if (!showSettingsButton) {
-      showToast(errorMessage, 'bad');
+      const loginPage = document.getElementById('loginPage');
+      const isLoginPageVisible = loginPage && !loginPage.classList.contains('hidden');
+      if (!isLoginPageVisible) {
+        showToast(errorMessage, 'bad');
+      }
     }
   }
 }
