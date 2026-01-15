@@ -59,6 +59,11 @@ async function initApp() {
   // Update FAB visibility based on API configuration
   updateFabVisibility();
   
+  // Update search button visibility
+  if (typeof window.updateSearchButtonVisibility === 'function') {
+    window.updateSearchButtonVisibility();
+  }
+  
   // Initial routing is handled by Router.init() which processes the current hash
   // Don't force 'content' here as it would override hash-based navigation
   

@@ -112,6 +112,39 @@ window.AppState = {
 // TAB MANAGEMENT
 // ============================================================
 
+window.updateSearchButtonVisibility = function() {
+  const searchBtn = document.getElementById('btnSearch');
+  if (!searchBtn) return;
+  
+  const loginPage = document.getElementById('loginPage');
+  const setupPage = document.getElementById('setupPage');
+  const mainApp = document.getElementById('mainApp');
+  
+  // Hide search button if login/setup page is visible or mainApp is hidden
+  if ((loginPage && !loginPage.classList.contains('hidden')) ||
+      (setupPage && !setupPage.classList.contains('hidden')) ||
+      (mainApp && mainApp.classList.contains('hidden'))) {
+    searchBtn.style.display = 'none';
+    return;
+  }
+  
+  // Get current route
+  const hash = window.location.hash.slice(1);
+  const routePath = hash || 'content';
+  const [path] = routePath.split('/').filter(p => p);
+  
+  // Show search button only on: content, calendar, timeline, bin
+  // Hide on: settings (all settings pages)
+  const allowedTabs = ['content', 'calendar', 'timeline', 'bin'];
+  const isSettings = path === 'settings' || routePath.startsWith('settings/');
+  
+  if (allowedTabs.includes(path) && !isSettings) {
+    searchBtn.style.display = '';
+  } else {
+    searchBtn.style.display = 'none';
+  }
+};
+
 window.activateTab = function(tabName, subSection = null) {
   // Update state
   window.AppState.currentTab = tabName;
@@ -131,6 +164,11 @@ window.activateTab = function(tabName, subSection = null) {
   document.querySelectorAll('.navBtn').forEach(btn => {
     btn.classList.toggle('active', btn.dataset.tab === tabName);
   });
+  
+  // Update search button visibility
+  if (typeof window.updateSearchButtonVisibility === 'function') {
+    window.updateSearchButtonVisibility();
+  }
   
   // Update dock
   if (typeof window.updateDock === 'function') {
@@ -564,20 +602,27 @@ window.initGlobalSearch = function() {
     }
   });
   
-  // Ctrl+K shortcut to open modal
+  // Ctrl+K shortcut to open modal (only if search button is visible)
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-      e.preventDefault();
-      searchModal.showModal();
-      setTimeout(() => {
-        searchInput.focus();
-        searchInput.select();
-      }, 100);
+      const searchBtn = document.getElementById('btnSearch');
+      if (searchBtn && searchBtn.style.display !== 'none') {
+        e.preventDefault();
+        searchModal.showModal();
+        setTimeout(() => {
+          searchInput.focus();
+          searchInput.select();
+        }, 100);
+      }
     }
   });
   
-  // Expose function to open search modal
+  // Expose function to open search modal (only if search button is visible)
   window.openSearchModal = function() {
+    const searchBtn = document.getElementById('btnSearch');
+    if (searchBtn && searchBtn.style.display === 'none') {
+      return; // Don't open search if button is hidden
+    }
     searchModal.showModal();
     setTimeout(() => {
       searchInput.focus();

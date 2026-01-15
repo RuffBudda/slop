@@ -12,7 +12,20 @@ const Router = {
     this.handleRoute();
     
     // Listen for hash changes
-    window.addEventListener('hashchange', () => this.handleRoute());
+    window.addEventListener('hashchange', () => {
+      this.handleRoute();
+      // Update search button visibility on route change
+      if (typeof window.updateSearchButtonVisibility === 'function') {
+        setTimeout(() => window.updateSearchButtonVisibility(), 100);
+      }
+    });
+    
+    // Update search button visibility after initial route
+    setTimeout(() => {
+      if (typeof window.updateSearchButtonVisibility === 'function') {
+        window.updateSearchButtonVisibility();
+      }
+    }, 200);
   },
   
   /**
@@ -129,6 +142,11 @@ const Router = {
             window.Icons.init();
           }
         }, 100);
+      }
+      
+      // Update search button visibility based on current page
+      if (typeof window.updateSearchButtonVisibility === 'function') {
+        window.updateSearchButtonVisibility();
       }
       
       // Initialize page-specific scripts

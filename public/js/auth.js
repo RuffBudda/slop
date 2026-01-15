@@ -60,6 +60,11 @@ function showLoginPage() {
   if (dock) dock.classList.add('hidden');
   hideAppLoader();
   
+  // Hide search button on login page
+  if (typeof window.updateSearchButtonVisibility === 'function') {
+    window.updateSearchButtonVisibility();
+  }
+  
   // Load saved username if "Remember me" was checked
   const savedUsername = localStorage.getItem('slop_remembered_username');
   const rememberMe = localStorage.getItem('slop_remember_me') === 'true';
@@ -154,6 +159,11 @@ function showMainApp() {
   const dock = document.getElementById('dock');
   if (dock) dock.classList.remove('hidden');
   hideAppLoader();
+  
+  // Update search button visibility when main app is shown
+  if (typeof window.updateSearchButtonVisibility === 'function') {
+    window.updateSearchButtonVisibility();
+  }
 }
 
 // ============================================================
