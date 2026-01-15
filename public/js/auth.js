@@ -31,16 +31,19 @@ async function checkAuthStatus() {
     
     if (result.setupRequired) {
       showSetupPage();
+      window.authChecked = true;
       return false;
     }
     
     if (result.authenticated) {
       window.AppState.user = result.user;
+      window.authChecked = true;
       return true;
     }
     
     window.AppState.user = null;
     showLoginPage();
+    window.authChecked = true;
     return false;
   } catch (error) {
     console.error('Auth check failed:', error);
@@ -48,6 +51,7 @@ async function checkAuthStatus() {
     hideAppLoader();
     window.AppState.user = null;
     showLoginPage();
+    window.authChecked = true;
     return false;
   }
 }

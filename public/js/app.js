@@ -260,6 +260,9 @@ window.toggleBulkSelect = function(postId) {
 document.addEventListener('DOMContentLoaded', async () => {
   console.log('DOM ready, checking auth status...');
   
+  // Initialize auth checked flag
+  window.authChecked = false;
+  
   // Safety timeout: hide loader after 15 seconds no matter what
   const safetyTimeout = setTimeout(() => {
     console.warn('Safety timeout: hiding app loader');
@@ -267,6 +270,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (typeof showLoginPage === 'function') {
       showLoginPage();
     }
+    window.authChecked = true;
   }, 15000);
   
   try {
@@ -277,6 +281,10 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (isAuthenticated) {
       showMainApp();
       initApp();
+      // Now that auth is confirmed, let router handle the route
+      if (window.Router && window.Router.handleRoute) {
+        window.Router.handleRoute();
+      }
     }
   } catch (error) {
     clearTimeout(safetyTimeout);
@@ -287,6 +295,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (typeof showLoginPage === 'function') {
       showLoginPage();
     }
+    window.authChecked = true;
   }
 });
 

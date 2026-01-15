@@ -34,6 +34,9 @@ async function loadSettings() {
     initSettingsTiles();
     initPasswordVisibilityToggles();
     
+    // Populate AI service icons if on AI configuration page
+    populateAIServiceIcons();
+    
     // Calculator should NOT be initialized here - only when environmental tile is clicked
   } catch (error) {
     console.error('Failed to load settings:', error);
@@ -1782,6 +1785,36 @@ function populateSettingsTileIcons() {
       }
     }
   });
+}
+
+/**
+ * Populate AI service card icons
+ */
+function populateAIServiceIcons() {
+  // Retry mechanism if Icons module not loaded yet
+  if (!window.Icons || !window.Icons.get) {
+    setTimeout(() => populateAIServiceIcons(), 100);
+    return;
+  }
+  
+  // Populate OpenAI icon
+  const openaiIcon = document.getElementById('aiServiceIconOpenai');
+  if (openaiIcon && !openaiIcon.innerHTML.trim()) {
+    const iconSvg = window.Icons.get('openai', 'icon');
+    if (iconSvg) {
+      openaiIcon.innerHTML = iconSvg;
+    }
+  }
+  
+  // Populate Stability AI icon (use image icon to represent image generation)
+  const stabilityIcon = document.getElementById('aiServiceIconStability');
+  if (stabilityIcon && !stabilityIcon.innerHTML.trim()) {
+    // Use 'stability' icon (image icon) for Stability AI to represent image generation
+    const iconSvg = window.Icons.get('stability', 'icon') || window.Icons.get('ai', 'icon');
+    if (iconSvg) {
+      stabilityIcon.innerHTML = iconSvg;
+    }
+  }
 }
 
 /**

@@ -270,7 +270,7 @@ a {
    ============================================================ */
 .wrap {
   max-width: var(--maxw);
-
+  margin: 0 auto;
   padding: var(--g);
 }
 
@@ -1555,7 +1555,7 @@ dialog::backdrop {
    ============================================================ */
 .settings-container {
   max-width: 900px;
-
+  margin: 0 auto;
 }
 
 .settings-breadcrumbs {
@@ -3214,6 +3214,114 @@ a:focus-visible {
 ::selection {
   background: rgba(16, 185, 129, 0.3);
   color: #fff;
+}
+
+/* ============================================================
+   AI SERVICE CARDS
+   ============================================================ */
+.ai-service-card {
+  background: var(--bg-card);
+  border: 1px solid var(--bd);
+  border-radius: var(--radius);
+  padding: 24px;
+  margin-bottom: 32px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.ai-service-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.ai-service-openai {
+  border-left: 4px solid #10a37f;
+  background: linear-gradient(to right, rgba(16, 163, 127, 0.05) 0%, var(--bg-card) 4%);
+}
+
+.ai-service-stability {
+  border-left: 4px solid #6366f1;
+  background: linear-gradient(to right, rgba(99, 102, 241, 0.05) 0%, var(--bg-card) 4%);
+}
+
+.ai-service-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid var(--bd);
+}
+
+.ai-service-icon {
+  flex-shrink: 0;
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 24px;
+}
+
+.ai-service-openai .ai-service-icon {
+  background: rgba(16, 163, 127, 0.15);
+  color: #10a37f;
+}
+
+.ai-service-stability .ai-service-icon {
+  background: rgba(99, 102, 241, 0.15);
+  color: #6366f1;
+}
+
+.ai-service-title-group {
+  flex: 1;
+}
+
+.ai-service-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 8px 0;
+  color: var(--ink);
+}
+
+.ai-service-description {
+  font-size: 14px;
+  color: var(--ink-muted);
+  margin: 0;
+  line-height: 1.5;
+}
+
+.ai-service-card .settings-section {
+  margin-top: 0;
+  border: none;
+  padding: 0;
+  background: transparent;
+}
+
+.ai-service-card .settings-section h3 {
+  display: none;
+}
+
+.ai-service-card .section-description {
+  margin-bottom: 20px;
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+
+@media (max-width: 768px) {
+  .ai-service-header {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .ai-service-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 20px;
+  }
+  
+  .ai-service-title {
+    font-size: 20px;
+  }
 }
 
 /* ============================================================

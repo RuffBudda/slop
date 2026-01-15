@@ -48,6 +48,12 @@ const Router = {
    * Handle current route
    */
   async handleRoute() {
+    // Don't handle routes if auth hasn't been checked yet
+    if (window.authChecked === false) {
+      console.log('Router: Waiting for auth check to complete...');
+      return;
+    }
+    
     // Don't handle routes if we're on login/setup page
     const loginPage = document.getElementById('loginPage');
     const setupPage = document.getElementById('setupPage');
@@ -64,6 +70,7 @@ const Router = {
     // Default route - content page
     if (!path || path === 'content') {
       await this.loadPage('content');
+      this.updateNavActiveState('content');
       return;
     }
     
@@ -74,6 +81,7 @@ const Router = {
       } else {
         await this.loadPage(`settings/${params[0]}`);
       }
+      this.updateNavActiveState('settings');
       return;
     }
     
@@ -81,10 +89,29 @@ const Router = {
     const validRoutes = ['calendar', 'timeline', 'bin'];
     if (validRoutes.includes(path)) {
       await this.loadPage(path);
+      this.updateNavActiveState(path);
     } else {
       // Default to content
       await this.loadPage('content');
+      this.updateNavActiveState('content');
     }
+  },
+  
+  /**
+   * Update navigation button active states based on current route
+   */
+  updateNavActiveState(path) {
+    // Map route paths to tab names
+    let tabName = path || 'content';
+    if (path && path.startsWith('settings')) {
+      tabName = 'settings';
+    }
+    
+    // Update all nav buttons
+    document.querySelectorAll('.navBtn').forEach(btn => {
+      const isActive = btn.dataset.tab === tabName;
+      btn.classList.toggle('active', isActive);
+    });
   },
   
   /**

@@ -32,6 +32,7 @@ const FLATICON_ICONS = {
   linkedin: 'fi fi-rr-linkedin',
   storage: 'fi fi-rr-database',
   ai: 'fi fi-rr-robot',
+  stability: 'fi fi-rr-image', // Image generation icon for Stability AI
   contentManagement: 'fi fi-rr-file-edit',
   calculator: 'fi fi-rr-calculator',
   admin: 'fi fi-rr-shield-check',
@@ -87,6 +88,7 @@ const FONT_AWESOME_ICONS = {
   linkedin: 'fa-brands fa-linkedin',
   storage: 'fa-solid fa-database',
   ai: 'fa-solid fa-robot',
+  stability: 'fa-solid fa-image', // Image generation icon for Stability AI
   contentManagement: 'fa-solid fa-file-pen',
   calculator: 'fa-solid fa-calculator',
   admin: 'fa-solid fa-shield-halved',
@@ -306,6 +308,11 @@ if (typeof window !== 'undefined') {
       // Initialize settings tile icons if on settings page
       if (typeof populateSettingsTileIcons === 'function') {
         populateSettingsTileIcons();
+      }
+      
+      // Initialize AI service icons if on AI configuration page
+      if (typeof populateAIServiceIcons === 'function') {
+        populateAIServiceIcons();
       }
     },
     FLATICON_ICONS,

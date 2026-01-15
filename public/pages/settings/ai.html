@@ -7,114 +7,135 @@
   <div class="settings-group settings-section-content" id="settingsSectionAi" data-section="ai">
     <h2 class="settings-group-title">AI Configuration</h2>
     
-    <!-- Prompts Section -->
-    <section class="settings-section">
-      <p class="section-description">
-        Customize the AI prompts used for content generation. These prompts are pre-configured based on the SLOP workflow for optimal LinkedIn content creation.
-      </p>
-      <form id="promptsSettingsForm" class="settings-form">
-        <div class="form-group prompt-editor">
-          <label for="systemPrompt">System Prompt (OpenAI GPT)</label>
-          <p class="field-description">
-            The comprehensive prompt that defines AI behavior, voice, content structure, and image prompt generation. 
-            Customize this to match your brand voice and content requirements.
+    <!-- OpenAI - Text Generation Card -->
+    <div class="ai-service-card ai-service-openai">
+      <div class="ai-service-header">
+        <div class="ai-service-icon" id="aiServiceIconOpenai"></div>
+        <div class="ai-service-title-group">
+          <h3 class="ai-service-title">OpenAI - Text Generation</h3>
+          <p class="ai-service-description">
+            Configure prompts and settings for OpenAI GPT models used to generate LinkedIn post content and image prompts.
           </p>
-          <textarea id="systemPrompt" name="system_prompt" class="prompt-textarea" rows="16" placeholder="Loading system prompt..."></textarea>
         </div>
-        <div class="form-group prompt-editor">
-          <label for="userTemplatePrompt">User Prompt Template</label>
-          <p class="field-description">
-            Template for building the user prompt from post data. Use placeholders: {{instruction}}, {{type}}, {{template}}, {{purpose}}, {{sample}}, {{keywords}}
-          </p>
-          <textarea id="userTemplatePrompt" name="user_template" class="prompt-textarea" rows="12" placeholder="Loading user template..."></textarea>
-        </div>
-        <div class="form-group prompt-editor">
-          <label for="imageStylePrefix">Image Prompt Style Prefix</label>
-          <p class="field-description">
-            Prefix added to all image prompts to ensure consistent style.
-          </p>
-          <textarea id="imageStylePrefix" name="image_style_prefix" class="prompt-textarea" rows="4" placeholder="Loading image style prefix..."></textarea>
-        </div>
-        <div class="form-group prompt-editor">
-          <label for="imageStyleSuffix">Image Prompt Style Suffix</label>
-          <p class="field-description">
-            Suffix added to all image prompts for additional styling.
-          </p>
-          <textarea id="imageStyleSuffix" name="image_style_suffix" class="prompt-textarea" rows="4" placeholder="Loading image style suffix..."></textarea>
-        </div>
-        <div class="prompt-actions" style="display: flex; gap: 12px; flex-wrap: wrap;">
-          <button type="submit" class="btn approve">
-            <span class="ico"></span> Save Prompts
-          </button>
-          <button type="button" class="btn clear" id="btnResetPrompts">
-            Reset to Defaults
-          </button>
-        </div>
-      </form>
-    </section>
+      </div>
+      
+      <section class="settings-section">
+        <p class="section-description">
+          Customize the AI prompts used for content generation. These prompts are pre-configured based on the SLOP workflow for optimal LinkedIn content creation.
+        </p>
+        <form id="promptsSettingsForm" class="settings-form">
+          <div class="form-group prompt-editor">
+            <label for="systemPrompt">System Prompt (OpenAI GPT)</label>
+            <p class="field-description">
+              The comprehensive prompt that defines AI behavior, voice, content structure, and image prompt generation. 
+              Customize this to match your brand voice and content requirements.
+            </p>
+            <textarea id="systemPrompt" name="system_prompt" class="prompt-textarea" rows="16" placeholder="Loading system prompt..."></textarea>
+          </div>
+          <div class="form-group prompt-editor">
+            <label for="userTemplatePrompt">User Prompt Template</label>
+            <p class="field-description">
+              Template for building the user prompt from post data. Use placeholders: {{instruction}}, {{type}}, {{template}}, {{purpose}}, {{sample}}, {{keywords}}
+            </p>
+            <textarea id="userTemplatePrompt" name="user_template" class="prompt-textarea" rows="12" placeholder="Loading user template..."></textarea>
+          </div>
+          <div class="form-group prompt-editor">
+            <label for="imageStylePrefix">Image Prompt Style Prefix</label>
+            <p class="field-description">
+              Prefix added to all image prompts to ensure consistent style.
+            </p>
+            <textarea id="imageStylePrefix" name="image_style_prefix" class="prompt-textarea" rows="4" placeholder="Loading image style prefix..."></textarea>
+          </div>
+          <div class="form-group prompt-editor">
+            <label for="imageStyleSuffix">Image Prompt Style Suffix</label>
+            <p class="field-description">
+              Suffix added to all image prompts for additional styling.
+            </p>
+            <textarea id="imageStyleSuffix" name="image_style_suffix" class="prompt-textarea" rows="4" placeholder="Loading image style suffix..."></textarea>
+          </div>
+          <div class="prompt-actions" style="display: flex; gap: 12px; flex-wrap: wrap;">
+            <button type="submit" class="btn approve">
+              <span class="ico"></span> Save OpenAI Prompts
+            </button>
+            <button type="button" class="btn clear" id="btnResetPrompts">
+              Reset to Defaults
+            </button>
+          </div>
+        </form>
+      </section>
+    </div>
 
-    <!-- Stability AI Image Options Section -->
-    <section class="settings-section">
-      <p class="section-description">
-        Configure all options for Stability AI image generation. These settings control how images are created.
-      </p>
-      <form id="stabilitySettingsForm" class="settings-form">
-        <div class="form-row">
-          <div class="form-group">
-            <label for="stabilityAspectRatio">Aspect Ratio</label>
-            <select id="stabilityAspectRatio" name="stability_aspect_ratio">
-              <option value="1:1">1:1 (Square)</option>
-              <option value="16:9">16:9 (Landscape)</option>
-              <option value="9:16">9:16 (Portrait)</option>
-              <option value="4:3">4:3 (Standard)</option>
-              <option value="3:4">3:4 (Portrait Standard)</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="stabilityModel">Model</label>
-            <select id="stabilityModel" name="stability_model">
-              <option value="sd3-large-turbo">SD3 Large Turbo (Fast)</option>
-              <option value="sd3">SD3 (Standard)</option>
-              <option value="stable-diffusion-xl-1024-v1-0">Stable Diffusion XL</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="stabilityOutputFormat">Output Format</label>
-            <select id="stabilityOutputFormat" name="stability_output_format">
-              <option value="png">PNG</option>
-              <option value="jpeg">JPEG</option>
-            </select>
-          </div>
-        </div>
-        <div class="form-group">
-          <label for="stabilityNegativePrompt">Negative Prompt</label>
-          <p class="field-description">
-            Elements to avoid in generated images (comma-separated).
+    <!-- Stability AI - Image Generation Card -->
+    <div class="ai-service-card ai-service-stability">
+      <div class="ai-service-header">
+        <div class="ai-service-icon" id="aiServiceIconStability"></div>
+        <div class="ai-service-title-group">
+          <h3 class="ai-service-title">Stability AI - Image Generation</h3>
+          <p class="ai-service-description">
+            Configure all options for Stability AI image generation. These settings control how images are created from the prompts generated by OpenAI.
           </p>
-          <textarea id="stabilityNegativePrompt" name="stability_negative_prompt" rows="3" placeholder="people, faces, hands, text..."></textarea>
         </div>
-        <h4 class="settings-subsection-title">Advanced Options (Optional)</h4>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="stabilitySeed">Seed</label>
-            <input type="number" id="stabilitySeed" name="stability_seed" placeholder="Leave empty for random">
-            <small>Random seed for reproducible results</small>
+      </div>
+      
+      <section class="settings-section">
+        <form id="stabilitySettingsForm" class="settings-form">
+          <div class="form-row">
+            <div class="form-group">
+              <label for="stabilityAspectRatio">Aspect Ratio</label>
+              <select id="stabilityAspectRatio" name="stability_aspect_ratio">
+                <option value="1:1">1:1 (Square)</option>
+                <option value="16:9">16:9 (Landscape)</option>
+                <option value="9:16">9:16 (Portrait)</option>
+                <option value="4:3">4:3 (Standard)</option>
+                <option value="3:4">3:4 (Portrait Standard)</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="stabilityModel">Model</label>
+              <select id="stabilityModel" name="stability_model">
+                <option value="sd3-large-turbo">SD3 Large Turbo (Fast)</option>
+                <option value="sd3">SD3 (Standard)</option>
+                <option value="stable-diffusion-xl-1024-v1-0">Stable Diffusion XL</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="stabilityOutputFormat">Output Format</label>
+              <select id="stabilityOutputFormat" name="stability_output_format">
+                <option value="png">PNG</option>
+                <option value="jpeg">JPEG</option>
+              </select>
+            </div>
           </div>
           <div class="form-group">
-            <label for="stabilitySteps">Steps</label>
-            <input type="number" id="stabilitySteps" name="stability_steps" placeholder="Auto (default)">
-            <small>Number of inference steps (higher = better quality)</small>
+            <label for="stabilityNegativePrompt">Negative Prompt</label>
+            <p class="field-description">
+              Elements to avoid in generated images (comma-separated).
+            </p>
+            <textarea id="stabilityNegativePrompt" name="stability_negative_prompt" rows="3" placeholder="people, faces, hands, text..."></textarea>
           </div>
-          <div class="form-group">
-            <label for="stabilityCfgScale">CFG Scale</label>
-            <input type="number" id="stabilityCfgScale" name="stability_cfg_scale" placeholder="Auto (default)" step="0.1" min="1" max="35">
-            <small>Classifier-free guidance scale (1-35)</small>
+          <h4 class="settings-subsection-title">Advanced Options (Optional)</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="stabilitySeed">Seed</label>
+              <input type="number" id="stabilitySeed" name="stability_seed" placeholder="Leave empty for random">
+              <small>Random seed for reproducible results</small>
+            </div>
+            <div class="form-group">
+              <label for="stabilitySteps">Steps</label>
+              <input type="number" id="stabilitySteps" name="stability_steps" placeholder="Auto (default)">
+              <small>Number of inference steps (higher = better quality)</small>
+            </div>
+            <div class="form-group">
+              <label for="stabilityCfgScale">CFG Scale</label>
+              <input type="number" id="stabilityCfgScale" name="stability_cfg_scale" placeholder="Auto (default)" step="0.1" min="1" max="35">
+              <small>Classifier-free guidance scale (1-35)</small>
+            </div>
           </div>
-        </div>
-        <button type="submit" class="btn approve">
-          <span class="ico"></span> Save Stability AI Settings
-        </button>
-      </form>
-    </section>
+          <button type="submit" class="btn approve">
+            <span class="ico"></span> Save Stability AI Settings
+          </button>
+        </form>
+      </section>
+    </div>
   </div>
 </div>
