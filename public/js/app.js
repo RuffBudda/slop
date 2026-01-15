@@ -25,6 +25,16 @@ async function initApp() {
     });
   }
   
+  // Initialize info button click handler
+  const infoBtn = document.getElementById('btnInfo');
+  if (infoBtn) {
+    infoBtn.addEventListener('click', () => {
+      if (typeof window.openInfoModal === 'function') {
+        window.openInfoModal();
+      }
+    });
+  }
+  
   // Logo click handler - navigate to content
   const brandLogo = document.getElementById('brandLogo');
   const appLogo = document.getElementById('appLogo');

@@ -101,30 +101,41 @@ async function loadApiSettings() {
     
     const settings = result.settings || {};
     
-    // Populate form (show masked values for secrets)
-    const form = document.getElementById('apiSettingsForm');
-    if (!form) return;
+    // Populate API settings form (show masked values for secrets)
+    const apiForm = document.getElementById('apiSettingsForm');
+    if (apiForm) {
+      // For API keys, show placeholder if set
+      if (settings.openai_api_key && apiForm.openai_api_key) {
+        apiForm.openai_api_key.placeholder = '••••••••••••••••';
+      }
+      if (settings.stability_api_key && apiForm.stability_api_key) {
+        apiForm.stability_api_key.placeholder = '••••••••••••••••';
+      }
+      if (settings.spaces_key && apiForm.spaces_key) {
+        apiForm.spaces_key.placeholder = '••••••••••••••••';
+      }
+      if (settings.spaces_secret && apiForm.spaces_secret) {
+        apiForm.spaces_secret.placeholder = '••••••••••••••••';
+      }
+      
+      // Set non-secret values
+      if (settings.spaces_name && apiForm.spaces_name) {
+        apiForm.spaces_name.value = settings.spaces_name;
+      }
+      if (settings.spaces_region && apiForm.spaces_region) {
+        apiForm.spaces_region.value = settings.spaces_region;
+      }
+    }
     
-    // For API keys, show placeholder if set
-    if (settings.openai_api_key) {
-      form.openai_api_key.placeholder = '••••••••••••••••';
-    }
-    if (settings.stability_api_key) {
-      form.stability_api_key.placeholder = '••••••••••••••••';
-    }
-    if (settings.spaces_key) {
-      form.spaces_key.placeholder = '••••••••••••••••';
-    }
-    if (settings.spaces_secret) {
-      form.spaces_secret.placeholder = '••••••••••••••••';
-    }
-    
-    // Set non-secret values
-    if (settings.spaces_name) {
-      form.spaces_name.value = settings.spaces_name;
-    }
-    if (settings.spaces_region) {
-      form.spaces_region.value = settings.spaces_region;
+    // Populate OpenAI settings form (for OpenAI page)
+    const openaiForm = document.getElementById('openaiSettingsForm');
+    if (openaiForm) {
+      if (settings.openai_api_key && openaiForm.openai_api_key) {
+        openaiForm.openai_api_key.placeholder = '••••••••••••••••';
+      }
+      if (settings.stability_api_key && openaiForm.stability_api_key) {
+        openaiForm.stability_api_key.placeholder = '••••••••••••••••';
+      }
     }
   } catch (error) {
     console.error('Failed to load API settings:', error);
@@ -170,6 +181,73 @@ function initApiSettingsForm() {
       window.dispatchEvent(new CustomEvent('settingsUpdated'));
     } catch (error) {
       showToast('Failed to save settings', 'bad');
+    } finally {
+      hideLoader();
+    }
+  });
+  
+  // Test buttons
+  form.querySelectorAll('[data-test]').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const service = e.currentTarget.dataset.test;
+      
+      try {
+        showLoader();
+        const result = await API.settings.test(service);
+        
+        if (result.success) {
+          showToast(`${service} connection successful`, 'ok');
+        } else {
+          showToast(`${service} test failed: ${result.error}`, 'bad');
+        }
+      } catch (error) {
+        showToast(`${service} test failed: ${error.message}`, 'bad');
+      } finally {
+        hideLoader();
+      }
+    });
+  });
+}
+
+function initOpenaiSettingsForm() {
+  const form = document.getElementById('openaiSettingsForm');
+  if (!form) return;
+  
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    const settings = [];
+    
+    // Only include non-empty values (don't override with empty)
+    for (const [key, value] of formData.entries()) {
+      if (value.trim()) {
+        settings.push({ key, value: value.trim() });
+      }
+    }
+    
+    if (settings.length === 0) {
+      showToast('No settings to save', 'neutral');
+      return;
+    }
+    
+    try {
+      showLoader();
+      await API.settings.setBulk(settings);
+      showToast('API keys saved successfully', 'ok');
+      
+      // Reload to show updated placeholders
+      loadApiSettings();
+      
+      // Update FAB visibility if API keys were changed
+      if (typeof updateFabVisibility === 'function') {
+        updateFabVisibility();
+      }
+      
+      // Dispatch event for other components that might need to react
+      window.dispatchEvent(new CustomEvent('settingsUpdated'));
+    } catch (error) {
+      showToast('Failed to save API keys', 'bad');
     } finally {
       hideLoader();
     }
@@ -2223,6 +2301,7 @@ function initPasswordVisibilityToggles() {
 function initSettingsModule() {
   initPasswordForm();
   initApiSettingsForm();
+  initOpenaiSettingsForm();
   initPromptsSection();
   initStabilitySettings();
   initGoogleDrive();

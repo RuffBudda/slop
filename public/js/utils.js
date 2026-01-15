@@ -447,6 +447,142 @@ window.throttle = function(func, limit) {
 // BADGE COUNTERS
 // ============================================================
 
+// ============================================================
+// BACKEND ARCHITECTURE INFO MODAL
+// ============================================================
+
+window.openInfoModal = async function() {
+  const modal = document.getElementById('infoModal');
+  const content = document.getElementById('infoModalContent');
+  const closeBtn = document.getElementById('infoModalClose');
+  
+  if (!modal || !content) return;
+  
+  // Show modal
+  modal.showModal();
+  
+  // Show loading state
+  content.innerHTML = `
+    <div style="text-align: center; margin-bottom: 24px;">
+      <h2 style="margin: 0 0 8px 0;">Loading Documentation...</h2>
+      <div class="spinner" style="margin: 20px auto;"></div>
+    </div>
+  `;
+  
+  // Close handler
+  const closeModal = () => {
+    modal.close();
+  };
+  
+  if (closeBtn) {
+    closeBtn.onclick = closeModal;
+  }
+  
+  modal.addEventListener('click', (e) => {
+    if (e.target === modal) closeModal();
+  });
+  
+  // Load documentation
+  try {
+    const response = await fetch('/BACKEND_ARCHITECTURE.md');
+    if (!response.ok) {
+      throw new Error('Failed to load documentation');
+    }
+    
+    const markdown = await response.text();
+    
+    // Convert markdown to HTML (simple conversion for basic markdown)
+    const html = convertMarkdownToHTML(markdown);
+    
+    content.innerHTML = html;
+    
+    // Initialize Mermaid diagrams if Mermaid is available
+    if (window.mermaid) {
+      window.mermaid.initialize({ startOnLoad: true, theme: 'dark' });
+      window.mermaid.init(undefined, content.querySelectorAll('.mermaid'));
+    }
+    
+  } catch (error) {
+    console.error('Failed to load documentation:', error);
+    content.innerHTML = `
+      <div style="text-align: center; padding: 40px;">
+        <h2 style="color: var(--bad); margin-bottom: 16px;">Error Loading Documentation</h2>
+        <p style="color: var(--ink-muted);">${error.message}</p>
+        <button class="btn clear" onclick="document.getElementById('infoModal').close()" style="margin-top: 24px;">
+          Close
+        </button>
+      </div>
+    `;
+  }
+};
+
+function convertMarkdownToHTML(markdown) {
+  let html = markdown;
+  
+  // Convert headers
+  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
+  html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
+  html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
+  
+  // Convert code blocks with mermaid
+  html = html.replace(/```mermaid\n([\s\S]*?)```/g, '<div class="mermaid">$1</div>');
+  
+  // Convert code blocks
+  html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
+  
+  // Convert inline code
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  
+  // Convert bold
+  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+  
+  // Convert italic
+  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+  
+  // Convert links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+  
+  // Convert lists
+  html = html.replace(/^\- (.*$)/gim, '<li>$1</li>');
+  html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
+  
+  // Convert paragraphs (lines that don't start with #, -, `, or are empty)
+  html = html.split('\n').map(line => {
+    if (line.trim() === '') return '<br>';
+    if (line.startsWith('<')) return line;
+    if (line.match(/^[#\-`\s]/)) return line;
+    return `<p>${line}</p>`;
+  }).join('\n');
+  
+  // Wrap in container with styling
+  return `
+    <div style="
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+      line-height: 1.6;
+      color: var(--ink);
+      max-width: 100%;
+    ">
+      <style>
+        .info-modal-content h1 { font-size: 28px; margin: 24px 0 16px 0; color: var(--ink); border-bottom: 2px solid var(--bd); padding-bottom: 8px; }
+        .info-modal-content h2 { font-size: 24px; margin: 20px 0 12px 0; color: var(--ink); }
+        .info-modal-content h3 { font-size: 20px; margin: 16px 0 8px 0; color: var(--ink); }
+        .info-modal-content p { margin: 12px 0; color: var(--ink); }
+        .info-modal-content ul, .info-modal-content ol { margin: 12px 0; padding-left: 24px; }
+        .info-modal-content li { margin: 6px 0; }
+        .info-modal-content code { background: var(--bg-elevated); padding: 2px 6px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.9em; color: var(--accent); }
+        .info-modal-content pre { background: var(--bg-elevated); padding: 16px; border-radius: 8px; overflow-x: auto; border: 1px solid var(--bd); }
+        .info-modal-content pre code { background: transparent; padding: 0; }
+        .info-modal-content a { color: var(--accent); text-decoration: none; }
+        .info-modal-content a:hover { text-decoration: underline; }
+        .info-modal-content .mermaid { margin: 24px 0; text-align: center; }
+      </style>
+      <div class="info-modal-content">
+        ${html}
+      </div>
+    </div>
+  `;
+}
+
 window.updateBadges = async function() {
   try {
     // Fetch counts for each category

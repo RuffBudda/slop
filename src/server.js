@@ -128,6 +128,15 @@ app.get('/api/test-static', (req, res) => {
   });
 });
 
+// Serve backend architecture documentation
+app.get('/BACKEND_ARCHITECTURE.md', (req, res) => {
+  res.sendFile(path.join(__dirname, '../BACKEND_ARCHITECTURE.md'), {
+    headers: {
+      'Content-Type': 'text/markdown; charset=utf-8'
+    }
+  });
+});
+
 // Serve index.html for all other routes (SPA support)
 // Note: This should only catch routes that weren't handled by static files or API routes
 app.get('*', (req, res, next) => {

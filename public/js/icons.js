@@ -24,6 +24,7 @@ const FLATICON_ICONS = {
   folder: 'fi fi-rr-folder',
   lightning: 'fi fi-rr-bolt',
   search: 'fi fi-rr-search',
+  info: 'fi fi-rr-info',
   
   // Settings tiles
   account: 'fi fi-rr-user',
@@ -80,6 +81,7 @@ const FONT_AWESOME_ICONS = {
   folder: 'fa-solid fa-folder',
   lightning: 'fa-solid fa-bolt',
   search: 'fa-solid fa-magnifying-glass',
+  info: 'fa-solid fa-circle-info',
   
   // Settings tiles
   account: 'fa-solid fa-user',
@@ -217,7 +219,8 @@ function initNavigationIcons() {
     navIconBin: 'bin',
     navIconSettings: 'settings',
     navIconLogout: 'logout',
-    navIconSearch: 'search'
+    navIconSearch: 'search',
+    navIconInfo: 'info'
   };
   
   Object.keys(iconMap).forEach(id => {
