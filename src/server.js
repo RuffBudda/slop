@@ -39,6 +39,7 @@ app.use(helmet({
       fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdn-uicons.flaticon.com", "https://cdnjs.cloudflare.com"],
       imgSrc: ["'self'", "data:", "https:", "blob:"],
       scriptSrc: ["'self'", "'unsafe-inline'"],
+      scriptSrcAttr: ["'unsafe-hashes'"], // Allow inline event handlers (onclick, onerror, etc.)
       connectSrc: ["'self'", "https://cdweya.blr1.cdn.digitaloceanspaces.com"]
     }
   }

@@ -1,18 +1,40 @@
 /**
  * Router Module
- * Handles hash-based routing for SPA navigation
+ * Handles clean URL routing for SPA navigation using History API
+ * Falls back to hash-based routing if History API is not available
  */
 
 const Router = {
   currentRoute: null,
   routes: {},
+  useHistoryAPI: typeof window !== 'undefined' && window.history && window.history.pushState,
   
   init() {
+    // Migrate hash-based URLs to clean URLs (one-time migration)
+    if (window.location.hash) {
+      const hashPath = window.location.hash.slice(1);
+      const cleanPath = hashPath.startsWith('/') ? hashPath : `/${hashPath}`;
+      window.history.replaceState(null, '', cleanPath);
+      window.location.hash = ''; // Remove hash
+    }
+    
     // Handle initial route
     this.handleRoute();
     
-    // Listen for hash changes
-    window.addEventListener('hashchange', () => this.handleRoute());
+    // Listen for browser navigation (back/forward buttons)
+    window.addEventListener('popstate', () => this.handleRoute());
+    
+    // Also listen for hash changes for backward compatibility during transition
+    window.addEventListener('hashchange', () => {
+      // Migrate hash to clean URL if someone uses hash navigation
+      if (window.location.hash) {
+        const hashPath = window.location.hash.slice(1);
+        const cleanPath = hashPath.startsWith('/') ? hashPath : `/${hashPath}`;
+        window.history.replaceState(null, '', cleanPath);
+        window.location.hash = '';
+        this.handleRoute();
+      }
+    });
   },
   
   /**
@@ -26,17 +48,45 @@ const Router = {
    * Navigate to a route
    */
   navigate(path) {
-    window.location.hash = path.startsWith('#') ? path : `#${path}`;
+    // Clean up path - remove leading # or / if present, then add leading /
+    let cleanPath = path.replace(/^[#\/]+/, '');
+    if (!cleanPath) cleanPath = 'content'; // Default to content
+    cleanPath = `/${cleanPath}`;
+    
+    if (this.useHistoryAPI) {
+      // Use History API for clean URLs
+      window.history.pushState(null, '', cleanPath);
+      this.handleRoute();
+    } else {
+      // Fallback to hash-based routing
+      window.location.hash = cleanPath;
+    }
   },
   
   /**
    * Handle current route
    */
   async handleRoute() {
-    const hash = window.location.hash.slice(1) || '/content';
-    const [path, ...params] = hash.split('/').filter(p => p);
+    // Get path from URL (either from pathname or hash as fallback)
+    let routePath = window.location.pathname;
     
-    this.currentRoute = { path, params, full: hash };
+    // Remove leading slash
+    if (routePath.startsWith('/')) {
+      routePath = routePath.slice(1);
+    }
+    
+    // Fallback to hash if pathname is empty or just '/'
+    if (!routePath || routePath === '/') {
+      routePath = window.location.hash.slice(1) || 'content';
+      // Clean up hash path
+      if (routePath.startsWith('/')) {
+        routePath = routePath.slice(1);
+      }
+    }
+    
+    const [path, ...params] = routePath.split('/').filter(p => p);
+    
+    this.currentRoute = { path: path || 'content', params, full: routePath };
     
     // Default route
     if (!path || path === 'content') {
@@ -51,6 +101,12 @@ const Router = {
       } else {
         await this.loadPage(`settings/${params[0]}`);
       }
+      return;
+    }
+    
+    // Documentation route
+    if (path === 'documentation' || path === 'docs') {
+      await this.loadPage('documentation');
       return;
     }
     
@@ -92,8 +148,20 @@ const Router = {
         window.Icons.init();
       }
       
+      // Initialize close icons for dynamically loaded pages
+      setTimeout(() => {
+        if (typeof window.initAllCloseIcons === 'function') {
+          window.initAllCloseIcons();
+        }
+      }, 150);
+      
       // Initialize page-specific scripts
       this.initPage(pagePath);
+      
+      // Initialize documentation page if needed
+      if (pagePath === 'documentation' && typeof window.loadDocumentation === 'function') {
+        window.loadDocumentation();
+      }
       
     } catch (error) {
       console.error('Error loading page:', error);
@@ -101,7 +169,7 @@ const Router = {
         <div class="emptyState">
           <h2>Error Loading Page</h2>
           <p>${error.message}</p>
-          <button class="btn approve" onclick="window.location.hash = '#/content'">Go to Content</button>
+          <button class="btn approve" onclick="window.Router.navigate('content')">Go to Content</button>
         </div>
       `;
     }

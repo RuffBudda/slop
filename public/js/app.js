@@ -15,6 +15,13 @@ async function initApp() {
     window.Icons.init();
   }
   
+  // Initialize all close icons after icons are loaded
+  setTimeout(() => {
+    if (typeof window.initAllCloseIcons === 'function') {
+      window.initAllCloseIcons();
+    }
+  }, 100);
+  
   // Initialize search button click handler
   const searchBtn = document.getElementById('btnSearch');
   if (searchBtn) {
@@ -25,12 +32,12 @@ async function initApp() {
     });
   }
   
-  // Initialize info button click handler
+  // Initialize info button click handler - navigate to documentation page
   const infoBtn = document.getElementById('btnInfo');
   if (infoBtn) {
     infoBtn.addEventListener('click', () => {
-      if (typeof window.openInfoModal === 'function') {
-        window.openInfoModal();
+      if (window.Router && window.Router.navigate) {
+        window.Router.navigate('documentation');
       }
     });
   }

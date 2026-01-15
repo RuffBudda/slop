@@ -33,10 +33,38 @@
             <button type="button" class="btn clear btn-sm" data-test="spaces">Test</button>
           </div>
         </div>
+        <div class="form-group">
+          <label for="spacesFolder">Upload Folder</label>
+          <div class="input-with-action">
+            <input type="text" id="spacesFolder" name="spaces_folder" placeholder="slop">
+            <button type="button" class="btn clear btn-sm" id="browseSpacesFolder">Browse</button>
+          </div>
+          <small style="display: block; margin-top: 4px; color: var(--ink-muted);">
+            Enter a folder path manually or click Browse to select from your bucket. Default: "slop" (leave empty for root)
+          </small>
+        </div>
         <button type="submit" class="btn approve">
           <span class="ico"></span> Save Storage Settings
         </button>
       </form>
+      
+      <!-- Spaces Folder Browser Modal -->
+      <dialog id="spacesFolderBrowserModal" style="max-width: 600px; width: 90%; border-radius: 8px; border: 1px solid var(--bd);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <h3 style="margin: 0;">Select Upload Folder</h3>
+          <button id="spacesFolderBrowserClose" class="btn clear" style="padding: 4px 8px;"><span class="close-icon"></span></button>
+        </div>
+        <div id="spacesFolderBrowserBreadcrumb" style="margin-bottom: 12px; padding: 8px; background: var(--bg-alt); border-radius: 4px; font-size: 13px;">
+          <button class="btn-link" data-folder-path="" style="text-decoration: none; color: var(--fg);">Root</button>
+        </div>
+        <div id="spacesFolderBrowserList" style="max-height: 400px; overflow-y: auto; border: 1px solid var(--bd); border-radius: 4px; padding: 8px;">
+          <p style="text-align: center; color: #666; padding: 20px;">Loading folders...</p>
+        </div>
+        <div style="margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px;">
+          <button id="spacesFolderBrowserCancel" class="btn clear">Cancel</button>
+          <button id="spacesFolderBrowserSelect" class="btn approve" disabled>Select Folder</button>
+        </div>
+      </dialog>
     </section>
   </div>
 </div>

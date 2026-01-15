@@ -163,7 +163,7 @@
             <div class="settings-tile" data-section="openai">
               <div class="tile-icon" id="tileIconOpenai"></div>
               <div class="tile-content">
-                <h3>OpenAI Integration</h3>
+                <h3>AI API Keys</h3>
               </div>
             </div>
             
@@ -256,9 +256,9 @@
             </section>
           </div>
           
-          <!-- OpenAI Integration Section -->
+          <!-- AI API Keys Section -->
           <div class="settings-group settings-section-content hidden" id="settingsSectionOpenai" data-section="openai">
-            <h2 class="settings-group-title">OpenAI Integration</h2>
+            <h2 class="settings-group-title">AI API Keys</h2>
             
             <section class="settings-section">
               <p class="section-description">
@@ -1020,16 +1020,6 @@
     </div>
   </dialog>
 
-  <!-- Backend Architecture Info Modal -->
-  <dialog id="infoModal" class="post-edit-modal" style="max-width: 900px; max-height: 90vh;">
-    <button class="closeBtn" id="infoModalClose"><span class="close-icon"></span></button>
-    <div id="infoModalContent" style="padding: 24px; overflow-y: auto; max-height: calc(90vh - 60px);">
-      <div style="text-align: center; margin-bottom: 24px;">
-        <h2 style="margin: 0 0 8px 0;">Loading Documentation...</h2>
-        <div class="spinner" style="margin: 20px auto;"></div>
-      </div>
-    </div>
-  </dialog>
 
   <!-- Instance Refresh Workflow Modal -->
   <dialog id="instanceRefreshModal" class="instance-refresh-modal">
@@ -1158,6 +1148,7 @@
   <script src="/js/api.js"></script>
   <script src="/js/router.js"></script>
   <script src="/js/utils.js"></script>
+  <script src="/js/documentation.js"></script>
   <script src="/js/auth.js"></script>
   <script src="/js/content.js"></script>
   <script src="/js/calendar.js"></script>

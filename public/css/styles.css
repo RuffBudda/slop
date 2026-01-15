@@ -3490,3 +3490,311 @@ a:focus-visible {
     font-size: 22px;
   }
 }
+
+/* ============================================================
+   DOCUMENTATION PAGE STYLES
+   ============================================================ */
+
+.documentation-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--g);
+  min-height: calc(100vh - 100px);
+}
+
+.documentation-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--bd);
+}
+
+.documentation-header h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.documentation-wrapper {
+  background: var(--bg-card);
+  border-radius: var(--radius);
+  border: 1px solid var(--bd);
+  overflow: hidden;
+}
+
+.documentation-article {
+  padding: 48px 64px;
+  line-height: 1.8;
+  color: var(--ink);
+}
+
+.documentation-article h1 {
+  font-size: 42px;
+  font-weight: 800;
+  margin: 0 0 32px 0;
+  color: var(--ink);
+  border-bottom: 3px solid var(--bd);
+  padding-bottom: 16px;
+  line-height: 1.2;
+  scroll-margin-top: 20px;
+}
+
+.documentation-article h2 {
+  font-size: 32px;
+  font-weight: 700;
+  margin: 56px 0 24px 0;
+  color: var(--ink);
+  border-bottom: 2px solid var(--bd);
+  padding-bottom: 12px;
+  line-height: 1.3;
+  scroll-margin-top: 20px;
+}
+
+.documentation-article h3 {
+  font-size: 24px;
+  font-weight: 600;
+  margin: 40px 0 16px 0;
+  color: var(--ink);
+  line-height: 1.4;
+  scroll-margin-top: 20px;
+}
+
+.documentation-article h4 {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 28px 0 12px 0;
+  color: var(--ink);
+  line-height: 1.4;
+  scroll-margin-top: 20px;
+}
+
+.documentation-article p {
+  margin: 16px 0;
+  color: var(--ink);
+  line-height: 1.8;
+}
+
+.documentation-article ul,
+.documentation-article ol {
+  margin: 20px 0;
+  padding-left: 32px;
+  color: var(--ink);
+}
+
+.documentation-article li {
+  margin: 8px 0;
+  line-height: 1.8;
+  color: var(--ink);
+}
+
+.documentation-article ul li {
+  list-style-type: disc;
+}
+
+.documentation-article ol li {
+  list-style-type: decimal;
+}
+
+.documentation-article li strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.documentation-article li code {
+  font-size: 0.9em;
+}
+
+.documentation-article ul ul,
+.documentation-article ol ol,
+.documentation-article ul ol,
+.documentation-article ol ul {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.documentation-article code {
+  background: var(--bg-elevated);
+  padding: 3px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', 'Monaco', 'Consolas', monospace;
+  font-size: 0.9em;
+  color: var(--accent);
+  border: 1px solid var(--bd);
+}
+
+.documentation-article code.inline-code {
+  font-size: 0.9em;
+  padding: 2px 6px;
+}
+
+.documentation-article pre {
+  background: var(--bg-elevated);
+  padding: 24px;
+  border-radius: 8px;
+  overflow-x: auto;
+  border: 1px solid var(--bd);
+  margin: 24px 0;
+}
+
+.documentation-article pre code {
+  background: transparent;
+  padding: 0;
+  border: none;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.6;
+  display: block;
+}
+
+.documentation-article pre.code-block {
+  position: relative;
+}
+
+.documentation-article a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.2s, color 0.2s;
+}
+
+.documentation-article a:hover {
+  border-bottom-color: var(--accent);
+  color: var(--accent-hover);
+}
+
+.documentation-article a.anchor-link {
+  color: var(--ink);
+  border-bottom: 1px dashed var(--ink-muted);
+}
+
+.documentation-article a.anchor-link:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+.documentation-article hr {
+  border: none;
+  border-top: 2px solid var(--bd);
+  margin: 48px 0;
+}
+
+.documentation-article strong {
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.documentation-article em {
+  font-style: italic;
+  color: var(--ink-muted);
+}
+
+.documentation-article .mermaid-diagram {
+  background: var(--bg-elevated);
+  padding: 32px;
+  border-radius: 8px;
+  border: 1px solid var(--bd);
+  margin: 32px 0;
+  text-align: center;
+  overflow-x: auto;
+}
+
+.documentation-article table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 24px 0;
+  background: var(--bg-elevated);
+  border-radius: 8px;
+  overflow: hidden;
+  border: 1px solid var(--bd);
+}
+
+.documentation-article th,
+.documentation-article td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--bd);
+}
+
+.documentation-article th {
+  background: var(--bg-alt);
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.documentation-article tr:last-child td {
+  border-bottom: none;
+}
+
+.documentation-article tr:hover {
+  background: var(--bg-alt);
+}
+
+.documentation-loading,
+.documentation-error {
+  padding: 80px 20px;
+  text-align: center;
+}
+
+.documentation-error h2 {
+  color: var(--bad);
+  margin-bottom: 16px;
+}
+
+/* Table of Contents styling */
+.documentation-article h2:first-of-type {
+  margin-top: 0;
+}
+
+/* Responsive adjustments */
+@media (max-width: 968px) {
+  .documentation-article {
+    padding: 32px 40px;
+  }
+  
+  .documentation-article h1 {
+    font-size: 36px;
+  }
+  
+  .documentation-article h2 {
+    font-size: 28px;
+  }
+  
+  .documentation-article h3 {
+    font-size: 22px;
+  }
+}
+
+@media (max-width: 640px) {
+  .documentation-container {
+    padding: 12px;
+  }
+  
+  .documentation-article {
+    padding: 24px 20px;
+  }
+  
+  .documentation-article h1 {
+    font-size: 28px;
+  }
+  
+  .documentation-article h2 {
+    font-size: 24px;
+  }
+  
+  .documentation-article h3 {
+    font-size: 20px;
+  }
+  
+  .documentation-article pre {
+    padding: 16px;
+    font-size: 12px;
+  }
+  
+  .documentation-article ul,
+  .documentation-article ol {
+    padding-left: 24px;
+  }
+}

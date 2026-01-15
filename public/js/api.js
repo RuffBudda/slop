@@ -281,6 +281,11 @@ const API = {
     
     async resetPrompt(key) {
       return API.call(`/settings/prompts/${key}`, { method: 'DELETE' });
+    },
+    
+    async listSpacesFolders(prefix = '') {
+      const query = prefix ? `?prefix=${encodeURIComponent(prefix)}` : '';
+      return API.call(`/settings/spaces/folders${query}`);
     }
   },
 

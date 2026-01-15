@@ -2,40 +2,75 @@
   <nav class="settings-breadcrumbs" aria-label="Breadcrumb">
     <a href="#/settings" class="breadcrumb-link">Settings</a>
     <span class="breadcrumb-separator">/</span>
-    <span class="breadcrumb-current">OpenAI Integration</span>
+    <span class="breadcrumb-current">AI API Keys</span>
   </nav>
   <div class="settings-group settings-section-content" id="settingsSectionOpenai" data-section="openai">
-    <h2 class="settings-group-title">OpenAI Integration</h2>
+    <h2 class="settings-group-title">AI API Keys</h2>
     
-    <section class="settings-section">
-      <p class="section-description">
-        Configure your API keys for content and image generation. Get your API keys from:
-        <ul style="margin-top: 8px; padding-left: 20px;">
-          <li><a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a> - for text generation</li>
-          <li><a href="https://platform.stability.ai/account/keys" target="_blank">Stability AI Platform</a> - for image generation</li>
-        </ul>
-      </p>
-      <form id="openaiSettingsForm" class="settings-form">
-        <div class="form-group">
-          <label for="openaiKey">OpenAI API Key</label>
-          <div class="input-with-action">
-            <input type="password" id="openaiKey" name="openai_api_key" placeholder="sk-...">
-            <button type="button" class="btn clear btn-sm" data-test="openai">Test</button>
-          </div>
-          <small>Your OpenAI API key starting with "sk-" - used for generating LinkedIn post content</small>
+    <!-- OpenAI - API Key Card -->
+    <div class="ai-service-card ai-service-openai">
+      <div class="ai-service-header">
+        <div class="ai-service-icon" id="aiServiceIconOpenai"></div>
+        <div class="ai-service-title-group">
+          <h3 class="ai-service-title">OpenAI - Text Generation</h3>
+          <p class="ai-service-description">
+            Configure your OpenAI API key for generating LinkedIn post content and image prompts using GPT models.
+          </p>
         </div>
-        <div class="form-group">
-          <label for="stabilityKey">Stability AI API Key</label>
-          <div class="input-with-action">
-            <input type="password" id="stabilityKey" name="stability_api_key" placeholder="sk-...">
-            <button type="button" class="btn clear btn-sm" data-test="stability">Test</button>
+      </div>
+      
+      <section class="settings-section">
+        <p class="section-description">
+          Get your API key from the <a href="https://platform.openai.com/api-keys" target="_blank">OpenAI Platform</a>. 
+          This key is used to generate text content for your LinkedIn posts.
+        </p>
+        <form id="openaiSettingsForm" class="settings-form">
+          <div class="form-group">
+            <label for="openaiKey">OpenAI API Key</label>
+            <div class="input-with-action">
+              <input type="password" id="openaiKey" name="openai_api_key" placeholder="sk-...">
+              <button type="button" class="btn clear btn-sm" data-test="openai">Test</button>
+            </div>
+            <small>Your OpenAI API key starting with "sk-" - used for generating LinkedIn post content</small>
           </div>
-          <small>Your Stability AI API key - used for generating images from prompts</small>
+          <button type="submit" class="btn approve">
+            <span class="ico"></span> Save OpenAI API Key
+          </button>
+        </form>
+      </section>
+    </div>
+
+    <!-- Stability AI - API Key Card -->
+    <div class="ai-service-card ai-service-stability">
+      <div class="ai-service-header">
+        <div class="ai-service-icon" id="aiServiceIconStability"></div>
+        <div class="ai-service-title-group">
+          <h3 class="ai-service-title">Stability AI - Image Generation</h3>
+          <p class="ai-service-description">
+            Configure your Stability AI API key for generating images from prompts created by OpenAI.
+          </p>
         </div>
-        <button type="submit" class="btn approve">
-          <span class="ico"></span> Save API Keys
-        </button>
-      </form>
-    </section>
+      </div>
+      
+      <section class="settings-section">
+        <p class="section-description">
+          Get your API key from the <a href="https://platform.stability.ai/account/keys" target="_blank">Stability AI Platform</a>. 
+          This key is used to generate images based on the prompts created during content generation.
+        </p>
+        <form id="stabilityApiKeyForm" class="settings-form">
+          <div class="form-group">
+            <label for="stabilityKey">Stability AI API Key</label>
+            <div class="input-with-action">
+              <input type="password" id="stabilityKey" name="stability_api_key" placeholder="sk-...">
+              <button type="button" class="btn clear btn-sm" data-test="stability">Test</button>
+            </div>
+            <small>Your Stability AI API key - used for generating images from prompts</small>
+          </div>
+          <button type="submit" class="btn approve">
+            <span class="ico"></span> Save Stability AI API Key
+          </button>
+        </form>
+      </section>
+    </div>
   </div>
 </div>

@@ -112,64 +112,25 @@ window.AppState = {
 // TAB MANAGEMENT
 // ============================================================
 
-window.closeSearchModalIfOpen = function() {
-  const searchModal = document.getElementById('searchModal');
-  if (searchModal && searchModal.open) {
-    searchModal.close();
-    const searchInput = document.getElementById('searchModalInput');
-    const searchResults = document.getElementById('searchResultsModal');
-    if (searchInput) searchInput.value = '';
-    if (searchResults) searchResults.classList.add('hidden');
-  }
-};
-
-window.updateSearchButtonVisibility = function() {
-  const searchBtn = document.getElementById('btnSearch');
-  if (!searchBtn) return;
-  
-  const loginPage = document.getElementById('loginPage');
-  const setupPage = document.getElementById('setupPage');
-  const mainApp = document.getElementById('mainApp');
-  
-  // Hide search button if login/setup page is visible or mainApp is hidden
-  if ((loginPage && !loginPage.classList.contains('hidden')) ||
-      (setupPage && !setupPage.classList.contains('hidden')) ||
-      (mainApp && mainApp.classList.contains('hidden'))) {
-    searchBtn.style.display = 'none';
-    window.closeSearchModalIfOpen();
-    return;
-  }
-  
-  // Get current route
-  const hash = window.location.hash.slice(1);
-  const routePath = hash || 'content';
-  const [path] = routePath.split('/').filter(p => p);
-  
-  // Show search button only on: content, calendar, timeline, bin
-  // Hide on: settings (all settings pages)
-  const allowedTabs = ['content', 'calendar', 'timeline', 'bin'];
-  const isSettings = path === 'settings' || routePath.startsWith('settings/');
-  
-  if (allowedTabs.includes(path) && !isSettings) {
-    searchBtn.style.display = '';
-  } else {
-    searchBtn.style.display = 'none';
-    window.closeSearchModalIfOpen();
-  }
-};
-
 window.activateTab = function(tabName, subSection = null) {
   // Update state
   window.AppState.currentTab = tabName;
   
   // Use router for navigation
-  if (window.Router && window.Router.navigate) {
+  if (window.Router) {
     if (tabName === 'settings' && subSection) {
       window.Router.navigate(`settings/${subSection}`);
     } else if (tabName === 'settings') {
       window.Router.navigate('settings');
     } else {
       window.Router.navigate(tabName);
+    }
+  } else {
+    // Fallback to hash navigation
+    if (subSection) {
+      window.location.hash = `#/${tabName}/${subSection}`;
+    } else {
+      window.location.hash = `#/${tabName}`;
     }
   }
   
@@ -178,19 +139,14 @@ window.activateTab = function(tabName, subSection = null) {
     btn.classList.toggle('active', btn.dataset.tab === tabName);
   });
   
-  // Update search button visibility
-  if (typeof window.updateSearchButtonVisibility === 'function') {
-    window.updateSearchButtonVisibility();
-  }
-  
   // Update dock
   if (typeof window.updateDock === 'function') {
     window.updateDock();
   }
 };
 
-// Hash-based routing is handled by router.js
-// The router module registers its own hashchange listener and handles initial route in Router.init()
+// Routing is handled by router.js
+// The router module uses History API for clean URLs and handles navigation
 
 // ============================================================
 // DOCK MANAGEMENT
@@ -447,142 +403,6 @@ window.throttle = function(func, limit) {
 // BADGE COUNTERS
 // ============================================================
 
-// ============================================================
-// BACKEND ARCHITECTURE INFO MODAL
-// ============================================================
-
-window.openInfoModal = async function() {
-  const modal = document.getElementById('infoModal');
-  const content = document.getElementById('infoModalContent');
-  const closeBtn = document.getElementById('infoModalClose');
-  
-  if (!modal || !content) return;
-  
-  // Show modal
-  modal.showModal();
-  
-  // Show loading state
-  content.innerHTML = `
-    <div style="text-align: center; margin-bottom: 24px;">
-      <h2 style="margin: 0 0 8px 0;">Loading Documentation...</h2>
-      <div class="spinner" style="margin: 20px auto;"></div>
-    </div>
-  `;
-  
-  // Close handler
-  const closeModal = () => {
-    modal.close();
-  };
-  
-  if (closeBtn) {
-    closeBtn.onclick = closeModal;
-  }
-  
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeModal();
-  });
-  
-  // Load documentation
-  try {
-    const response = await fetch('/BACKEND_ARCHITECTURE.md');
-    if (!response.ok) {
-      throw new Error('Failed to load documentation');
-    }
-    
-    const markdown = await response.text();
-    
-    // Convert markdown to HTML (simple conversion for basic markdown)
-    const html = convertMarkdownToHTML(markdown);
-    
-    content.innerHTML = html;
-    
-    // Initialize Mermaid diagrams if Mermaid is available
-    if (window.mermaid) {
-      window.mermaid.initialize({ startOnLoad: true, theme: 'dark' });
-      window.mermaid.init(undefined, content.querySelectorAll('.mermaid'));
-    }
-    
-  } catch (error) {
-    console.error('Failed to load documentation:', error);
-    content.innerHTML = `
-      <div style="text-align: center; padding: 40px;">
-        <h2 style="color: var(--bad); margin-bottom: 16px;">Error Loading Documentation</h2>
-        <p style="color: var(--ink-muted);">${error.message}</p>
-        <button class="btn clear" onclick="document.getElementById('infoModal').close()" style="margin-top: 24px;">
-          Close
-        </button>
-      </div>
-    `;
-  }
-};
-
-function convertMarkdownToHTML(markdown) {
-  let html = markdown;
-  
-  // Convert headers
-  html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
-  html = html.replace(/^## (.*$)/gim, '<h2>$1</h2>');
-  html = html.replace(/^# (.*$)/gim, '<h1>$1</h1>');
-  
-  // Convert code blocks with mermaid
-  html = html.replace(/```mermaid\n([\s\S]*?)```/g, '<div class="mermaid">$1</div>');
-  
-  // Convert code blocks
-  html = html.replace(/```(\w+)?\n([\s\S]*?)```/g, '<pre><code>$2</code></pre>');
-  
-  // Convert inline code
-  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
-  
-  // Convert bold
-  html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-  
-  // Convert italic
-  html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-  
-  // Convert links
-  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
-  
-  // Convert lists
-  html = html.replace(/^\- (.*$)/gim, '<li>$1</li>');
-  html = html.replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>');
-  
-  // Convert paragraphs (lines that don't start with #, -, `, or are empty)
-  html = html.split('\n').map(line => {
-    if (line.trim() === '') return '<br>';
-    if (line.startsWith('<')) return line;
-    if (line.match(/^[#\-`\s]/)) return line;
-    return `<p>${line}</p>`;
-  }).join('\n');
-  
-  // Wrap in container with styling
-  return `
-    <div style="
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
-      line-height: 1.6;
-      color: var(--ink);
-      max-width: 100%;
-    ">
-      <style>
-        .info-modal-content h1 { font-size: 28px; margin: 24px 0 16px 0; color: var(--ink); border-bottom: 2px solid var(--bd); padding-bottom: 8px; }
-        .info-modal-content h2 { font-size: 24px; margin: 20px 0 12px 0; color: var(--ink); }
-        .info-modal-content h3 { font-size: 20px; margin: 16px 0 8px 0; color: var(--ink); }
-        .info-modal-content p { margin: 12px 0; color: var(--ink); }
-        .info-modal-content ul, .info-modal-content ol { margin: 12px 0; padding-left: 24px; }
-        .info-modal-content li { margin: 6px 0; }
-        .info-modal-content code { background: var(--bg-elevated); padding: 2px 6px; border-radius: 4px; font-family: 'Courier New', monospace; font-size: 0.9em; color: var(--accent); }
-        .info-modal-content pre { background: var(--bg-elevated); padding: 16px; border-radius: 8px; overflow-x: auto; border: 1px solid var(--bd); }
-        .info-modal-content pre code { background: transparent; padding: 0; }
-        .info-modal-content a { color: var(--accent); text-decoration: none; }
-        .info-modal-content a:hover { text-decoration: underline; }
-        .info-modal-content .mermaid { margin: 24px 0; text-align: center; }
-      </style>
-      <div class="info-modal-content">
-        ${html}
-      </div>
-    </div>
-  `;
-}
-
 window.updateBadges = async function() {
   try {
     // Fetch counts for each category
@@ -631,47 +451,10 @@ window.updateBadges = async function() {
 // ============================================================
 
 window.initGlobalSearch = function() {
-  const searchModal = document.getElementById('searchModal');
-  const searchInput = document.getElementById('searchModalInput');
-  const searchResults = document.getElementById('searchResultsModal');
-  const searchIcon = document.querySelector('.search-modal-icon');
+  const searchInput = document.getElementById('globalSearch');
+  const searchResults = document.getElementById('searchResults');
   
-  if (!searchModal || !searchInput || !searchResults) return;
-
-  const isSearchAllowed = () => {
-    const loginPage = document.getElementById('loginPage');
-    const setupPage = document.getElementById('setupPage');
-    const mainApp = document.getElementById('mainApp');
-    if ((loginPage && !loginPage.classList.contains('hidden')) ||
-        (setupPage && !setupPage.classList.contains('hidden')) ||
-        (mainApp && mainApp.classList.contains('hidden'))) {
-      return false;
-    }
-
-    const hash = window.location.hash.slice(1);
-    const routePath = hash || 'content';
-    const [path] = routePath.split('/').filter(p => p);
-    const allowedTabs = ['content', 'calendar', 'timeline', 'bin'];
-    const isSettings = path === 'settings' || routePath.startsWith('settings/');
-    return allowedTabs.includes(path) && !isSettings;
-  };
-
-  const closeSearchModal = () => {
-    if (searchModal.open) {
-      searchModal.close();
-      searchInput.value = '';
-      searchResults.classList.add('hidden');
-    }
-  };
-
-  if (!isSearchAllowed()) {
-    closeSearchModal();
-  }
-  
-  // Initialize search icon with larger size for macOS Spotlight style
-  if (searchIcon && window.Icons && window.Icons.get) {
-    searchIcon.innerHTML = window.Icons.get('search', '', { size: '20px' });
-  }
+  if (!searchInput || !searchResults) return;
   
   // Debounced search
   const performSearch = debounce(async (query) => {
@@ -700,15 +483,13 @@ window.initGlobalSearch = function() {
       }).slice(0, 10);
       
       if (filtered.length === 0) {
-        searchResults.innerHTML = '<div class="search-result-item"><div class="result-title">No results found</div></div>';
+        searchResults.innerHTML = '<div class="search-result-item">No results found</div>';
       } else {
         searchResults.innerHTML = filtered.map(post => `
           <div class="search-result-item" data-post-id="${post.id}" data-status="${post.status}">
-            <div style="flex: 1;">
-              <div class="result-title">${escapeHtml(post.post_id)}</div>
-              <div class="result-snippet">${escapeHtml((post.instruction || 'No instruction').substring(0, 100))}${(post.instruction || '').length > 100 ? '...' : ''}</div>
-            </div>
-            <span class="chip status-${getStatusClass(post.status)}">${post.status || 'Pending'}</span>
+            <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(post.post_id)}</div>
+            <div style="font-size: 12px; color: #666;">${escapeHtml((post.instruction || '').substring(0, 80))}...</div>
+            <span class="chip status-${getStatusClass(post.status)}" style="margin-top: 4px;">${post.status || 'Pending'}</span>
           </div>
         `).join('');
         
@@ -717,11 +498,6 @@ window.initGlobalSearch = function() {
           item.addEventListener('click', () => {
             const postId = item.dataset.postId;
             const status = item.dataset.status;
-            
-            // Close modal
-            searchModal.close();
-            searchInput.value = '';
-            searchResults.classList.add('hidden');
             
             // Navigate to appropriate tab
             if (status === 'generated') {
@@ -733,6 +509,9 @@ window.initGlobalSearch = function() {
             } else {
               activateTab('settings');
             }
+            
+            searchResults.classList.add('hidden');
+            searchInput.value = '';
             
             // Scroll to post after tab loads
             setTimeout(() => {
@@ -763,70 +542,21 @@ window.initGlobalSearch = function() {
     }
   });
   
-  // Close modal on Escape
-  searchModal.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape') {
-      searchModal.close();
-      searchInput.value = '';
+  // Close on outside click
+  document.addEventListener('click', (e) => {
+    if (!e.target.closest('.search-container')) {
       searchResults.classList.add('hidden');
     }
   });
   
-  // Close modal on backdrop click
-  searchModal.addEventListener('click', (e) => {
-    if (e.target === searchModal) {
-      searchModal.close();
-      searchInput.value = '';
-      searchResults.classList.add('hidden');
-    }
-  });
-  
-  // Ctrl+K shortcut to open modal (only if search button is visible)
+  // Ctrl+K shortcut
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-      const searchBtn = document.getElementById('btnSearch');
-      if (searchBtn && searchBtn.style.display !== 'none' && isSearchAllowed()) {
-        e.preventDefault();
-        searchModal.showModal();
-        setTimeout(() => {
-          searchInput.focus();
-          searchInput.select();
-        }, 100);
-      }
-    }
-  });
-  
-  // Expose function to open search modal (only if search button is visible)
-  window.openSearchModal = function() {
-    const searchBtn = document.getElementById('btnSearch');
-    if (searchBtn && searchBtn.style.display === 'none') {
-      return; // Don't open search if button is hidden
-    }
-    if (!isSearchAllowed()) {
-      closeSearchModal();
-      return;
-    }
-    searchModal.showModal();
-    setTimeout(() => {
+      e.preventDefault();
       searchInput.focus();
       searchInput.select();
-    }, 100);
-  };
-
-  window.addEventListener('hashchange', () => {
-    if (!isSearchAllowed()) {
-      closeSearchModal();
     }
   });
-  
-  // Monitor modal and auto-close if opened on restricted pages
-  const modalObserver = new MutationObserver(() => {
-    if (searchModal.open && !isSearchAllowed()) {
-      closeSearchModal();
-    }
-  });
-  
-  modalObserver.observe(searchModal, { attributes: true, attributeFilter: ['open'] });
 };
 
 // ============================================================
@@ -858,19 +588,51 @@ window.showPreview = function(postId) {
   modal.showModal();
 };
 
-// Initialize preview modal close
-document.addEventListener('DOMContentLoaded', () => {
-  const modal = document.getElementById('previewModal');
-  const closeBtn = document.getElementById('previewClose');
-  
-  // Initialize close icon
+/**
+ * Initialize close icon for a close button
+ */
+window.initCloseIcon = function(closeBtn) {
   if (closeBtn && window.Icons && window.Icons.get) {
     const iconSpan = closeBtn.querySelector('.close-icon');
     if (iconSpan && !iconSpan.innerHTML.trim()) {
       iconSpan.innerHTML = window.Icons.get('close', '', { size: '16px' });
     }
   }
+};
+
+/**
+ * Initialize all close icons on the page
+ */
+window.initAllCloseIcons = function() {
+  // Find all close-icon spans and initialize their parent buttons
+  document.querySelectorAll('.close-icon').forEach(span => {
+    const btn = span.closest('button');
+    if (btn) window.initCloseIcon(btn);
+  });
   
+  // Also check by common close button IDs (in case they're dynamically loaded)
+  const closeButtonIds = [
+    'previewClose',
+    'shortcutsClose',
+    'folderBrowserClose',
+    'spacesFolderBrowserClose',
+    'postEditClose',
+    'userEditClose',
+    'instanceRefreshClose'
+  ];
+  
+  closeButtonIds.forEach(id => {
+    const btn = document.getElementById(id);
+    if (btn) window.initCloseIcon(btn);
+  });
+};
+
+// Initialize preview modal close
+document.addEventListener('DOMContentLoaded', () => {
+  const modal = document.getElementById('previewModal');
+  const closeBtn = document.getElementById('previewClose');
+  
+  initCloseIcon(closeBtn);
   closeBtn?.addEventListener('click', () => modal.close());
   modal?.addEventListener('click', (e) => {
     if (e.target === modal) modal.close();
@@ -890,18 +652,15 @@ document.addEventListener('DOMContentLoaded', () => {
   const modal = document.getElementById('shortcutsModal');
   const closeBtn = document.getElementById('shortcutsClose');
   
-  // Initialize close icon
-  if (closeBtn && window.Icons && window.Icons.get) {
-    const iconSpan = closeBtn.querySelector('.close-icon');
-    if (iconSpan && !iconSpan.innerHTML.trim()) {
-      iconSpan.innerHTML = window.Icons.get('close', '', { size: '16px' });
-    }
-  }
-  
+  window.initCloseIcon(closeBtn);
   closeBtn?.addEventListener('click', () => modal.close());
   modal?.addEventListener('click', (e) => {
     if (e.target === modal) modal.close();
   });
+  
+  // Initialize all close icons when DOM is ready
+  window.initAllCloseIcons();
+  
 });
 
 // ============================================================

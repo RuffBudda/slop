@@ -96,7 +96,8 @@ async function loadApiSettings() {
       'spaces_name',
       'spaces_region',
       'spaces_key',
-      'spaces_secret'
+      'spaces_secret',
+      'spaces_folder'
     ]);
     
     const settings = result.settings || {};
@@ -127,14 +128,39 @@ async function loadApiSettings() {
       }
     }
     
+    // Populate storage settings form
+    const storageForm = document.getElementById('storageSettingsForm');
+    if (storageForm) {
+      if (settings.spaces_key && storageForm.spaces_key) {
+        storageForm.spaces_key.placeholder = '••••••••••••••••';
+      }
+      if (settings.spaces_secret && storageForm.spaces_secret) {
+        storageForm.spaces_secret.placeholder = '••••••••••••••••';
+      }
+      if (settings.spaces_name && storageForm.spaces_name) {
+        storageForm.spaces_name.value = settings.spaces_name;
+      }
+      if (settings.spaces_region && storageForm.spaces_region) {
+        storageForm.spaces_region.value = settings.spaces_region;
+      }
+      if (settings.spaces_folder && storageForm.spaces_folder) {
+        storageForm.spaces_folder.value = settings.spaces_folder;
+      }
+    }
+    
     // Populate OpenAI settings form (for OpenAI page)
     const openaiForm = document.getElementById('openaiSettingsForm');
     if (openaiForm) {
       if (settings.openai_api_key && openaiForm.openai_api_key) {
         openaiForm.openai_api_key.placeholder = '••••••••••••••••';
       }
-      if (settings.stability_api_key && openaiForm.stability_api_key) {
-        openaiForm.stability_api_key.placeholder = '••••••••••••••••';
+    }
+    
+    // Populate Stability AI API key form (for OpenAI page)
+    const stabilityApiKeyForm = document.getElementById('stabilityApiKeyForm');
+    if (stabilityApiKeyForm) {
+      if (settings.stability_api_key && stabilityApiKeyForm.stability_api_key) {
+        stabilityApiKeyForm.stability_api_key.placeholder = '••••••••••••••••';
       }
     }
   } catch (error) {
@@ -210,70 +236,137 @@ function initApiSettingsForm() {
 }
 
 function initOpenaiSettingsForm() {
-  const form = document.getElementById('openaiSettingsForm');
-  if (!form) return;
-  
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const formData = new FormData(form);
-    const settings = [];
-    
-    // Only include non-empty values (don't override with empty)
-    for (const [key, value] of formData.entries()) {
-      if (value.trim()) {
-        settings.push({ key, value: value.trim() });
-      }
-    }
-    
-    if (settings.length === 0) {
-      showToast('No settings to save', 'neutral');
-      return;
-    }
-    
-    try {
-      showLoader();
-      await API.settings.setBulk(settings);
-      showToast('API keys saved successfully', 'ok');
+  // OpenAI API Key Form
+  const openaiForm = document.getElementById('openaiSettingsForm');
+  if (openaiForm) {
+    openaiForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
       
-      // Reload to show updated placeholders
-      loadApiSettings();
+      const formData = new FormData(openaiForm);
+      const settings = [];
       
-      // Update FAB visibility if API keys were changed
-      if (typeof updateFabVisibility === 'function') {
-        updateFabVisibility();
+      // Only include non-empty values (don't override with empty)
+      for (const [key, value] of formData.entries()) {
+        if (value.trim()) {
+          settings.push({ key, value: value.trim() });
+        }
       }
       
-      // Dispatch event for other components that might need to react
-      window.dispatchEvent(new CustomEvent('settingsUpdated'));
-    } catch (error) {
-      showToast('Failed to save API keys', 'bad');
-    } finally {
-      hideLoader();
-    }
-  });
-  
-  // Test buttons
-  form.querySelectorAll('[data-test]').forEach(btn => {
-    btn.addEventListener('click', async (e) => {
-      const service = e.currentTarget.dataset.test;
+      if (settings.length === 0) {
+        showToast('No settings to save', 'neutral');
+        return;
+      }
       
       try {
         showLoader();
-        const result = await API.settings.test(service);
+        await API.settings.setBulk(settings);
+        showToast('OpenAI API key saved successfully', 'ok');
         
-        if (result.success) {
-          showToast(`${service} connection successful`, 'ok');
-        } else {
-          showToast(`${service} test failed: ${result.error}`, 'bad');
+        // Reload to show updated placeholders
+        loadApiSettings();
+        
+        // Update FAB visibility if API keys were changed
+        if (typeof updateFabVisibility === 'function') {
+          updateFabVisibility();
         }
+        
+        // Dispatch event for other components that might need to react
+        window.dispatchEvent(new CustomEvent('settingsUpdated'));
       } catch (error) {
-        showToast(`${service} test failed: ${error.message}`, 'bad');
+        showToast('Failed to save settings', 'bad');
       } finally {
         hideLoader();
       }
     });
-  });
+    
+    // Test button for OpenAI
+    const openaiTestBtn = openaiForm.querySelector('[data-test="openai"]');
+    if (openaiTestBtn) {
+      openaiTestBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        try {
+          showLoader();
+          const result = await API.settings.test('openai');
+          
+          if (result.success) {
+            showToast('OpenAI API credentials are valid', 'ok');
+          } else {
+            showToast('OpenAI API test failed', 'bad');
+          }
+        } catch (error) {
+          showToast(error.message || 'OpenAI API test failed', 'bad');
+        } finally {
+          hideLoader();
+        }
+      });
+    }
+  }
+  
+  // Stability AI API Key Form
+  const stabilityApiKeyForm = document.getElementById('stabilityApiKeyForm');
+  if (stabilityApiKeyForm) {
+    stabilityApiKeyForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      
+      const formData = new FormData(stabilityApiKeyForm);
+      const settings = [];
+      
+      // Only include non-empty values (don't override with empty)
+      for (const [key, value] of formData.entries()) {
+        if (value.trim()) {
+          settings.push({ key, value: value.trim() });
+        }
+      }
+      
+      if (settings.length === 0) {
+        showToast('No settings to save', 'neutral');
+        return;
+      }
+      
+      try {
+        showLoader();
+        await API.settings.setBulk(settings);
+        showToast('Stability AI API key saved successfully', 'ok');
+        
+        // Reload to show updated placeholders
+        loadApiSettings();
+        
+        // Update FAB visibility if API keys were changed
+        if (typeof updateFabVisibility === 'function') {
+          updateFabVisibility();
+        }
+        
+        // Dispatch event for other components that might need to react
+        window.dispatchEvent(new CustomEvent('settingsUpdated'));
+      } catch (error) {
+        showToast('Failed to save settings', 'bad');
+      } finally {
+        hideLoader();
+      }
+    });
+    
+    // Test button for Stability AI
+    const stabilityTestBtn = stabilityApiKeyForm.querySelector('[data-test="stability"]');
+    if (stabilityTestBtn) {
+      stabilityTestBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        try {
+          showLoader();
+          const result = await API.settings.test('stability');
+          
+          if (result.success) {
+            showToast('Stability AI API credentials are valid', 'ok');
+          } else {
+            showToast('Stability AI API test failed', 'bad');
+          }
+        } catch (error) {
+          showToast(error.message || 'Stability AI API test failed', 'bad');
+        } finally {
+          hideLoader();
+        }
+      });
+    }
+  }
 }
 
 // ============================================================
@@ -474,6 +567,247 @@ function initPromptsSection() {
   });
 }
 
+// ============================================================
+// STORAGE SETTINGS (S3/Spaces)
+// ============================================================
+
+let spacesCurrentFolderPath = [];
+let spacesSelectedFolderPath = '';
+
+async function loadSpacesFolders(prefix = '') {
+  const folderList = document.getElementById('spacesFolderBrowserList');
+  if (!folderList) return;
+
+  try {
+    folderList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Loading folders...</p>';
+
+    const result = await API.settings.listSpacesFolders(prefix);
+    const folders = result.folders || [];
+
+    if (folders.length === 0) {
+      folderList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No folders found. You can type a folder name manually in the input field.</p>';
+      return;
+    }
+
+    folderList.innerHTML = folders.map(folder => `
+      <div class="folder-item" style="padding: 12px; border-bottom: 1px solid var(--bd); cursor: pointer; display: flex; align-items: center; gap: 12px; transition: background 0.2s;"
+           data-folder-path="${escapeHtml(folder.path)}" data-folder-name="${escapeHtml(folder.name)}">
+        <span class="folder-icon-large">${window.Icons ? window.Icons.get('folder', '', { size: '20px' }) : '📁'}</span>
+        <div style="flex: 1;">
+          <div style="font-weight: 500;">${escapeHtml(folder.name)}</div>
+          <div style="font-size: 12px; color: #666;">${escapeHtml(folder.path)}</div>
+        </div>
+      </div>
+    `).join('');
+
+    // Attach click handlers
+    folderList.querySelectorAll('.folder-item').forEach(item => {
+      item.addEventListener('click', () => {
+        const folderPath = item.dataset.folderPath;
+        const folderName = item.dataset.folderName;
+        
+        // Select this folder
+        selectSpacesFolder(folderPath);
+        
+        // Also allow double-click to navigate into folder
+        let clickCount = 0;
+        item.addEventListener('dblclick', () => {
+          spacesCurrentFolderPath.push({ path: folderPath, name: folderName });
+          updateSpacesBreadcrumb();
+          loadSpacesFolders(folderPath);
+        });
+      });
+      
+      item.addEventListener('mouseenter', function() {
+        this.style.background = 'var(--bg-alt)';
+      });
+      
+      item.addEventListener('mouseleave', function() {
+        this.style.background = 'transparent';
+      });
+    });
+
+  } catch (error) {
+    console.error('Failed to load folders:', error);
+    folderList.innerHTML = `<p style="text-align: center; color: var(--bad); padding: 20px;">Error loading folders: ${escapeHtml(error.message || 'Unknown error')}</p>`;
+  }
+}
+
+function updateSpacesBreadcrumb() {
+  const breadcrumb = document.getElementById('spacesFolderBrowserBreadcrumb');
+  if (!breadcrumb) return;
+
+  const breadcrumbItems = [{ path: '', name: 'Root' }, ...spacesCurrentFolderPath];
+  
+  breadcrumb.innerHTML = breadcrumbItems.map((folder, index) => {
+    if (index === breadcrumbItems.length - 1) {
+      return `<span style="color: var(--fg); font-weight: 500;">${escapeHtml(folder.name)}</span>`;
+    }
+    return `<button class="btn-link" onclick="navigateToSpacesBreadcrumb(${index});" style="text-decoration: none; color: var(--fg);">${escapeHtml(folder.name)}</button> <span style="color: #666;">/</span> `;
+  }).join('');
+}
+
+window.navigateToSpacesBreadcrumb = function(index) {
+  spacesCurrentFolderPath = spacesCurrentFolderPath.slice(0, index);
+  updateSpacesBreadcrumb();
+  const targetPath = index === 0 ? '' : spacesCurrentFolderPath[index - 1].path;
+  loadSpacesFolders(targetPath);
+};
+
+function selectSpacesFolder(folderPath) {
+  spacesSelectedFolderPath = folderPath;
+  
+  const selectBtn = document.getElementById('spacesFolderBrowserSelect');
+  if (selectBtn) {
+    selectBtn.disabled = false;
+    const folderName = folderPath.split('/').filter(p => p).pop() || 'Root';
+    selectBtn.textContent = `Select: ${folderName}`;
+  }
+}
+
+function initStorageSettings() {
+  const form = document.getElementById('storageSettingsForm');
+  if (!form) return;
+  
+  // Form submission
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    const settings = [];
+    
+    // Only include non-empty values (don't override with empty)
+    for (const [key, value] of formData.entries()) {
+      if (value.trim()) {
+        settings.push({ key, value: value.trim() });
+      }
+    }
+    
+    if (settings.length === 0) {
+      showToast('No settings to save', 'neutral');
+      return;
+    }
+    
+    try {
+      showLoader();
+      await API.settings.setBulk(settings);
+      showToast('Storage settings saved successfully', 'ok');
+      
+      // Reload to show updated placeholders
+      loadApiSettings();
+      
+      // Dispatch event for other components
+      window.dispatchEvent(new CustomEvent('settingsUpdated'));
+    } catch (error) {
+      showToast('Failed to save settings', 'bad');
+    } finally {
+      hideLoader();
+    }
+  });
+  
+  // Test button
+  const testBtn = form.querySelector('[data-test="spaces"]');
+  if (testBtn) {
+    testBtn.addEventListener('click', async () => {
+      try {
+        showLoader();
+        const result = await API.settings.test('spaces');
+        
+        if (result.success) {
+          showToast('Storage credentials are valid', 'ok');
+        } else {
+          showToast('Storage test failed', 'bad');
+        }
+      } catch (error) {
+        showToast(error.message || 'Storage test failed', 'bad');
+      } finally {
+        hideLoader();
+      }
+    });
+  }
+  
+  // Browse folder button
+  const browseBtn = document.getElementById('browseSpacesFolder');
+  const folderInput = document.getElementById('spacesFolder');
+  const folderModal = document.getElementById('spacesFolderBrowserModal');
+  const folderClose = document.getElementById('spacesFolderBrowserClose');
+  const folderCancel = document.getElementById('spacesFolderBrowserCancel');
+  const folderSelect = document.getElementById('spacesFolderBrowserSelect');
+  
+  if (browseBtn) {
+    browseBtn.addEventListener('click', async () => {
+      // Verify credentials are configured
+      const spacesName = form.spaces_name?.value;
+      const spacesKey = form.spaces_key?.value;
+      const spacesSecret = form.spaces_secret?.value;
+      
+      if (!spacesName || !spacesKey || !spacesSecret) {
+        showToast('Please configure and save your Spaces credentials first', 'bad');
+        return;
+      }
+      
+      // Save current form values temporarily for the API call
+      if (form.spaces_name?.value) {
+        await API.settings.set('spaces_name', form.spaces_name.value);
+      }
+      if (form.spaces_region?.value) {
+        await API.settings.set('spaces_region', form.spaces_region.value);
+      }
+      if (form.spaces_key?.value) {
+        await API.settings.set('spaces_key', form.spaces_key.value);
+      }
+      if (form.spaces_secret?.value) {
+        await API.settings.set('spaces_secret', form.spaces_secret.value);
+      }
+      
+      if (folderModal) {
+        // Reset state
+        spacesCurrentFolderPath = [];
+        spacesSelectedFolderPath = folderInput?.value || '';
+        updateSpacesBreadcrumb();
+        loadSpacesFolders('');
+        folderModal.showModal();
+      }
+    });
+  }
+  
+  if (folderClose) {
+    // Initialize close icon
+    if (typeof window.initCloseIcon === 'function') {
+      window.initCloseIcon(folderClose);
+    }
+    folderClose.addEventListener('click', () => {
+      if (folderModal) folderModal.close();
+    });
+  }
+  
+  if (folderCancel) {
+    folderCancel.addEventListener('click', () => {
+      if (folderModal) folderModal.close();
+    });
+  }
+  
+  if (folderSelect) {
+    folderSelect.addEventListener('click', () => {
+      if (spacesSelectedFolderPath !== '') {
+        // Remove trailing slash if present, but keep folder structure
+        const cleanPath = spacesSelectedFolderPath.replace(/\/$/, '');
+        if (folderInput) {
+          folderInput.value = cleanPath;
+        }
+      } else {
+        // Root selected - empty string means root
+        if (folderInput) {
+          folderInput.value = '';
+        }
+      }
+      if (folderModal) folderModal.close();
+    });
+  }
+  
+  
+}
+
 function initStabilitySettings() {
   const form = document.getElementById('stabilitySettingsForm');
   if (!form) return;
@@ -588,7 +922,7 @@ async function loadFoldersForBrowser(parentId = null) {
     
   } catch (error) {
     console.error('Failed to load folders:', error);
-    folderList.innerHTML = `<p style="text-align: center; color: #dc2626; padding: 20px;">Failed to load folders: ${error.message}</p>`;
+    folderList.innerHTML = `<p style="text-align: center; color: #dc2626; padding: 20px;">Failed to load folders: ${escapeHtml(error.message || 'Unknown error')}</p>`;
   }
 }
 
@@ -842,6 +1176,10 @@ function initGoogleDrive() {
   
   // Folder browser modal handlers
   if (folderBrowserClose) {
+    // Initialize close icon
+    if (typeof window.initCloseIcon === 'function') {
+      window.initCloseIcon(folderBrowserClose);
+    }
     folderBrowserClose.addEventListener('click', () => {
       if (folderBrowserModal) folderBrowserModal.close();
     });
@@ -962,7 +1300,9 @@ function initPostEditModal() {
   const cancelBtn = document.getElementById('postEditCancel');
   
   // Initialize close icon
-  if (closeBtn && window.Icons && window.Icons.get) {
+  if (typeof window.initCloseIcon === 'function') {
+    window.initCloseIcon(closeBtn);
+  } else if (closeBtn && window.Icons && window.Icons.get) {
     const iconSpan = closeBtn.querySelector('.close-icon');
     if (iconSpan && !iconSpan.innerHTML.trim()) {
       iconSpan.innerHTML = window.Icons.get('close', '', { size: '16px' });
@@ -1277,7 +1617,7 @@ async function loadUsers() {
     if (error.message && error.message.includes('403')) {
       container.innerHTML = '<p style="color: var(--bad); padding: 20px; text-align: center;">Access denied. Admin privileges required.</p>';
     } else {
-      container.innerHTML = `<p style="color: var(--bad); padding: 20px; text-align: center;">Failed to load users: ${error.message || 'Unknown error'}</p>`;
+      container.innerHTML = `<p style="color: var(--bad); padding: 20px; text-align: center;">Failed to load users: ${escapeHtml(error.message || 'Unknown error')}</p>`;
     }
   } finally {
     hideLoader();
@@ -1297,7 +1637,9 @@ function initUserEditModal() {
   const passwordLabel = form?.querySelector('label[for="userPassword"]');
   
   // Initialize close icon
-  if (closeBtn && window.Icons && window.Icons.get) {
+  if (typeof window.initCloseIcon === 'function') {
+    window.initCloseIcon(closeBtn);
+  } else if (closeBtn && window.Icons && window.Icons.get) {
     const iconSpan = closeBtn.querySelector('.close-icon');
     if (iconSpan && !iconSpan.innerHTML.trim()) {
       iconSpan.innerHTML = window.Icons.get('close', '', { size: '16px' });
@@ -1597,7 +1939,9 @@ function initInstanceRefreshWorkflow() {
   const closeBtn = document.getElementById('instanceRefreshClose');
   
   // Initialize close icon
-  if (closeBtn && window.Icons && window.Icons.get) {
+  if (typeof window.initCloseIcon === 'function') {
+    window.initCloseIcon(closeBtn);
+  } else if (closeBtn && window.Icons && window.Icons.get) {
     const iconSpan = closeBtn.querySelector('.close-icon');
     if (iconSpan && !iconSpan.innerHTML.trim()) {
       iconSpan.innerHTML = window.Icons.get('close', '', { size: '16px' });
@@ -2305,6 +2649,7 @@ function initSettingsModule() {
   initPromptsSection();
   initStabilitySettings();
   initGoogleDrive();
+  initStorageSettings();
   initPostEditModal();
   initCsvButtons();
   initUserEditModal();

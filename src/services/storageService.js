@@ -46,14 +46,20 @@ async function uploadFile(userId, fileBuffer, fileName, options = {}) {
   const spacesRegion = getSettingValue(userId, 'spaces_region') || 'blr1';
   const s3 = getS3Client(userId);
 
+  // Get folder from settings or options (default to 'slop')
+  const configuredFolder = getSettingValue(userId, 'spaces_folder') || 'slop';
+  
   const {
     contentType = 'image/png',
     acl = 'public-read',
-    folder = 'slop'
+    folder = configuredFolder
   } = options;
 
+  // Clean folder path - remove leading/trailing slashes and normalize
+  const cleanFolder = folder.replace(/^\/+|\/+$/g, '').replace(/\/+/g, '/') || 'slop';
+
   // Generate unique file name
-  const uniqueName = `${folder}/${Date.now()}-${uuidv4().substring(0, 8)}-${fileName}`;
+  const uniqueName = cleanFolder ? `${cleanFolder}/${Date.now()}-${uuidv4().substring(0, 8)}-${fileName}` : `${Date.now()}-${uuidv4().substring(0, 8)}-${fileName}`;
 
   const params = {
     Bucket: spacesName,

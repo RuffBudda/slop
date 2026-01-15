@@ -60,6 +60,7 @@ const SENSITIVE_KEYS = [
   'stability_api_key',
   'spaces_key',
   'spaces_secret',
+  'spaces_folder',
   'google_drive_refresh_token',
   'google_drive_access_token',
   'google_drive_service_account',
@@ -661,6 +662,61 @@ router.post('/test/spaces', async (req, res) => {
     console.error('Spaces test error:', error);
     res.status(400).json({ 
       error: 'DigitalOcean Spaces test failed',
+      details: error.message 
+    });
+  }
+});
+
+/**
+ * List folders/prefixes in DigitalOcean Spaces bucket
+ * GET /api/settings/spaces/folders?prefix=
+ */
+router.get('/spaces/folders', async (req, res) => {
+  try {
+    const spacesName = getSettingValue(req.user.id, 'spaces_name');
+    const spacesRegion = getSettingValue(req.user.id, 'spaces_region');
+    const spacesKey = getSettingValue(req.user.id, 'spaces_key');
+    const spacesSecret = getSettingValue(req.user.id, 'spaces_secret');
+    const prefix = req.query.prefix || '';
+    
+    if (!spacesName || !spacesKey || !spacesSecret) {
+      return res.status(400).json({ error: 'DigitalOcean Spaces credentials not configured' });
+    }
+
+    const AWS = require('aws-sdk');
+    const spacesEndpoint = new AWS.Endpoint(`${spacesRegion || 'nyc3'}.digitaloceanspaces.com`);
+    const s3 = new AWS.S3({
+      endpoint: spacesEndpoint,
+      accessKeyId: spacesKey,
+      secretAccessKey: spacesSecret
+    });
+
+    // List objects with delimiter to get folders
+    const params = {
+      Bucket: spacesName,
+      Delimiter: '/',
+      Prefix: prefix,
+      MaxKeys: 1000
+    };
+
+    const data = await s3.listObjectsV2(params).promise();
+    
+    // Extract folders (CommonPrefixes) and files
+    const folders = (data.CommonPrefixes || []).map(prefix => ({
+      name: prefix.Prefix.replace(prefix.Prefix.slice(0, prefix.Prefix.lastIndexOf('/', prefix.Prefix.length - 2) + 1), ''),
+      path: prefix.Prefix
+    }));
+
+    res.json({ 
+      success: true,
+      folders: folders,
+      currentPath: prefix
+    });
+
+  } catch (error) {
+    console.error('List folders error:', error);
+    res.status(400).json({ 
+      error: 'Failed to list folders',
       details: error.message 
     });
   }
