@@ -23,6 +23,12 @@ const { initScheduler } = require('./services/scheduler');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const isProduction = process.env.NODE_ENV === 'production';
+const trustProxy = isProduction || process.env.TRUST_PROXY === 'true';
+
+if (trustProxy) {
+  app.set('trust proxy', 1);
+}
 
 // Security middleware
 app.use(helmet({
@@ -69,15 +75,20 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 
 // Session configuration
+const cookieSecure = process.env.SESSION_COOKIE_SECURE
+  ? process.env.SESSION_COOKIE_SECURE === 'true'
+  : isProduction;
+
 app.use(session({
   secret: process.env.SESSION_SECRET || 'slop-secret-change-in-production',
   resave: false,
   saveUninitialized: false,
   name: 'slop.sid', // Explicit session name
+  proxy: trustProxy,
   cookie: {
-    secure: process.env.NODE_ENV === 'production',
+    secure: cookieSecure,
     httpOnly: true,
-    sameSite: process.env.NODE_ENV === 'production' ? 'strict' : 'lax', // Use 'lax' in development for better compatibility
+    sameSite: 'lax',
     maxAge: 24 * 60 * 60 * 1000, // 24 hours
     path: '/' // Ensure cookie is available for all paths
   }

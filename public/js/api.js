@@ -11,7 +11,13 @@ const API = {
    * Base API call method
    */
   async call(endpoint, options = {}) {
-    const { method = 'GET', body, headers = {}, timeout = 10000 } = options;
+    const {
+      method = 'GET',
+      body,
+      headers = {},
+      timeout = 10000,
+      credentials = 'same-origin'
+    } = options;
     
     const config = {
       method,
@@ -19,7 +25,7 @@ const API = {
         'Content-Type': 'application/json',
         ...headers
       },
-      credentials: 'same-origin'
+      credentials
     };
     
     if (body && method !== 'GET') {

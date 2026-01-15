@@ -2527,9 +2527,9 @@ dialog::backdrop {
 
 .search-modal-content {
   position: absolute;
-  top: 20%;
+  top: 50%;
   left: 50%;
-  transform: translate(-50%, 0);
+  transform: translate(-50%, -50%);
   width: 90%;
   max-width: 680px;
   background: rgba(28, 28, 30, 0.85);
@@ -2549,11 +2549,11 @@ dialog::backdrop {
 @keyframes spotlightSlideUp {
   from {
     opacity: 0;
-    transform: translate(-50%, -10px) scale(0.96);
+    transform: translate(-50%, calc(-50% - 10px)) scale(0.96);
   }
   to {
     opacity: 1;
-    transform: translate(-50%, 0) scale(1);
+    transform: translate(-50%, -50%) scale(1);
   }
 }
 
@@ -2561,14 +2561,19 @@ dialog::backdrop {
   position: relative;
   display: flex;
   align-items: center;
-  padding: 24px 28px;
+  padding: 16px 22px;
   background: transparent;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: box-shadow 0.2s ease;
+}
+
+.search-modal-input-wrapper:focus-within {
+  box-shadow: 0 0 0 2px #2ee8a6 inset;
 }
 
 .search-modal-icon {
   position: absolute;
-  left: 28px;
+  left: 22px;
   color: rgba(255, 255, 255, 0.5);
   font-size: 20px;
   display: flex;
@@ -2586,7 +2591,7 @@ dialog::backdrop {
 
 .search-modal-input {
   width: 100%;
-  padding: 16px 24px 16px 60px;
+  padding: 12px 20px 12px 52px;
   border: none;
   background: transparent;
   color: rgba(255, 255, 255, 0.95);
@@ -2607,31 +2612,6 @@ dialog::backdrop {
 
 .search-modal-input:focus {
   color: rgba(255, 255, 255, 0.95);
-}
-
-/* Keyboard shortcut hint - will be added via JavaScript */
-.search-modal-shortcut-hint {
-  position: absolute;
-  right: 28px;
-  top: 50%;
-  transform: translateY(-50%);
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  border-radius: 6px;
-  padding: 4px 8px;
-  font-size: 11px;
-  font-family: ui-monospace, 'SF Mono', Monaco, 'Cascadia Code', monospace;
-  color: rgba(255, 255, 255, 0.6);
-  letter-spacing: 0.5px;
-  opacity: 1;
-  transition: opacity 0.2s ease;
-  pointer-events: none;
-  z-index: 2;
-}
-
-.search-modal-input:focus ~ .search-modal-shortcut-hint,
-.search-modal-input:not(:placeholder-shown) ~ .search-modal-shortcut-hint {
-  opacity: 0;
 }
 
 .search-results-modal {
