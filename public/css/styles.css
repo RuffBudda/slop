@@ -2532,6 +2532,7 @@ dialog::backdrop {
   position: relative;
   width: 90%;
   max-width: 680px;
+  margin: 0 auto;
   background: rgba(28, 28, 30, 0.85);
   backdrop-filter: blur(40px) saturate(180%);
   -webkit-backdrop-filter: blur(40px) saturate(180%);
@@ -2561,14 +2562,14 @@ dialog::backdrop {
   position: relative;
   display: flex;
   align-items: center;
-  padding: 16px 22px;
+  padding: 10px 16px;
   background: transparent;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .search-modal-icon {
   position: absolute;
-  left: 22px;
+  left: 16px;
   color: rgba(255, 255, 255, 0.5);
   font-size: 20px;
   display: flex;
@@ -2586,11 +2587,11 @@ dialog::backdrop {
 
 .search-modal-input {
   width: 100%;
-  padding: 12px 20px 12px 52px;
+  padding: 8px 16px 8px 44px;
   border: none;
   background: transparent;
   color: rgba(255, 255, 255, 0.95);
-  font-size: 20px;
+  font-size: 16px;
   font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
   font-weight: 400;
   letter-spacing: -0.01em;
@@ -2605,8 +2606,11 @@ dialog::backdrop {
   letter-spacing: -0.01em;
 }
 
-.search-modal-input:focus {
+.search-modal-input:focus,
+.search-modal-input:focus-visible {
   color: rgba(255, 255, 255, 0.95);
+  outline: none !important;
+  box-shadow: none !important;
 }
 
 .search-results-modal {

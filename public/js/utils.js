@@ -488,6 +488,36 @@ window.initGlobalSearch = function() {
   const searchIcon = document.querySelector('.search-modal-icon');
   
   if (!searchModal || !searchInput || !searchResults) return;
+
+  const isSearchAllowed = () => {
+    const loginPage = document.getElementById('loginPage');
+    const setupPage = document.getElementById('setupPage');
+    const mainApp = document.getElementById('mainApp');
+    if ((loginPage && !loginPage.classList.contains('hidden')) ||
+        (setupPage && !setupPage.classList.contains('hidden')) ||
+        (mainApp && mainApp.classList.contains('hidden'))) {
+      return false;
+    }
+
+    const hash = window.location.hash.slice(1);
+    const routePath = hash || 'content';
+    const [path] = routePath.split('/').filter(p => p);
+    const allowedTabs = ['content', 'calendar', 'timeline', 'bin'];
+    const isSettings = path === 'settings' || routePath.startsWith('settings/');
+    return allowedTabs.includes(path) && !isSettings;
+  };
+
+  const closeSearchModal = () => {
+    if (searchModal.open) {
+      searchModal.close();
+      searchInput.value = '';
+      searchResults.classList.add('hidden');
+    }
+  };
+
+  if (!isSearchAllowed()) {
+    closeSearchModal();
+  }
   
   // Initialize search icon with larger size for macOS Spotlight style
   if (searchIcon && window.Icons && window.Icons.get) {
@@ -606,7 +636,7 @@ window.initGlobalSearch = function() {
   document.addEventListener('keydown', (e) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       const searchBtn = document.getElementById('btnSearch');
-      if (searchBtn && searchBtn.style.display !== 'none') {
+      if (searchBtn && searchBtn.style.display !== 'none' && isSearchAllowed()) {
         e.preventDefault();
         searchModal.showModal();
         setTimeout(() => {
@@ -623,12 +653,22 @@ window.initGlobalSearch = function() {
     if (searchBtn && searchBtn.style.display === 'none') {
       return; // Don't open search if button is hidden
     }
+    if (!isSearchAllowed()) {
+      closeSearchModal();
+      return;
+    }
     searchModal.showModal();
     setTimeout(() => {
       searchInput.focus();
       searchInput.select();
     }, 100);
   };
+
+  window.addEventListener('hashchange', () => {
+    if (!isSearchAllowed()) {
+      closeSearchModal();
+    }
+  });
 };
 
 // ============================================================
