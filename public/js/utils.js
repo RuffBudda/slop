@@ -112,6 +112,17 @@ window.AppState = {
 // TAB MANAGEMENT
 // ============================================================
 
+window.closeSearchModalIfOpen = function() {
+  const searchModal = document.getElementById('searchModal');
+  if (searchModal && searchModal.open) {
+    searchModal.close();
+    const searchInput = document.getElementById('searchModalInput');
+    const searchResults = document.getElementById('searchResultsModal');
+    if (searchInput) searchInput.value = '';
+    if (searchResults) searchResults.classList.add('hidden');
+  }
+};
+
 window.updateSearchButtonVisibility = function() {
   const searchBtn = document.getElementById('btnSearch');
   if (!searchBtn) return;
@@ -125,6 +136,7 @@ window.updateSearchButtonVisibility = function() {
       (setupPage && !setupPage.classList.contains('hidden')) ||
       (mainApp && mainApp.classList.contains('hidden'))) {
     searchBtn.style.display = 'none';
+    window.closeSearchModalIfOpen();
     return;
   }
   
@@ -142,6 +154,7 @@ window.updateSearchButtonVisibility = function() {
     searchBtn.style.display = '';
   } else {
     searchBtn.style.display = 'none';
+    window.closeSearchModalIfOpen();
   }
 };
 
@@ -669,6 +682,15 @@ window.initGlobalSearch = function() {
       closeSearchModal();
     }
   });
+  
+  // Monitor modal and auto-close if opened on restricted pages
+  const modalObserver = new MutationObserver(() => {
+    if (searchModal.open && !isSearchAllowed()) {
+      closeSearchModal();
+    }
+  });
+  
+  modalObserver.observe(searchModal, { attributes: true, attributeFilter: ['open'] });
 };
 
 // ============================================================
