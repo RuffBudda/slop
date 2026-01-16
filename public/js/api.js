@@ -116,6 +116,11 @@ const API = {
                 // Reset flag to allow future checks
                 isVerifyingAuth = false;
                 // Don't redirect or clear state, just throw the original error
+                // Use a custom error that won't trigger auth check in content.js
+                const error = new Error(data.error || 'Server error');
+                error.authVerificationAttempted = true; // Flag to indicate we attempted verification
+                error.verificationSucceeded = true; // Flag to indicate verification succeeded (user is authenticated)
+                throw error;
               }
             } catch (authCheckError) {
               // If auth check fails (network error, etc.), don't assume session is invalid
@@ -123,10 +128,16 @@ const API = {
               console.warn('Auth verification failed, treating as transient error:', authCheckError);
               isVerifyingAuth = false;
               // Don't clear state or redirect on network errors
-              // Mark as verified (attempted) so content.js doesn't do redundant check
+              // Mark that verification was attempted (but failed) to prevent redundant check in content.js
               const error = new Error(data.error || `HTTP ${response.status}`);
-              error.verifiedAuthenticated = true; // Flag to indicate we attempted verification
-              error.isNetworkError = true; // Additional flag to indicate this is a network error
+              error.authVerificationAttempted = true; // Flag to indicate we attempted verification
+              error.verificationSucceeded = false; // Flag to indicate verification failed
+              // Check if it's a network error
+              const authErrorMsg = authCheckError.message?.toLowerCase() || '';
+              if (authErrorMsg.includes('timeout') || authErrorMsg.includes('network') || 
+                  authErrorMsg.includes('fetch') || authErrorMsg.includes('failed to fetch')) {
+                error.isNetworkError = true;
+              }
               throw error;
             } finally {
               // Ensure flag is reset if we didn't handle redirect
