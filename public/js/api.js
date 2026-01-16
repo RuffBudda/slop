@@ -79,7 +79,9 @@ const API = {
             // Verify session is actually invalid before clearing state
             // This prevents clearing state on transient errors
             try {
-              const authStatus = await API.auth.status().catch(() => ({ authenticated: false }));
+              // Don't catch errors here - let them propagate so we can distinguish
+              // between actual auth failures and network errors
+              const authStatus = await API.auth.status();
               
               // Only clear state if auth check confirms user is not authenticated
               if (!authStatus.authenticated) {
@@ -313,11 +315,6 @@ const API = {
     
     async resetPrompt(key) {
       return API.call(`/settings/prompts/${key}`, { method: 'DELETE' });
-    },
-    
-    async listSpacesFolders(prefix = '') {
-      const query = prefix ? `?prefix=${encodeURIComponent(prefix)}` : '';
-      return API.call(`/settings/spaces/folders${query}`);
     }
   },
 

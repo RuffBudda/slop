@@ -1575,9 +1575,9 @@ async function loadUsers() {
     }
     
     // Ensure user state is set if authenticated
-    if (authStatus.user && !window.AppState.user) {
+    if (authStatus.user && !window.AppState?.user) {
+      window.AppState = window.AppState || {};
       window.AppState.user = authStatus.user;
-    }
   } catch (authCheckError) {
     // If auth check fails, don't proceed with API call
     console.error('Failed to verify authentication:', authCheckError);

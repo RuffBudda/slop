@@ -72,9 +72,9 @@ async function loadContent(forceRefresh = false, retryCount = 0) {
           if (authStatus.authenticated) {
             // User is authenticated but getting 401 - might be a session issue or temporary error
             // Preserve user state - don't clear window.AppState.user
-            if (authStatus.user && !window.AppState.user) {
+            if (authStatus.user && !window.AppState?.user) {
               // Restore user state if it was cleared
-              window.AppState.user = authStatus.user;
+              window.AppState = window.AppState || {};
             }
             // Don't show auth error, show generic error instead
             errorTitle = 'Error Loading Content';
