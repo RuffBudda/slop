@@ -1578,7 +1578,7 @@ async function loadUsers() {
     if (authStatus.user && !window.AppState?.user) {
       window.AppState = window.AppState || {};
       window.AppState.user = authStatus.user;
-  } catch (authCheckError) {
+      }} catch (authCheckError) {
     // If auth check fails, don't proceed with API call
     console.error('Failed to verify authentication:', authCheckError);
     container.innerHTML = '<p style="color: var(--bad); padding: 20px; text-align: center;">Unable to verify authentication. Please try refreshing the page.</p>';
