@@ -125,6 +125,16 @@ const API = {
             } catch (authCheckError) {
               // If auth check fails (network error, etc.), don't assume session is invalid
               // Reset flag and throw original error without clearing state
+              
+              // Check if this error was already processed (e.g., user is authenticated)
+              // If so, re-throw it as-is without modification
+              if (authCheckError.authVerificationAttempted && authCheckError.verificationSucceeded) {
+                // This error was thrown from the else block when user is authenticated
+                // Re-throw it without modification
+                throw authCheckError;
+              }
+              
+              // Otherwise, this is a genuine auth check failure
               console.warn('Auth verification failed, treating as transient error:', authCheckError);
               isVerifyingAuth = false;
               // Don't clear state or redirect on network errors
