@@ -52,15 +52,29 @@ async function loadContent(forceRefresh = false) {
         try {
           const authStatus = await API.auth.status();
           if (authStatus.authenticated) {
-            // User is authenticated but getting 401 - might be a session issue
-            errorTitle = 'Session Issue';
-            errorMessage = 'Your session may have expired. Please refresh the page.';
+            // User is authenticated but getting 401 - might be a session issue or temporary error
+            // Preserve user state - don't clear window.AppState.user
+            // Always restore user state from authStatus if available
+            if (authStatus.user) {
+              // Restore user state if it was cleared or update it if it exists
+              window.AppState = window.AppState || {};
+              window.AppState.user = authStatus.user;
+            }
+            // Don't show auth error, show generic error instead
+            errorTitle = 'Error Loading Content';
+            errorMessage = 'Unable to load content. Please try refreshing the page.';
             errorDetails = 'If the problem persists, please log out and log in again.';
+            isAuthError = false; // Don't treat as auth error since user is authenticated
           } else {
-            // User is not authenticated
+            // User is not authenticated - only clear state if confirmed not authenticated
+            isAuthError = true;
             errorTitle = 'Authentication Required';
             errorMessage = 'Please log in to access this content.';
             errorDetails = 'You need to be logged in to view content.';
+            // Only clear user state if explicitly not authenticated
+            if (window.AppState) {
+              window.AppState.user = null;
+            }
           }
         } catch (authCheckError) {
           // If auth check fails, check if it's a network error vs actual auth failure
@@ -68,11 +82,14 @@ async function loadContent(forceRefresh = false) {
           if (authErrorMsg.includes('timeout') || authErrorMsg.includes('network') || 
               authErrorMsg.includes('fetch') || authErrorMsg.includes('failed to fetch')) {
             // Network error during auth check - don't assume unauthenticated
-            // Show generic error instead
+            // Only show auth error if we're confident the user is not authenticated
+            // Preserve user state during network errors
+            console.warn('Auth check failed, treating as generic error:', authCheckError);
             errorTitle = 'Error Loading Content';
             errorMessage = 'Unable to verify authentication. Please try again.';
             errorDetails = 'If the problem persists, please refresh the page.';
             isAuthError = false;
+            // Don't clear window.AppState.user on network errors
           } else {
             // Likely an actual auth failure
             errorTitle = 'Authentication Required';
