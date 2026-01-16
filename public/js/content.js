@@ -47,10 +47,19 @@ async function loadContent(forceRefresh = false) {
       // Authentication errors - check if user is actually authenticated first
       // Skip auth check if it was already verified in api.js
       if (error.verifiedAuthenticated) {
-        // Auth was already verified - this is a server error, not an auth error
-        errorTitle = 'Error Loading Content';
-        errorMessage = 'Unable to load content. Please try refreshing the page.';
-        errorDetails = 'If the problem persists, please log out and log in again.';
+        // Auth was already verified (or verification attempted but failed due to network error)
+        // This is a server error or network error, not an auth error
+        if (error.isNetworkError) {
+          // Network error during auth verification - treat as transient error
+          errorTitle = 'Error Loading Content';
+          errorMessage = 'Unable to verify authentication. Please try again.';
+          errorDetails = 'If the problem persists, please refresh the page.';
+        } else {
+          // Auth was verified, user is authenticated - this is a server error
+          errorTitle = 'Error Loading Content';
+          errorMessage = 'Unable to load content. Please try refreshing the page.';
+          errorDetails = 'If the problem persists, please log out and log in again.';
+        }
         isAuthError = false;
       } else if (errorMsg.includes('401') || errorMsg.includes('authentication') || errorMsg.includes('unauthorized') || errorMsg.includes('authentication required')) {
         isAuthError = true;
