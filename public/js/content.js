@@ -7,7 +7,7 @@
 // CONTENT LOADING
 // ============================================================
 
-async function loadContent(forceRefresh = false) {
+async function loadContent(forceRefresh = false, retryCount = 0) {
   const container = document.getElementById('contentCards');
   const loader = document.getElementById('initialLoader');
   
@@ -34,6 +34,24 @@ async function loadContent(forceRefresh = false) {
     renderContentCards(result.posts);
     updateDock();
   } catch (error) {
+    // Retry once on transient errors before showing error
+    if (retryCount === 0 && error.message && 
+        (error.message.includes('timeout') || error.message.includes('network') || 
+         error.message.includes('fetch') || error.message.toLowerCase().includes('authentication required'))) {
+      // Check if user is still authenticated before retrying
+      try {
+        const authStatus = await API.auth.status();
+        if (authStatus.authenticated && window.AppState?.user) {
+          // User is authenticated, retry once
+          console.log('Retrying content load after transient error...');
+          await new Promise(resolve => setTimeout(resolve, 500)); // Brief delay before retry
+          return loadContent(forceRefresh, retryCount + 1);
+        }
+      } catch (authCheckError) {
+        // If auth check fails, proceed to error handling
+        console.warn('Auth check failed during retry:', authCheckError);
+      }
+    }
     console.error('Failed to load content:', error);
     
     let errorTitle = 'Error Loading Content';
@@ -53,26 +71,37 @@ async function loadContent(forceRefresh = false) {
           const authStatus = await API.auth.status();
           if (authStatus.authenticated) {
             // User is authenticated but getting 401 - might be a session issue or temporary error
+            // Preserve user state - don't clear window.AppState.user
+            if (authStatus.user && !window.AppState.user) {
+              // Restore user state if it was cleared
+              window.AppState.user = authStatus.user;
+            }
             // Don't show auth error, show generic error instead
             errorTitle = 'Error Loading Content';
             errorMessage = 'Unable to load content. Please try refreshing the page.';
             errorDetails = 'If the problem persists, please log out and log in again.';
             isAuthError = false; // Don't treat as auth error since user is authenticated
           } else {
-            // User is not authenticated
+            // User is not authenticated - only clear state if confirmed not authenticated
             isAuthError = true;
             errorTitle = 'Authentication Required';
             errorMessage = 'Please log in to access this content.';
             errorDetails = 'You need to be logged in to view content.';
+            // Only clear user state if explicitly not authenticated
+            if (window.AppState) {
+              window.AppState.user = null;
+            }
           }
         } catch (authCheckError) {
           // If auth check fails, don't assume auth error - might be network issue
           // Only show auth error if we're confident the user is not authenticated
+          // Preserve user state during network errors
           console.warn('Auth check failed, treating as generic error:', authCheckError);
           errorTitle = 'Error Loading Content';
           errorMessage = 'Unable to verify authentication. Please try again.';
           errorDetails = 'If the problem persists, please refresh the page.';
           isAuthError = false;
+          // Don't clear window.AppState.user on network errors
         }
       }
       // Network errors

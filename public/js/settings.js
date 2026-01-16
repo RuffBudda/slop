@@ -1561,6 +1561,30 @@ async function loadUsers() {
     return;
   }
   
+  // Verify session before making API call
+  try {
+    const authStatus = await API.auth.status();
+    if (!authStatus.authenticated) {
+      // User is not authenticated - redirect to login
+      if (typeof showLoginPage === 'function') {
+        showLoginPage();
+      } else {
+        window.location.href = '/login';
+      }
+      return;
+    }
+    
+    // Ensure user state is set if authenticated
+    if (authStatus.user && !window.AppState.user) {
+      window.AppState.user = authStatus.user;
+    }
+  } catch (authCheckError) {
+    // If auth check fails, don't proceed with API call
+    console.error('Failed to verify authentication:', authCheckError);
+    container.innerHTML = '<p style="color: var(--bad); padding: 20px; text-align: center;">Unable to verify authentication. Please try refreshing the page.</p>';
+    return;
+  }
+  
   try {
     showLoader();
     const result = await API.users.list();
@@ -1614,6 +1638,33 @@ async function loadUsers() {
     });
   } catch (error) {
     console.error('Failed to load users:', error);
+    
+    // Check if it's an auth error
+    if (error.message && (error.message.includes('401') || error.message.includes('Authentication required'))) {
+      // Verify session before showing auth error
+      try {
+        const authStatus = await API.auth.status();
+        if (!authStatus.authenticated) {
+          // User is actually not authenticated
+          if (typeof showLoginPage === 'function') {
+            showLoginPage();
+          } else {
+            window.location.href = '/login';
+          }
+          return;
+        } else {
+          // User is authenticated but got 401 - don't clear state, show generic error
+          container.innerHTML = '<p style="color: var(--bad); padding: 20px; text-align: center;">Unable to load users. Please try refreshing the page.</p>';
+          // Don't clear window.AppState.user - preserve state
+          return;
+        }
+      } catch (authCheckError) {
+        // Auth check failed - don't assume auth error
+        container.innerHTML = '<p style="color: var(--bad); padding: 20px; text-align: center;">Unable to verify authentication. Please try again.</p>';
+        return;
+      }
+    }
+    
     if (error.message && error.message.includes('403')) {
       container.innerHTML = '<p style="color: var(--bad); padding: 20px; text-align: center;">Access denied. Admin privileges required.</p>';
     } else {

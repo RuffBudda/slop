@@ -5,6 +5,8 @@
 
 // Track if we're already handling an auth redirect to prevent multiple toasts/redirects
 let isHandlingAuthRedirect = false;
+// Track if we're currently verifying auth status to prevent multiple simultaneous checks
+let isVerifyingAuth = false;
 
 const API = {
   /**
@@ -68,35 +70,65 @@ const API = {
       // #endregion
       
       if (!response.ok) {
-        // Handle 401 (Unauthorized) globally - session expired
+        // Handle 401 (Unauthorized) globally - but verify session is actually invalid first
         if (response.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/status' && endpoint !== '/auth/setup') {
           // Only handle redirect once to prevent multiple toasts/redirects
-          if (!isHandlingAuthRedirect) {
-            isHandlingAuthRedirect = true;
+          if (!isHandlingAuthRedirect && !isVerifyingAuth) {
+            isVerifyingAuth = true;
             
-            // Clear user state
-            window.AppState = window.AppState || {};
-            window.AppState.user = null;
-            
-            // Clear any cached data
-            if (typeof clearCache === 'function') {
-              clearCache();
-            }
-            
-            // Only redirect if not already on login/setup page
-            const currentPath = window.location.pathname;
-            if (!currentPath.includes('/login') && !currentPath.includes('/setup') && currentPath !== '/') {
-              // Show one toast and redirect
-              if (typeof showToast === 'function') {
-                showToast('Session expired. Please log in again.', 'bad');
+            // Verify session is actually invalid before clearing state
+            // This prevents clearing state on transient errors
+            try {
+              const authStatus = await API.auth.status().catch(() => ({ authenticated: false }));
+              
+              // Only clear state if auth check confirms user is not authenticated
+              if (!authStatus.authenticated) {
+                isHandlingAuthRedirect = true;
+                
+                // Clear user state
+                window.AppState = window.AppState || {};
+                window.AppState.user = null;
+                
+                // Clear any cached data
+                if (typeof clearCache === 'function') {
+                  clearCache();
+                }
+                
+                // Only redirect if not already on login/setup page
+                const currentPath = window.location.pathname;
+                if (!currentPath.includes('/login') && !currentPath.includes('/setup') && currentPath !== '/') {
+                  // Show one toast and redirect
+                  if (typeof showToast === 'function') {
+                    showToast('Session expired. Please log in again.', 'bad');
+                  }
+                  setTimeout(() => {
+                    window.location.href = '/login';
+                  }, 1000);
+                } else {
+                  // Reset flag if we're already on login page
+                  isHandlingAuthRedirect = false;
+                }
+              } else {
+                // User is still authenticated - don't clear state
+                // This was likely a transient error or race condition
+                // Reset flag to allow future checks
+                isVerifyingAuth = false;
+                // Don't redirect or clear state, just throw the original error
               }
-              setTimeout(() => {
-                window.location.href = '/login';
-              }, 1000);
-            } else {
-              // Reset flag if we're already on login page
-              isHandlingAuthRedirect = false;
+            } catch (authCheckError) {
+              // If auth check fails (network error, etc.), don't assume session is invalid
+              // Reset flag and throw original error without clearing state
+              console.warn('Auth verification failed, treating as transient error:', authCheckError);
+              isVerifyingAuth = false;
+              // Don't clear state or redirect on network errors
+            } finally {
+              // Ensure flag is reset if we didn't handle redirect
+              if (!isHandlingAuthRedirect) {
+                isVerifyingAuth = false;
+              }
             }
+          } else if (isHandlingAuthRedirect) {
+            // Already handled redirect, just throw error
           }
           
           // Throw error to stop further processing
