@@ -48,9 +48,19 @@ async function loadContent(forceRefresh = false) {
       if (errorMsg.includes('401') || errorMsg.includes('authentication') || errorMsg.includes('unauthorized') || errorMsg.includes('authentication required')) {
         isAuthError = true;
         
-        // Check if user is actually authenticated
-        try {
-          const authStatus = await API.auth.status();
+        // First check if we have user state - if so, user was authenticated
+        // Only call API.auth.status() if we don't have user state
+        if (window.AppState?.user) {
+          // User state exists - user is authenticated, this is likely a server error
+          // Restore/update user state from window.AppState
+          errorTitle = 'Error Loading Content';
+          errorMessage = 'Unable to load content. Please try refreshing the page.';
+          errorDetails = 'If the problem persists, please log out and log in again.';
+          isAuthError = false; // Don't treat as auth error since user is authenticated
+        } else {
+          // No user state - check with server
+          try {
+            const authStatus = await API.auth.status();
           if (authStatus.authenticated) {
             // User is authenticated but getting 401 - might be a session issue or temporary error
             // Preserve user state - don't clear window.AppState.user
@@ -96,6 +106,7 @@ async function loadContent(forceRefresh = false) {
             errorMessage = 'Please log in to access this content.';
             errorDetails = 'You need to be logged in to view content.';
           }
+        }
         }
       }
       // Network errors
