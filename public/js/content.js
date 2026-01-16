@@ -11,6 +11,9 @@ async function loadContent(forceRefresh = false) {
   const container = document.getElementById('contentCards');
   const loader = document.getElementById('initialLoader');
   
+  // Hide initial loader immediately
+  if (loader) loader.style.display = 'none';
+  
   // Check cache
   if (!forceRefresh && isCacheValid('generated')) {
     const cached = getCache('generated');
@@ -22,7 +25,6 @@ async function loadContent(forceRefresh = false) {
   
   try {
     // Show skeleton loading
-    if (loader) loader.style.display = 'none';
     container.innerHTML = renderSkeletonCards(3);
     
     const result = await API.posts.getGenerated();
@@ -46,27 +48,31 @@ async function loadContent(forceRefresh = false) {
       
       // Authentication errors - check if user is actually authenticated first
       if (errorMsg.includes('401') || errorMsg.includes('authentication') || errorMsg.includes('unauthorized') || errorMsg.includes('authentication required')) {
-        isAuthError = true;
-        
         // Check if user is actually authenticated
         try {
           const authStatus = await API.auth.status();
           if (authStatus.authenticated) {
-            // User is authenticated but getting 401 - might be a session issue
-            errorTitle = 'Session Issue';
-            errorMessage = 'Your session may have expired. Please refresh the page.';
+            // User is authenticated but getting 401 - might be a session issue or temporary error
+            // Don't show auth error, show generic error instead
+            errorTitle = 'Error Loading Content';
+            errorMessage = 'Unable to load content. Please try refreshing the page.';
             errorDetails = 'If the problem persists, please log out and log in again.';
+            isAuthError = false; // Don't treat as auth error since user is authenticated
           } else {
             // User is not authenticated
+            isAuthError = true;
             errorTitle = 'Authentication Required';
             errorMessage = 'Please log in to access this content.';
             errorDetails = 'You need to be logged in to view content.';
           }
         } catch (authCheckError) {
-          // If auth check fails, assume not authenticated
-          errorTitle = 'Authentication Required';
-          errorMessage = 'Please log in to access this content.';
-          errorDetails = 'You need to be logged in to view content.';
+          // If auth check fails, don't assume auth error - might be network issue
+          // Only show auth error if we're confident the user is not authenticated
+          console.warn('Auth check failed, treating as generic error:', authCheckError);
+          errorTitle = 'Error Loading Content';
+          errorMessage = 'Unable to verify authentication. Please try again.';
+          errorDetails = 'If the problem persists, please refresh the page.';
+          isAuthError = false;
         }
       }
       // Network errors

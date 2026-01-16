@@ -315,6 +315,15 @@ window.initKeyboardShortcuts = function() {
       return;
     }
     
+    // Search shortcut (Ctrl+K / Cmd+K)
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+      e.preventDefault();
+      if (typeof window.openSearchModal === 'function') {
+        window.openSearchModal();
+      }
+      return;
+    }
+    
     // Tab switching
     if (e.altKey) {
       switch (e.key) {
@@ -450,7 +459,132 @@ window.updateBadges = async function() {
 // GLOBAL SEARCH
 // ============================================================
 
+/**
+ * Open search modal
+ */
+window.openSearchModal = function() {
+  const searchModal = document.getElementById('searchModal');
+  const searchInput = document.getElementById('searchModalInput');
+  if (searchModal && searchInput) {
+    searchModal.showModal();
+    setTimeout(() => searchInput.focus(), 100);
+  }
+};
+
 window.initGlobalSearch = function() {
+  // Initialize modal search
+  const searchModal = document.getElementById('searchModal');
+  const searchModalInput = document.getElementById('searchModalInput');
+  const searchResultsModal = document.getElementById('searchResultsModal');
+  
+  if (searchModal && searchModalInput && searchResultsModal) {
+    // Search functionality for modal
+    const performModalSearch = debounce(async (query) => {
+      if (!query || query.length < 2) {
+        searchResultsModal.classList.add('hidden');
+        return;
+      }
+      
+      try {
+        const result = await API.posts.list({ limit: 100 });
+        const posts = result.posts || [];
+        
+        // Filter posts by query
+        const filtered = posts.filter(post => {
+          const searchText = [
+            post.post_id,
+            post.instruction,
+            post.type,
+            post.variant_1,
+            post.variant_2,
+            post.variant_3,
+            post.keywords
+          ].filter(Boolean).join(' ').toLowerCase();
+          
+          return searchText.includes(query.toLowerCase());
+        }).slice(0, 10);
+        
+        if (filtered.length === 0) {
+          searchResultsModal.innerHTML = '<div class="search-result-item">No results found</div>';
+        } else {
+          searchResultsModal.innerHTML = filtered.map(post => `
+            <div class="search-result-item" data-post-id="${post.id}" data-status="${post.status}">
+              <div style="font-weight: 600; margin-bottom: 4px;">${escapeHtml(post.post_id)}</div>
+              <div style="font-size: 12px; color: #666;">${escapeHtml((post.instruction || '').substring(0, 80))}...</div>
+              <span class="chip status-${getStatusClass(post.status)}" style="margin-top: 4px;">${post.status || 'Pending'}</span>
+            </div>
+          `).join('');
+          
+          // Attach click handlers
+          searchResultsModal.querySelectorAll('.search-result-item').forEach(item => {
+            item.addEventListener('click', () => {
+              const postId = item.dataset.postId;
+              const status = item.dataset.status;
+              
+              // Close modal
+              searchModal.close();
+              searchModalInput.value = '';
+              searchResultsModal.classList.add('hidden');
+              
+              // Navigate to appropriate tab
+              if (status === 'generated') {
+                if (window.activateTab) window.activateTab('content');
+                else if (window.Router) window.Router.navigate('content');
+              } else if (status === 'Scheduled') {
+                if (window.activateTab) window.activateTab('timeline');
+                else if (window.Router) window.Router.navigate('timeline');
+              } else if (status === 'rejected') {
+                if (window.activateTab) window.activateTab('bin');
+                else if (window.Router) window.Router.navigate('bin');
+              } else {
+                if (window.activateTab) window.activateTab('settings');
+                else if (window.Router) window.Router.navigate('settings');
+              }
+              
+              // Scroll to post after tab loads
+              setTimeout(() => {
+                const card = document.querySelector(`[data-post-id="${postId}"]`);
+                if (card) {
+                  card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                  card.classList.add('highlight');
+                  setTimeout(() => card.classList.remove('highlight'), 2000);
+                }
+              }, 500);
+            });
+          });
+        }
+        
+        searchResultsModal.classList.remove('hidden');
+      } catch (error) {
+        console.error('Search failed:', error);
+        searchResultsModal.innerHTML = '<div class="search-result-item">Error searching</div>';
+        searchResultsModal.classList.remove('hidden');
+      }
+    }, 300);
+    
+    searchModalInput.addEventListener('input', (e) => {
+      performModalSearch(e.target.value);
+    });
+    
+    // Close modal on Escape or outside click
+    searchModal.addEventListener('click', (e) => {
+      if (e.target === searchModal) {
+        searchModal.close();
+        searchModalInput.value = '';
+        searchResultsModal.classList.add('hidden');
+      }
+    });
+    
+    searchModal.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        searchModal.close();
+        searchModalInput.value = '';
+        searchResultsModal.classList.add('hidden');
+      }
+    });
+  }
+  
+  // Legacy header search (if it exists)
   const searchInput = document.getElementById('globalSearch');
   const searchResults = document.getElementById('searchResults');
   
@@ -549,14 +683,7 @@ window.initGlobalSearch = function() {
     }
   });
   
-  // Ctrl+K shortcut
-  document.addEventListener('keydown', (e) => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-      e.preventDefault();
-      searchInput.focus();
-      searchInput.select();
-    }
-  });
+  // Ctrl+K shortcut - handled in initKeyboardShortcuts
 };
 
 // ============================================================

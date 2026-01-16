@@ -179,6 +179,10 @@ const Router = {
    * Initialize page-specific functionality
    */
   initPage(pagePath) {
+    // Hide any initial loader that might be in the loaded page
+    const loader = document.getElementById('initialLoader');
+    if (loader) loader.style.display = 'none';
+    
     // Trigger appropriate load function based on page
     const pageMap = {
       'content': () => { if (typeof loadContent === 'function') loadContent(); },
