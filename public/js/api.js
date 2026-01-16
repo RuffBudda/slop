@@ -116,7 +116,10 @@ const API = {
                 // Reset flag to allow future checks
                 isVerifyingAuth = false;
                 // Don't redirect or clear state, just throw the original error
-                throw new Error(data.error || `HTTP ${response.status}`);
+                // Use a custom error that won't trigger auth check in content.js
+                const error = new Error(data.error || 'Server error');
+                error.verifiedAuthenticated = true; // Flag to indicate auth was already verified
+                throw error;
               }
             } catch (authCheckError) {
               // If auth check fails (network error, etc.), don't assume session is invalid

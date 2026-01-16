@@ -45,7 +45,14 @@ async function loadContent(forceRefresh = false) {
       const errorMsg = error.message.toLowerCase();
       
       // Authentication errors - check if user is actually authenticated first
-      if (errorMsg.includes('401') || errorMsg.includes('authentication') || errorMsg.includes('unauthorized') || errorMsg.includes('authentication required')) {
+      // Skip auth check if it was already verified in api.js
+      if (error.verifiedAuthenticated) {
+        // Auth was already verified - this is a server error, not an auth error
+        errorTitle = 'Error Loading Content';
+        errorMessage = 'Unable to load content. Please try refreshing the page.';
+        errorDetails = 'If the problem persists, please log out and log in again.';
+        isAuthError = false;
+      } else if (errorMsg.includes('401') || errorMsg.includes('authentication') || errorMsg.includes('unauthorized') || errorMsg.includes('authentication required')) {
         isAuthError = true;
         
         // Check if user is actually authenticated
