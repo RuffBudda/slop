@@ -96,10 +96,40 @@ const Router = {
     
     // Settings routes
     if (path === 'settings') {
-      if (params.length === 0) {
-        await this.loadPage('settings/index');
-      } else {
-        await this.loadPage(`settings/${params[0]}`);
+      // Always load the index page which has the tiles grid
+      await this.loadPage('settings/index');
+      // If a section is specified, load that section's HTML and show it
+      if (params.length > 0) {
+        const sectionName = params[0];
+        try {
+          // Load the section HTML
+          const response = await fetch(`/pages/settings/${sectionName}.html`);
+          if (response.ok) {
+            const html = await response.text();
+            const mainContent = document.getElementById('mainContent');
+            if (mainContent) {
+              // Append the section HTML to the main content
+              const tempDiv = document.createElement('div');
+              tempDiv.innerHTML = html;
+              const sectionContent = tempDiv.querySelector('.settings-section-content');
+              if (sectionContent && !document.getElementById(sectionContent.id)) {
+                // Only append if it doesn't already exist
+                const settingsContainer = mainContent.querySelector('.settings-container');
+                if (settingsContainer) {
+                  settingsContainer.appendChild(sectionContent);
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.error('Failed to load settings section:', error);
+        }
+        // Show the section after a short delay to ensure DOM is ready
+        if (window.showSettingsSection) {
+          setTimeout(() => {
+            window.showSettingsSection(sectionName);
+          }, 200);
+        }
       }
       return;
     }

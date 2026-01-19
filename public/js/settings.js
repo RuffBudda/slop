@@ -1844,7 +1844,9 @@ function initSettingsTiles() {
   if (!tilesInitialized) {
     // Add click handlers to tiles
     tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
-      tile.addEventListener('click', () => {
+      tile.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         const section = tile.dataset.section;
         if (section) {
           showSection(section);
@@ -1896,8 +1898,13 @@ function initSettingsTiles() {
     if (targetSection) {
       targetSection.classList.remove('hidden');
       
-      // Update URL hash
-      window.location.hash = `#/settings/${sectionName}`;
+      // Update URL using router to prevent page reload
+      if (window.Router && window.Router.navigate) {
+        window.Router.navigate(`settings/${sectionName}`);
+      } else {
+        // Fallback to hash navigation
+        window.location.hash = `#/settings/${sectionName}`;
+      }
       
       // Load users if admin section is shown
       if (sectionName === 'admin') {
@@ -1913,6 +1920,13 @@ function initSettingsTiles() {
           document.getElementById('userManagementSection')?.classList.add('hidden');
           document.getElementById('instanceRefreshSection')?.classList.add('hidden');
         }
+      }
+    } else {
+      // Section not found in current page, let router handle navigation
+      if (window.Router && window.Router.navigate) {
+        window.Router.navigate(`settings/${sectionName}`);
+      } else {
+        window.location.hash = `#/settings/${sectionName}`;
       }
     }
     // Update active tile
