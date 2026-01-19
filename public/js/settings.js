@@ -1955,17 +1955,20 @@ function initSettingsTiles() {
   
   if (sectionName) {
     // A section is specified in the URL, show it after a delay to ensure section HTML is loaded
+    // Use skipNavigation=true to prevent triggering router navigation which causes loops
     setTimeout(() => {
       if (window.showSettingsSection) {
-        window.showSettingsSection(sectionName);
+        window.showSettingsSection(sectionName, true); // Skip navigation to prevent loop
       }
     }, 300);
   } else {
     // No section, show tiles
+    currentSection = null;
     showTiles();
   }
   
   function showTiles() {
+    currentSection = null;
     // Show tiles grid - ensure it's visible
     if (tilesGrid) {
       tilesGrid.classList.remove('hidden');
@@ -1989,7 +1992,17 @@ function initSettingsTiles() {
     }
   }
   
-  function showSection(sectionName) {
+  let isNavigating = false;
+  let currentSection = null;
+  
+  function showSection(sectionName, skipNavigation = false) {
+    // Prevent infinite loops - if we're already showing this section, don't do anything
+    if (currentSection === sectionName && !skipNavigation) {
+      return;
+    }
+    
+    currentSection = sectionName;
+    
     // Hide tiles grid
     if (tilesGrid) tilesGrid.classList.add('hidden');
     // Show back button
@@ -2003,12 +2016,18 @@ function initSettingsTiles() {
     if (targetSection) {
       targetSection.classList.remove('hidden');
       
-      // Update URL using router to prevent page reload
-      if (window.Router && window.Router.navigate) {
-        window.Router.navigate(`settings/${sectionName}`);
-      } else {
-        // Fallback to hash navigation
-        window.location.hash = `#/settings/${sectionName}`;
+      // Only update URL if not skipping navigation (to prevent loops)
+      if (!skipNavigation) {
+        // Update URL using router to prevent page reload
+        if (window.Router && window.Router.navigate && !isNavigating) {
+          isNavigating = true;
+          window.Router.navigate(`settings/${sectionName}`);
+          // Reset flag after a delay
+          setTimeout(() => { isNavigating = false; }, 500);
+        } else if (!isNavigating) {
+          // Fallback to hash navigation
+          window.location.hash = `#/settings/${sectionName}`;
+        }
       }
       
       // Load users if admin section is shown
@@ -2028,9 +2047,11 @@ function initSettingsTiles() {
       }
     } else {
       // Section not found in current page, let router handle navigation
-      if (window.Router && window.Router.navigate) {
+      if (!skipNavigation && window.Router && window.Router.navigate && !isNavigating) {
+        isNavigating = true;
         window.Router.navigate(`settings/${sectionName}`);
-      } else {
+        setTimeout(() => { isNavigating = false; }, 500);
+      } else if (!skipNavigation && !isNavigating) {
         window.location.hash = `#/settings/${sectionName}`;
       }
     }

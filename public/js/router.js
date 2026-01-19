@@ -125,18 +125,17 @@ const Router = {
           console.error('Failed to load settings section:', error);
         }
         // Show the section after a short delay to ensure DOM is ready
+        // Use skipNavigation=true to prevent triggering another navigation loop
         if (window.showSettingsSection) {
           setTimeout(() => {
-            window.showSettingsSection(sectionName);
+            window.showSettingsSection(sectionName, true); // Skip navigation to prevent loop
           }, 200);
         }
       } else {
         // No section specified - ensure tiles are shown
         setTimeout(() => {
           const tilesGrid = document.getElementById('settingsTilesGrid');
-          if (tilesGrid && window.showSettingsSection) {
-            // Call showTiles through the global function if available
-            // Or directly show tiles
+          if (tilesGrid) {
             tilesGrid.classList.remove('hidden');
             // Hide any visible sections
             document.querySelectorAll('.settings-section-content').forEach(section => {
