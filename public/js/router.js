@@ -228,6 +228,7 @@ const Router = {
     if (loader) loader.style.display = 'none';
     
     // Trigger appropriate load function based on page
+    // Note: loadSettings has its own guard to prevent multiple simultaneous calls
     const pageMap = {
       'content': () => { if (typeof loadContent === 'function') loadContent(); },
       'calendar': () => { if (typeof loadCalendar === 'function') loadCalendar(); },

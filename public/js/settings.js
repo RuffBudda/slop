@@ -7,40 +7,106 @@
 // SETTINGS LOADING
 // ============================================================
 
+let isLoadingSettings = false;
+let settingsLoadPromise = null;
+
 async function loadSettings() {
-  try {
-    // Load API settings
-    await loadApiSettings();
-    
-    // Load prompts settings
-    await loadPrompts();
-    
-    // Load Stability AI settings
-    await loadStabilitySettings();
-    
-    // Load Google Drive status
-    await loadGoogleDriveStatus();
-    
-    // Load Google Drive folder selection
-    await loadGoogleDriveFolder();
-    
-    // Load posts for sheet view
-    await loadSheetData();
-    
-    // Load users (admin only) - but don't show sections here, let showSection handle it
-    if (window.AppState.user?.role === 'admin') {
-      await loadUsers();
-    }
-    
-    // Initialize tiles and password toggles when settings tab is activated
-    initSettingsTiles();
-    initPasswordVisibilityToggles();
-    
-    // Calculator should NOT be initialized here - only when environmental tile is clicked
-  } catch (error) {
-    console.error('Failed to load settings:', error);
-    showToast('Failed to load settings', 'bad');
+  // Prevent multiple simultaneous calls
+  if (isLoadingSettings && settingsLoadPromise) {
+    return settingsLoadPromise;
   }
+  
+  isLoadingSettings = true;
+  settingsLoadPromise = (async () => {
+    try {
+      // Load settings in parallel where possible, but handle errors gracefully
+      // so one failure doesn't block others
+      const loadPromises = [
+        loadApiSettings().catch(err => {
+          if (err.message && err.message.includes('Too many requests')) {
+            console.warn('Rate limited: API settings');
+            return null; // Silently fail for rate limits
+          }
+          console.error('Failed to load API settings:', err);
+          return null;
+        }),
+        loadPrompts().catch(err => {
+          if (err.message && err.message.includes('Too many requests')) {
+            console.warn('Rate limited: Prompts');
+            return null;
+          }
+          console.error('Failed to load prompts:', err);
+          return null;
+        }),
+        loadStabilitySettings().catch(err => {
+          if (err.message && err.message.includes('Too many requests')) {
+            console.warn('Rate limited: Stability settings');
+            return null;
+          }
+          console.error('Failed to load Stability settings:', err);
+          return null;
+        }),
+        loadGoogleDriveStatus().catch(err => {
+          if (err.message && err.message.includes('Too many requests')) {
+            console.warn('Rate limited: Google Drive status');
+            return null;
+          }
+          console.error('Failed to load Google Drive status:', err);
+          return null;
+        }),
+        loadGoogleDriveFolder().catch(err => {
+          if (err.message && err.message.includes('Too many requests')) {
+            console.warn('Rate limited: Google Drive folder');
+            return null;
+          }
+          console.error('Failed to load Google Drive folder:', err);
+          return null;
+        }),
+        loadSheetData().catch(err => {
+          if (err.message && err.message.includes('Too many requests')) {
+            console.warn('Rate limited: Sheet data');
+            return null;
+          }
+          console.error('Failed to load sheet data:', err);
+          return null;
+        })
+      ];
+      
+      // Load users separately if admin
+      if (window.AppState.user?.role === 'admin') {
+        loadPromises.push(
+          loadUsers().catch(err => {
+            if (err.message && err.message.includes('Too many requests')) {
+              console.warn('Rate limited: Users');
+              return null;
+            }
+            console.error('Failed to load users:', err);
+            return null;
+          })
+        );
+      }
+      
+      // Wait for all loads to complete (or fail gracefully)
+      await Promise.all(loadPromises);
+      
+      // Initialize tiles and password toggles when settings tab is activated
+      initSettingsTiles();
+      initPasswordVisibilityToggles();
+      
+      // Calculator should NOT be initialized here - only when environmental tile is clicked
+    } catch (error) {
+      // Only show toast for non-rate-limit errors
+      if (!error.message || !error.message.includes('Too many requests')) {
+        console.error('Failed to load settings:', error);
+        showToast('Failed to load some settings. Please refresh the page.', 'bad');
+      }
+    } finally {
+      isLoadingSettings = false;
+      settingsLoadPromise = null;
+    }
+  })();
+  
+  return settingsLoadPromise;
 }
 
 

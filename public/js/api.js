@@ -70,6 +70,14 @@ const API = {
       // #endregion
       
       if (!response.ok) {
+        // Handle 429 (Too Many Requests) - rate limiting
+        if (response.status === 429) {
+          const error = new Error('Too many requests, please try again later.');
+          error.status = 429;
+          error.isRateLimit = true;
+          throw error;
+        }
+        
         // Handle 401 (Unauthorized) globally - but verify session is actually invalid first
         if (response.status === 401 && endpoint !== '/auth/login' && endpoint !== '/auth/status' && endpoint !== '/auth/setup') {
           // Only handle redirect once to prevent multiple toasts/redirects
