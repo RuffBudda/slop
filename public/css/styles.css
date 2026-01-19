@@ -79,7 +79,7 @@ a {
 
 .top-inner {
   max-width: var(--maxw);
-
+  margin: 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -95,7 +95,7 @@ a {
 }
 
 .navBtns {
-  flex: 1;
+  flex-shrink: 0;
   display: flex;
   justify-content: flex-start;
   align-items: center;

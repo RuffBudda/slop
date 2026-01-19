@@ -1940,6 +1940,7 @@ function populateSettingsTileIcons() {
     storage: 'storage',
     ai: 'ai',
     content: 'contentManagement', // Note: icon name is contentManagement
+    calculator: 'calculator',
     admin: 'admin'
   };
   
@@ -2004,6 +2005,105 @@ function initPasswordVisibilityToggles() {
       toggle.innerHTML = isPassword ? (window.Icons ? window.Icons.get('eyeSlash') : '👁️') : (window.Icons ? window.Icons.get('eye') : '👁️');
     });
   });
+}
+
+function initStorageSettings() {
+  const form = document.getElementById('storageSettingsForm');
+  if (!form) return;
+  
+  // Form submission handler
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const formData = new FormData(form);
+    const settings = [];
+    
+    // Only include non-empty values (don't override with empty)
+    for (const [key, value] of formData.entries()) {
+      if (value.trim()) {
+        settings.push({ key, value: value.trim() });
+      }
+    }
+    
+    if (settings.length === 0) {
+      showToast('No settings to save', 'neutral');
+      return;
+    }
+    
+    try {
+      showLoader();
+      await API.settings.setBulk(settings);
+      showToast('Storage settings saved successfully', 'ok');
+      
+      // Reload to show updated placeholders
+      await loadApiSettings();
+    } catch (error) {
+      showToast(error.message || 'Failed to save storage settings', 'bad');
+    } finally {
+      hideLoader();
+    }
+  });
+  
+  // Test button handler
+  const testBtn = form.querySelector('[data-test="spaces"]');
+  if (testBtn) {
+    testBtn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      
+      try {
+        showLoader();
+        const result = await API.settings.test('spaces');
+        
+        if (result.success) {
+          showToast('Spaces connection successful', 'ok');
+        } else {
+          showToast(`Spaces test failed: ${result.error || 'Unknown error'}`, 'bad');
+        }
+      } catch (error) {
+        showToast(`Spaces test failed: ${error.message || 'Unknown error'}`, 'bad');
+      } finally {
+        hideLoader();
+      }
+    });
+  }
+  
+  // Browse folder button handler
+  const browseBtn = document.getElementById('browseSpacesFolder');
+  const folderBrowserModal = document.getElementById('spacesFolderBrowserModal');
+  const folderBrowserClose = document.getElementById('spacesFolderBrowserClose');
+  const folderBrowserCancel = document.getElementById('spacesFolderBrowserCancel');
+  const folderBrowserSelect = document.getElementById('spacesFolderBrowserSelect');
+  
+  if (browseBtn && folderBrowserModal) {
+    browseBtn.addEventListener('click', () => {
+      folderBrowserModal.showModal();
+      // TODO: Implement folder browser for Spaces if API endpoint exists
+      // For now, just show the modal
+      const folderList = document.getElementById('spacesFolderBrowserList');
+      if (folderList) {
+        folderList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Folder browser not yet implemented for Spaces</p>';
+      }
+    });
+  }
+  
+  if (folderBrowserClose) {
+    folderBrowserClose.addEventListener('click', () => {
+      if (folderBrowserModal) folderBrowserModal.close();
+    });
+  }
+  
+  if (folderBrowserCancel) {
+    folderBrowserCancel.addEventListener('click', () => {
+      if (folderBrowserModal) folderBrowserModal.close();
+    });
+  }
+  
+  if (folderBrowserSelect) {
+    folderBrowserSelect.addEventListener('click', () => {
+      // TODO: Implement folder selection when browser is implemented
+      if (folderBrowserModal) folderBrowserModal.close();
+    });
+  }
 }
 
 function initSettingsModule() {
