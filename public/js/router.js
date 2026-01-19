@@ -130,6 +130,20 @@ const Router = {
             window.showSettingsSection(sectionName);
           }, 200);
         }
+      } else {
+        // No section specified - ensure tiles are shown
+        setTimeout(() => {
+          const tilesGrid = document.getElementById('settingsTilesGrid');
+          if (tilesGrid && window.showSettingsSection) {
+            // Call showTiles through the global function if available
+            // Or directly show tiles
+            tilesGrid.classList.remove('hidden');
+            // Hide any visible sections
+            document.querySelectorAll('.settings-section-content').forEach(section => {
+              section.classList.add('hidden');
+            });
+          }
+        }, 200);
       }
       return;
     }

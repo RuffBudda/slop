@@ -1836,7 +1836,11 @@ function initSettingsTiles() {
   const backContainer = document.getElementById('settingsBack');
   const backBtn = document.getElementById('btnSettingsBack');
   
-  if (!tilesGrid) return;
+  if (!tilesGrid) {
+    // Retry if tiles grid doesn't exist yet (might be loading)
+    setTimeout(() => initSettingsTiles(), 100);
+    return;
+  }
   
   // Populate tile icons
   populateSettingsTileIcons();
@@ -1865,11 +1869,46 @@ function initSettingsTiles() {
   }
   
   // Always show tiles by default when settings tab is activated
-  showTiles();
+  // Check URL to see if we should show a section instead
+  // Check both pathname and hash for routing
+  let sectionName = null;
+  const pathname = window.location.pathname;
+  const hash = window.location.hash;
+  
+  // Check pathname first (clean URLs)
+  const pathMatch = pathname.match(/\/settings\/(.+)/);
+  if (pathMatch && pathMatch[1]) {
+    sectionName = pathMatch[1];
+  } else if (hash) {
+    // Check hash-based routing
+    const hashMatch = hash.match(/\/settings\/(.+)/);
+    if (hashMatch && hashMatch[1]) {
+      sectionName = hashMatch[1];
+    }
+  }
+  
+  if (sectionName) {
+    // A section is specified in the URL, show it after a delay to ensure section HTML is loaded
+    setTimeout(() => {
+      if (window.showSettingsSection) {
+        window.showSettingsSection(sectionName);
+      }
+    }, 300);
+  } else {
+    // No section, show tiles
+    showTiles();
+  }
   
   function showTiles() {
-    // Show tiles grid
-    if (tilesGrid) tilesGrid.classList.remove('hidden');
+    // Show tiles grid - ensure it's visible
+    if (tilesGrid) {
+      tilesGrid.classList.remove('hidden');
+      tilesGrid.style.display = '';
+      // Force visibility
+      if (tilesGrid.style.display === 'none') {
+        tilesGrid.style.display = '';
+      }
+    }
     // Hide back button
     if (backContainer) backContainer.classList.add('hidden');
     // Hide all sections
