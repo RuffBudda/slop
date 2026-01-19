@@ -11,16 +11,16 @@ const imageService = require('./imageService');
 const storageService = require('./storageService');
 
 /**
- * Queue posts for processing
+ * Queue posts for processing (backend_working.md spec)
  * @param {number} userId - User ID
  * @param {number} count - Number of posts to queue (default 10)
  * @returns {Object} Result with queued count
  */
 function queuePosts(userId, count = 10) {
-  // Find posts with null status (not yet processed)
+  // Find posts with status "Not Started" or NULL (not yet processed)
   const posts = db.prepare(`
     SELECT id FROM posts 
-    WHERE status IS NULL 
+    WHERE status IS NULL OR status = 'Not Started'
     ORDER BY created_at ASC 
     LIMIT ?
   `).all(count);
@@ -29,7 +29,7 @@ function queuePosts(userId, count = 10) {
     return { queued: 0, message: 'No posts available to queue' };
   }
 
-  // Update status to Queue
+  // Update status to Queue (for processing)
   const updateStmt = db.prepare(`
     UPDATE posts SET status = 'Queue', updated_at = CURRENT_TIMESTAMP WHERE id = ?
   `);
@@ -139,13 +139,13 @@ async function processQueue(userId, sessionId) {
         }
       }
 
-      // Update post with image URLs
+      // Update post with image URLs and set status to "Generated – Pending Review"
       db.prepare(`
         UPDATE posts SET
           image_url_1 = ?,
           image_url_2 = ?,
           image_url_3 = ?,
-          status = 'generated',
+          status = 'Generated – Pending Review',
           updated_at = CURRENT_TIMESTAMP
         WHERE id = ?
       `).run(
@@ -169,9 +169,9 @@ async function processQueue(userId, sessionId) {
       results.failed++;
       results.errors.push({ postId: post.post_id, error: error.message });
 
-      // Reset post status on failure
+      // Reset post status on failure to "Not Started"
       db.prepare(`
-        UPDATE posts SET status = NULL, updated_at = CURRENT_TIMESTAMP WHERE id = ?
+        UPDATE posts SET status = 'Not Started', updated_at = CURRENT_TIMESTAMP WHERE id = ?
       `).run(post.id);
     }
   }
@@ -289,10 +289,143 @@ function isGenerationInProgress() {
   };
 }
 
+/**
+ * Regenerate content for a rejected post (backend_working.md spec)
+ * @param {number} userId - User ID for API keys
+ * @param {number} postId - Post ID to regenerate
+ * @returns {Object} Regeneration result
+ */
+async function regeneratePost(userId, postId) {
+  const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(postId);
+  
+  if (!post) {
+    throw new Error('Post not found');
+  }
+  
+  // Verify post is in "Rejected" status
+  if (post.status !== 'Rejected') {
+    throw new Error('Can only regenerate rejected posts');
+  }
+  
+  // Create uploader function for this user
+  const uploadFn = storageService.createUploader(userId);
+  
+  try {
+    // Generate NEW content (overwrite existing)
+    const content = await contentService.generateContent(userId, post);
+    
+    // Update post with NEW content (overwrite)
+    db.prepare(`
+      UPDATE posts SET
+        variant_1 = ?,
+        variant_2 = ?,
+        variant_3 = ?,
+        image_prompt_1 = ?,
+        image_prompt_2 = ?,
+        image_prompt_3 = ?,
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(
+      content.variant_1,
+      content.variant_2,
+      content.variant_3,
+      content.image_prompt_1,
+      content.image_prompt_2,
+      content.image_prompt_3,
+      postId
+    );
+    
+    // Generate NEW images (overwrite existing)
+    const imagePrompts = [
+      content.image_prompt_1,
+      content.image_prompt_2,
+      content.image_prompt_3
+    ].filter(Boolean);
+    
+    const imageUrls = [];
+    for (let j = 0; j < imagePrompts.length; j++) {
+      try {
+        const imageBuffer = await imageService.generateImage(userId, imagePrompts[j]);
+        const url = await uploadFn(imageBuffer, `${post.post_id}-${j + 1}.png`);
+        imageUrls.push(url);
+        
+        // Delay between image generations
+        await new Promise(resolve => setTimeout(resolve, 1500));
+      } catch (imgError) {
+        console.error(`Image generation failed for prompt ${j + 1}:`, imgError);
+        imageUrls.push(null);
+      }
+    }
+    
+    // Update post with NEW image URLs and set status to "Generated – Pending Review"
+    db.prepare(`
+      UPDATE posts SET
+        image_url_1 = ?,
+        image_url_2 = ?,
+        image_url_3 = ?,
+        status = 'Generated – Pending Review',
+        updated_at = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `).run(
+      imageUrls[0] || null,
+      imageUrls[1] || null,
+      imageUrls[2] || null,
+      postId
+    );
+    
+    // Check for automatic reset after regeneration
+    checkAutomaticReset();
+    
+    return {
+      success: true,
+      message: 'Post regenerated successfully'
+    };
+  } catch (error) {
+    console.error(`[Workflow] Failed to regenerate post ${post.post_id}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Check if all posts are approved and trigger automatic reset (backend_working.md spec)
+ */
+function checkAutomaticReset() {
+  const allPosts = db.prepare('SELECT status FROM posts').all();
+  
+  if (allPosts.length === 0) {
+    return; // No posts to check
+  }
+  
+  // Check if ALL posts are "Approved & Posted"
+  const allApproved = allPosts.every(post => post.status === 'Approved & Posted');
+  
+  if (allApproved) {
+    // Automatic reset: clear content and reset all to "Not Started"
+    db.prepare(`
+      UPDATE posts SET
+        variant_1 = NULL,
+        variant_2 = NULL,
+        variant_3 = NULL,
+        image_url_1 = NULL,
+        image_url_2 = NULL,
+        image_url_3 = NULL,
+        image_prompt_1 = NULL,
+        image_prompt_2 = NULL,
+        image_prompt_3 = NULL,
+        status = 'Not Started',
+        updated_at = CURRENT_TIMESTAMP
+    `).run();
+    
+    console.log('✓ Automatic reset triggered: All posts approved, reset to "Not Started"');
+  }
+}
+
 module.exports = {
   queuePosts,
   processQueue,
   startWorkflow,
   getSessionStatus,
-  isGenerationInProgress
+  isGenerationInProgress,
+  regeneratePost,
+  checkAutomaticReset
 };

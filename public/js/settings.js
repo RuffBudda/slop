@@ -27,15 +27,14 @@ async function loadSettings() {
     // Load posts for sheet view
     await loadSheetData();
     
-    // Note: Users are loaded when admin section is displayed (handled by router)
-    // This prevents loading users unnecessarily when other settings sections are accessed
+    // Load users (admin only) - but don't show sections here, let showSection handle it
+    if (window.AppState.user?.role === 'admin') {
+      await loadUsers();
+    }
     
     // Initialize tiles and password toggles when settings tab is activated
     initSettingsTiles();
     initPasswordVisibilityToggles();
-    
-    // Populate AI service icons if on AI configuration page
-    populateAIServiceIcons();
     
     // Calculator should NOT be initialized here - only when environmental tile is clicked
   } catch (error) {
@@ -96,71 +95,74 @@ async function loadApiSettings() {
       'spaces_name',
       'spaces_region',
       'spaces_key',
-      'spaces_secret',
-      'spaces_folder'
+      'spaces_secret'
     ]);
     
     const settings = result.settings || {};
     
-    // Populate API settings form (show masked values for secrets)
-    const apiForm = document.getElementById('apiSettingsForm');
-    if (apiForm) {
-      // For API keys, show placeholder if set
-      if (settings.openai_api_key && apiForm.openai_api_key) {
-        apiForm.openai_api_key.placeholder = '••••••••••••••••';
-      }
-      if (settings.stability_api_key && apiForm.stability_api_key) {
-        apiForm.stability_api_key.placeholder = '••••••••••••••••';
-      }
-      if (settings.spaces_key && apiForm.spaces_key) {
-        apiForm.spaces_key.placeholder = '••••••••••••••••';
-      }
-      if (settings.spaces_secret && apiForm.spaces_secret) {
-        apiForm.spaces_secret.placeholder = '••••••••••••••••';
-      }
-      
-      // Set non-secret values
-      if (settings.spaces_name && apiForm.spaces_name) {
-        apiForm.spaces_name.value = settings.spaces_name;
-      }
-      if (settings.spaces_region && apiForm.spaces_region) {
-        apiForm.spaces_region.value = settings.spaces_region;
-      }
+    // Populate form (show masked values for secrets)
+    const form = document.getElementById('apiSettingsForm');
+    if (!form) return;
+    
+    // For API keys, show placeholder if set
+    if (settings.openai_api_key) {
+      form.openai_api_key.placeholder = '••••••••••••••••';
+    }
+    if (settings.stability_api_key) {
+      form.stability_api_key.placeholder = '••••••••••••••••';
+    }
+    if (settings.spaces_key) {
+      form.spaces_key.placeholder = '••••••••••••••••';
+    }
+    if (settings.spaces_secret) {
+      form.spaces_secret.placeholder = '••••••••••••••••';
     }
     
-    // Populate storage settings form
-    const storageForm = document.getElementById('storageSettingsForm');
-    if (storageForm) {
-      if (settings.spaces_key && storageForm.spaces_key) {
-        storageForm.spaces_key.placeholder = '••••••••••••••••';
-      }
-      if (settings.spaces_secret && storageForm.spaces_secret) {
-        storageForm.spaces_secret.placeholder = '••••••••••••••••';
-      }
-      if (settings.spaces_name && storageForm.spaces_name) {
-        storageForm.spaces_name.value = settings.spaces_name;
-      }
-      if (settings.spaces_region && storageForm.spaces_region) {
-        storageForm.spaces_region.value = settings.spaces_region;
-      }
-      if (settings.spaces_folder && storageForm.spaces_folder) {
-        storageForm.spaces_folder.value = settings.spaces_folder;
-      }
+    // Set non-secret values
+    if (settings.spaces_name) {
+      form.spaces_name.value = settings.spaces_name;
+    }
+    if (settings.spaces_region) {
+      form.spaces_region.value = settings.spaces_region;
     }
     
     // Populate OpenAI settings form (for OpenAI page)
     const openaiForm = document.getElementById('openaiSettingsForm');
     if (openaiForm) {
-      if (settings.openai_api_key && openaiForm.openai_api_key) {
-        openaiForm.openai_api_key.placeholder = '••••••••••••••••';
+      const openaiKeyInput = openaiForm.querySelector('input[name="openai_api_key"]');
+      if (openaiKeyInput) {
+        // Check if setting exists (can be object with isSet/masked or just truthy)
+        if (settings.openai_api_key) {
+          const isSet = typeof settings.openai_api_key === 'object' 
+            ? (settings.openai_api_key.isSet || settings.openai_api_key.masked)
+            : true;
+          if (isSet) {
+            openaiKeyInput.placeholder = '••••••••••••••••';
+            if (!openaiKeyInput.value) {
+              openaiKeyInput.value = ''; // Clear value to show placeholder
+            }
+          }
+        }
       }
     }
     
     // Populate Stability AI API key form (for OpenAI page)
     const stabilityApiKeyForm = document.getElementById('stabilityApiKeyForm');
     if (stabilityApiKeyForm) {
-      if (settings.stability_api_key && stabilityApiKeyForm.stability_api_key) {
-        stabilityApiKeyForm.stability_api_key.placeholder = '••••••••••••••••';
+      const stabilityKeyInput = stabilityApiKeyForm.querySelector('input[name="stability_api_key"]');
+      if (stabilityKeyInput) {
+        // Check if setting exists (can be object with isSet/masked or just truthy)
+        if (settings.stability_api_key) {
+          const isSet = typeof settings.stability_api_key === 'object' 
+            ? (settings.stability_api_key.isSet || settings.stability_api_key.masked)
+            : true;
+          if (isSet) {
+            stabilityKeyInput.placeholder = '••••••••••••••••';
+            if (!stabilityKeyInput.value) {
+              stabilityKeyInput.value = ''; // Clear value to show placeholder
+            }
+          }
+        }
       }
     }
   } catch (error) {
@@ -197,14 +199,6 @@ function initApiSettingsForm() {
       
       // Reload to show updated placeholders
       loadApiSettings();
-      
-      // Update FAB visibility if API keys were changed
-      if (typeof updateFabVisibility === 'function') {
-        updateFabVisibility();
-      }
-      
-      // Dispatch event for other components that might need to react
-      window.dispatchEvent(new CustomEvent('settingsUpdated'));
     } catch (error) {
       showToast('Failed to save settings', 'bad');
     } finally {
@@ -242,40 +236,41 @@ function initOpenaiSettingsForm() {
     openaiForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      const formData = new FormData(openaiForm);
-      const settings = [];
+      const apiKeyInput = openaiForm.querySelector('input[name="openai_api_key"]');
+      const apiKey = apiKeyInput?.value.trim() || '';
       
-      // Only include non-empty values (don't override with empty)
-      for (const [key, value] of formData.entries()) {
-        if (value.trim()) {
-          settings.push({ key, value: value.trim() });
-        }
-      }
-      
-      if (settings.length === 0) {
-        showToast('No settings to save', 'neutral');
+      // Check if input has a value or if placeholder is set (indicating existing key)
+      // If input is empty and placeholder is set, user might want to keep existing key
+      // But if they submit with empty value, don't save (preserve existing)
+      if (!apiKey && !apiKeyInput?.placeholder) {
+        showToast('No API key provided', 'neutral');
         return;
       }
       
-      try {
-        showLoader();
-        await API.settings.setBulk(settings);
-        showToast('OpenAI API key saved successfully', 'ok');
-        
-        // Reload to show updated placeholders
-        loadApiSettings();
-        
-        // Update FAB visibility if API keys were changed
-        if (typeof updateFabVisibility === 'function') {
-          updateFabVisibility();
+      // Only save if there's an actual value (not just placeholder)
+      if (apiKey) {
+        try {
+          showLoader();
+          await API.settings.set('openai_api_key', apiKey);
+          showToast('OpenAI API key saved successfully', 'ok');
+          
+          // Reload to show updated placeholder
+          await loadApiSettings();
+          
+          // Update FAB visibility if API keys were changed
+          if (typeof updateFabVisibility === 'function') {
+            updateFabVisibility();
+          }
+          
+          // Dispatch event for other components
+          window.dispatchEvent(new CustomEvent('settingsUpdated'));
+        } catch (error) {
+          showToast('Failed to save OpenAI API key', 'bad');
+        } finally {
+          hideLoader();
         }
-        
-        // Dispatch event for other components that might need to react
-        window.dispatchEvent(new CustomEvent('settingsUpdated'));
-      } catch (error) {
-        showToast('Failed to save settings', 'bad');
-      } finally {
-        hideLoader();
+      } else {
+        showToast('Enter an API key to save', 'neutral');
       }
     });
     
@@ -286,12 +281,24 @@ function initOpenaiSettingsForm() {
         e.preventDefault();
         try {
           showLoader();
+          
+          // Get current key from input or check if already saved
+          const apiKeyInput = openaiForm.querySelector('input[name="openai_api_key"]');
+          const apiKey = apiKeyInput?.value.trim();
+          
+          // If input has value, save it first before testing
+          if (apiKey) {
+            await API.settings.set('openai_api_key', apiKey);
+          }
+          
           const result = await API.settings.test('openai');
           
           if (result.success) {
             showToast('OpenAI API credentials are valid', 'ok');
+            // Reload to update placeholder
+            await loadApiSettings();
           } else {
-            showToast('OpenAI API test failed', 'bad');
+            showToast('OpenAI API test failed: ' + (result.error || 'Invalid API key'), 'bad');
           }
         } catch (error) {
           showToast(error.message || 'OpenAI API test failed', 'bad');
@@ -308,40 +315,37 @@ function initOpenaiSettingsForm() {
     stabilityApiKeyForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       
-      const formData = new FormData(stabilityApiKeyForm);
-      const settings = [];
+      const apiKeyInput = stabilityApiKeyForm.querySelector('input[name="stability_api_key"]');
+      const apiKey = apiKeyInput?.value.trim() || '';
       
-      // Only include non-empty values (don't override with empty)
-      for (const [key, value] of formData.entries()) {
-        if (value.trim()) {
-          settings.push({ key, value: value.trim() });
-        }
-      }
-      
-      if (settings.length === 0) {
-        showToast('No settings to save', 'neutral');
+      if (!apiKey && !apiKeyInput?.placeholder) {
+        showToast('No API key provided', 'neutral');
         return;
       }
       
-      try {
-        showLoader();
-        await API.settings.setBulk(settings);
-        showToast('Stability AI API key saved successfully', 'ok');
-        
-        // Reload to show updated placeholders
-        loadApiSettings();
-        
-        // Update FAB visibility if API keys were changed
-        if (typeof updateFabVisibility === 'function') {
-          updateFabVisibility();
+      if (apiKey) {
+        try {
+          showLoader();
+          await API.settings.set('stability_api_key', apiKey);
+          showToast('Stability AI API key saved successfully', 'ok');
+          
+          // Reload to show updated placeholder
+          await loadApiSettings();
+          
+          // Update FAB visibility if API keys were changed
+          if (typeof updateFabVisibility === 'function') {
+            updateFabVisibility();
+          }
+          
+          // Dispatch event for other components
+          window.dispatchEvent(new CustomEvent('settingsUpdated'));
+        } catch (error) {
+          showToast('Failed to save Stability AI API key', 'bad');
+        } finally {
+          hideLoader();
         }
-        
-        // Dispatch event for other components that might need to react
-        window.dispatchEvent(new CustomEvent('settingsUpdated'));
-      } catch (error) {
-        showToast('Failed to save settings', 'bad');
-      } finally {
-        hideLoader();
+      } else {
+        showToast('Enter an API key to save', 'neutral');
       }
     });
     
@@ -352,12 +356,24 @@ function initOpenaiSettingsForm() {
         e.preventDefault();
         try {
           showLoader();
+          
+          // Get current key from input or check if already saved
+          const apiKeyInput = stabilityApiKeyForm.querySelector('input[name="stability_api_key"]');
+          const apiKey = apiKeyInput?.value.trim();
+          
+          // If input has value, save it first before testing
+          if (apiKey) {
+            await API.settings.set('stability_api_key', apiKey);
+          }
+          
           const result = await API.settings.test('stability');
           
           if (result.success) {
             showToast('Stability AI API credentials are valid', 'ok');
+            // Reload to update placeholder
+            await loadApiSettings();
           } else {
-            showToast('Stability AI API test failed', 'bad');
+            showToast('Stability AI API test failed: ' + (result.error || 'Invalid API key'), 'bad');
           }
         } catch (error) {
           showToast(error.message || 'Stability AI API test failed', 'bad');
@@ -567,247 +583,6 @@ function initPromptsSection() {
   });
 }
 
-// ============================================================
-// STORAGE SETTINGS (S3/Spaces)
-// ============================================================
-
-let spacesCurrentFolderPath = [];
-let spacesSelectedFolderPath = '';
-
-async function loadSpacesFolders(prefix = '') {
-  const folderList = document.getElementById('spacesFolderBrowserList');
-  if (!folderList) return;
-
-  try {
-    folderList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Loading folders...</p>';
-
-    const result = await API.settings.listSpacesFolders(prefix);
-    const folders = result.folders || [];
-
-    if (folders.length === 0) {
-      folderList.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">No folders found. You can type a folder name manually in the input field.</p>';
-      return;
-    }
-
-    folderList.innerHTML = folders.map(folder => `
-      <div class="folder-item" style="padding: 12px; border-bottom: 1px solid var(--bd); cursor: pointer; display: flex; align-items: center; gap: 12px; transition: background 0.2s;"
-           data-folder-path="${escapeHtml(folder.path)}" data-folder-name="${escapeHtml(folder.name)}">
-        <span class="folder-icon-large">${window.Icons ? window.Icons.get('folder', '', { size: '20px' }) : '📁'}</span>
-        <div style="flex: 1;">
-          <div style="font-weight: 500;">${escapeHtml(folder.name)}</div>
-          <div style="font-size: 12px; color: #666;">${escapeHtml(folder.path)}</div>
-        </div>
-      </div>
-    `).join('');
-
-    // Attach click handlers
-    folderList.querySelectorAll('.folder-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const folderPath = item.dataset.folderPath;
-        const folderName = item.dataset.folderName;
-        
-        // Select this folder
-        selectSpacesFolder(folderPath);
-        
-        // Also allow double-click to navigate into folder
-        let clickCount = 0;
-        item.addEventListener('dblclick', () => {
-          spacesCurrentFolderPath.push({ path: folderPath, name: folderName });
-          updateSpacesBreadcrumb();
-          loadSpacesFolders(folderPath);
-        });
-      });
-      
-      item.addEventListener('mouseenter', function() {
-        this.style.background = 'var(--bg-alt)';
-      });
-      
-      item.addEventListener('mouseleave', function() {
-        this.style.background = 'transparent';
-      });
-    });
-
-  } catch (error) {
-    console.error('Failed to load folders:', error);
-    folderList.innerHTML = `<p style="text-align: center; color: var(--bad); padding: 20px;">Error loading folders: ${escapeHtml(error.message || 'Unknown error')}</p>`;
-  }
-}
-
-function updateSpacesBreadcrumb() {
-  const breadcrumb = document.getElementById('spacesFolderBrowserBreadcrumb');
-  if (!breadcrumb) return;
-
-  const breadcrumbItems = [{ path: '', name: 'Root' }, ...spacesCurrentFolderPath];
-  
-  breadcrumb.innerHTML = breadcrumbItems.map((folder, index) => {
-    if (index === breadcrumbItems.length - 1) {
-      return `<span style="color: var(--fg); font-weight: 500;">${escapeHtml(folder.name)}</span>`;
-    }
-    return `<button class="btn-link" onclick="navigateToSpacesBreadcrumb(${index});" style="text-decoration: none; color: var(--fg);">${escapeHtml(folder.name)}</button> <span style="color: #666;">/</span> `;
-  }).join('');
-}
-
-window.navigateToSpacesBreadcrumb = function(index) {
-  spacesCurrentFolderPath = spacesCurrentFolderPath.slice(0, index);
-  updateSpacesBreadcrumb();
-  const targetPath = index === 0 ? '' : spacesCurrentFolderPath[index - 1].path;
-  loadSpacesFolders(targetPath);
-};
-
-function selectSpacesFolder(folderPath) {
-  spacesSelectedFolderPath = folderPath;
-  
-  const selectBtn = document.getElementById('spacesFolderBrowserSelect');
-  if (selectBtn) {
-    selectBtn.disabled = false;
-    const folderName = folderPath.split('/').filter(p => p).pop() || 'Root';
-    selectBtn.textContent = `Select: ${folderName}`;
-  }
-}
-
-function initStorageSettings() {
-  const form = document.getElementById('storageSettingsForm');
-  if (!form) return;
-  
-  // Form submission
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    
-    const formData = new FormData(form);
-    const settings = [];
-    
-    // Only include non-empty values (don't override with empty)
-    for (const [key, value] of formData.entries()) {
-      if (value.trim()) {
-        settings.push({ key, value: value.trim() });
-      }
-    }
-    
-    if (settings.length === 0) {
-      showToast('No settings to save', 'neutral');
-      return;
-    }
-    
-    try {
-      showLoader();
-      await API.settings.setBulk(settings);
-      showToast('Storage settings saved successfully', 'ok');
-      
-      // Reload to show updated placeholders
-      loadApiSettings();
-      
-      // Dispatch event for other components
-      window.dispatchEvent(new CustomEvent('settingsUpdated'));
-    } catch (error) {
-      showToast('Failed to save settings', 'bad');
-    } finally {
-      hideLoader();
-    }
-  });
-  
-  // Test button
-  const testBtn = form.querySelector('[data-test="spaces"]');
-  if (testBtn) {
-    testBtn.addEventListener('click', async () => {
-      try {
-        showLoader();
-        const result = await API.settings.test('spaces');
-        
-        if (result.success) {
-          showToast('Storage credentials are valid', 'ok');
-        } else {
-          showToast('Storage test failed', 'bad');
-        }
-      } catch (error) {
-        showToast(error.message || 'Storage test failed', 'bad');
-      } finally {
-        hideLoader();
-      }
-    });
-  }
-  
-  // Browse folder button
-  const browseBtn = document.getElementById('browseSpacesFolder');
-  const folderInput = document.getElementById('spacesFolder');
-  const folderModal = document.getElementById('spacesFolderBrowserModal');
-  const folderClose = document.getElementById('spacesFolderBrowserClose');
-  const folderCancel = document.getElementById('spacesFolderBrowserCancel');
-  const folderSelect = document.getElementById('spacesFolderBrowserSelect');
-  
-  if (browseBtn) {
-    browseBtn.addEventListener('click', async () => {
-      // Verify credentials are configured
-      const spacesName = form.spaces_name?.value;
-      const spacesKey = form.spaces_key?.value;
-      const spacesSecret = form.spaces_secret?.value;
-      
-      if (!spacesName || !spacesKey || !spacesSecret) {
-        showToast('Please configure and save your Spaces credentials first', 'bad');
-        return;
-      }
-      
-      // Save current form values temporarily for the API call
-      if (form.spaces_name?.value) {
-        await API.settings.set('spaces_name', form.spaces_name.value);
-      }
-      if (form.spaces_region?.value) {
-        await API.settings.set('spaces_region', form.spaces_region.value);
-      }
-      if (form.spaces_key?.value) {
-        await API.settings.set('spaces_key', form.spaces_key.value);
-      }
-      if (form.spaces_secret?.value) {
-        await API.settings.set('spaces_secret', form.spaces_secret.value);
-      }
-      
-      if (folderModal) {
-        // Reset state
-        spacesCurrentFolderPath = [];
-        spacesSelectedFolderPath = folderInput?.value || '';
-        updateSpacesBreadcrumb();
-        loadSpacesFolders('');
-        folderModal.showModal();
-      }
-    });
-  }
-  
-  if (folderClose) {
-    // Initialize close icon
-    if (typeof window.initCloseIcon === 'function') {
-      window.initCloseIcon(folderClose);
-    }
-    folderClose.addEventListener('click', () => {
-      if (folderModal) folderModal.close();
-    });
-  }
-  
-  if (folderCancel) {
-    folderCancel.addEventListener('click', () => {
-      if (folderModal) folderModal.close();
-    });
-  }
-  
-  if (folderSelect) {
-    folderSelect.addEventListener('click', () => {
-      if (spacesSelectedFolderPath !== '') {
-        // Remove trailing slash if present, but keep folder structure
-        const cleanPath = spacesSelectedFolderPath.replace(/\/$/, '');
-        if (folderInput) {
-          folderInput.value = cleanPath;
-        }
-      } else {
-        // Root selected - empty string means root
-        if (folderInput) {
-          folderInput.value = '';
-        }
-      }
-      if (folderModal) folderModal.close();
-    });
-  }
-  
-  
-}
-
 function initStabilitySettings() {
   const form = document.getElementById('stabilitySettingsForm');
   if (!form) return;
@@ -922,7 +697,7 @@ async function loadFoldersForBrowser(parentId = null) {
     
   } catch (error) {
     console.error('Failed to load folders:', error);
-    folderList.innerHTML = `<p style="text-align: center; color: #dc2626; padding: 20px;">Failed to load folders: ${escapeHtml(error.message || 'Unknown error')}</p>`;
+    folderList.innerHTML = `<p style="text-align: center; color: #dc2626; padding: 20px;">Failed to load folders: ${error.message}</p>`;
   }
 }
 
@@ -1176,10 +951,6 @@ function initGoogleDrive() {
   
   // Folder browser modal handlers
   if (folderBrowserClose) {
-    // Initialize close icon
-    if (typeof window.initCloseIcon === 'function') {
-      window.initCloseIcon(folderBrowserClose);
-    }
     folderBrowserClose.addEventListener('click', () => {
       if (folderBrowserModal) folderBrowserModal.close();
     });
@@ -1230,14 +1001,26 @@ async function loadSheetData() {
   if (!tbody) return;
   
   try {
-    // Load posts that need manual input (status is null or empty)
+    // Load posts - only show instruction posts (status null, empty, or "Pending")
+    // Exclude generated posts (status "generated", "Approved", "Rejected", "Posted", "Queue")
     const result = await API.posts.list({ page: 1, limit: 100 });
-    const posts = result.posts || [];
+    const allPosts = result.posts || [];
     
-    renderSheetRows(posts);
+    // Filter to only show instruction posts (pre-generation)
+    const instructionPosts = allPosts.filter(post => {
+      const status = post.status;
+      // Include: null, empty string, "Pending", or any status that doesn't indicate generation has occurred
+      return !status || status === 'Pending' || 
+             (status !== 'Queue' && status !== 'generated' && 
+              status !== 'Approved' && status !== 'Rejected' && 
+              status !== 'Posted' && status !== 'Generated – Pending Review' &&
+              status !== 'Approved & Posted');
+    });
+    
+    renderSheetRows(instructionPosts);
   } catch (error) {
     console.error('Failed to load sheet data:', error);
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px;">Failed to load data</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px;">Failed to load data</td></tr>';
   }
 }
 
@@ -1245,12 +1028,15 @@ function renderSheetRows(posts) {
   const tbody = document.getElementById('sheetBody');
   
   if (posts.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="9" style="text-align: center; padding: 40px; color: #666;">No posts yet. Click "Add New Post" to create one.</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="10" style="text-align: center; padding: 40px; color: #666;">No posts yet. Click "Add New Post" to create one.</td></tr>';
     return;
   }
   
   tbody.innerHTML = posts.map(post => `
     <tr data-post-id="${post.id}">
+      <td class="col-select">
+        <input type="checkbox" class="sheet-checkbox" data-post-id="${post.id}">
+      </td>
       <td class="col-id">${escapeHtml(post.post_id)}</td>
       <td class="col-instruction" title="${escapeHtml(post.instruction || '')}">${escapeHtml(post.instruction || '-')}</td>
       <td class="col-type">${escapeHtml(post.type || '-')}</td>
@@ -1272,6 +1058,20 @@ function renderSheetRows(posts) {
   tbody.querySelectorAll('[data-action]').forEach(btn => {
     btn.addEventListener('click', handleSheetAction);
   });
+  
+  // Attach checkbox listeners
+  tbody.querySelectorAll('.sheet-checkbox').forEach(checkbox => {
+    checkbox.addEventListener('change', handleSheetCheckboxChange);
+  });
+  
+  // Attach select all checkbox
+  const selectAll = document.getElementById('selectAllPosts');
+  if (selectAll) {
+    selectAll.addEventListener('change', handleSelectAllChange);
+  }
+  
+  // Update bulk delete button visibility
+  updateBulkDeleteButton();
 }
 
 function handleSheetAction(e) {
@@ -1290,6 +1090,84 @@ function handleSheetAction(e) {
 }
 
 // ============================================================
+// BULK DELETE HANDLERS
+// ============================================================
+
+function handleSheetCheckboxChange(e) {
+  updateBulkDeleteButton();
+  updateSelectAllCheckbox();
+}
+
+function handleSelectAllChange(e) {
+  const selectAll = e.target;
+  const checkboxes = document.querySelectorAll('.sheet-checkbox');
+  
+  checkboxes.forEach(checkbox => {
+    checkbox.checked = selectAll.checked;
+  });
+  
+  updateBulkDeleteButton();
+}
+
+function updateBulkDeleteButton() {
+  const selected = document.querySelectorAll('.sheet-checkbox:checked');
+  const bulkDeleteBtn = document.getElementById('btnBulkDelete');
+  
+  if (bulkDeleteBtn) {
+    if (selected.length > 0) {
+      bulkDeleteBtn.style.display = 'inline-flex';
+      bulkDeleteBtn.textContent = `Delete Selected (${selected.length})`;
+    } else {
+      bulkDeleteBtn.style.display = 'none';
+    }
+  }
+}
+
+function updateSelectAllCheckbox() {
+  const checkboxes = document.querySelectorAll('.sheet-checkbox');
+  const selectAll = document.getElementById('selectAllPosts');
+  
+  if (selectAll && checkboxes.length > 0) {
+    const checked = document.querySelectorAll('.sheet-checkbox:checked');
+    selectAll.checked = checked.length === checkboxes.length;
+    selectAll.indeterminate = checked.length > 0 && checked.length < checkboxes.length;
+  }
+}
+
+async function handleBulkDelete() {
+  const selected = document.querySelectorAll('.sheet-checkbox:checked');
+  const ids = Array.from(selected).map(cb => parseInt(cb.dataset.postId));
+  
+  if (ids.length === 0) {
+    showToast('No posts selected', 'neutral');
+    return;
+  }
+  
+  if (!confirm(`Are you sure you want to delete ${ids.length} post(s)? This action cannot be undone.`)) {
+    return;
+  }
+  
+  try {
+    showLoader();
+    await API.posts.bulkDelete(ids);
+    showToast(`Deleted ${ids.length} post(s)`, 'ok');
+    loadSheetData();
+  } catch (error) {
+    showToast('Failed to delete posts', 'bad');
+  } finally {
+    hideLoader();
+  }
+}
+
+// Initialize bulk delete button
+function initBulkDelete() {
+  const bulkDeleteBtn = document.getElementById('btnBulkDelete');
+  if (bulkDeleteBtn) {
+    bulkDeleteBtn.addEventListener('click', handleBulkDelete);
+  }
+}
+
+// ============================================================
 // POST EDIT MODAL
 // ============================================================
 
@@ -1298,16 +1176,6 @@ function initPostEditModal() {
   const form = document.getElementById('postEditForm');
   const closeBtn = document.getElementById('postEditClose');
   const cancelBtn = document.getElementById('postEditCancel');
-  
-  // Initialize close icon
-  if (typeof window.initCloseIcon === 'function') {
-    window.initCloseIcon(closeBtn);
-  } else if (closeBtn && window.Icons && window.Icons.get) {
-    const iconSpan = closeBtn.querySelector('.close-icon');
-    if (iconSpan && !iconSpan.innerHTML.trim()) {
-      iconSpan.innerHTML = window.Icons.get('close', '', { size: '16px' });
-    }
-  }
   
   // Close handlers
   closeBtn?.addEventListener('click', () => modal.close());
@@ -1556,60 +1424,27 @@ async function handleCsvExport() {
 
 async function loadUsers() {
   const container = document.getElementById('usersList');
-  if (!container) {
-    console.warn('Users list container not found');
-    return;
-  }
-  
-  // Verify session before making API call
-  try {
-    const authStatus = await API.auth.status();
-    if (!authStatus.authenticated) {
-      // User is not authenticated - redirect to login
-      if (typeof showLoginPage === 'function') {
-        showLoginPage();
-      } else {
-        window.location.href = '/login';
-      }
-      return;
-    }
-    
-    // Ensure user state is set if authenticated
-    if (authStatus.user && !window.AppState?.user) {
-      window.AppState = window.AppState || {};
-      window.AppState.user = authStatus.user;
-      }} catch (authCheckError) {
-    // If auth check fails, don't proceed with API call
-    console.error('Failed to verify authentication:', authCheckError);
-    container.innerHTML = '<p style="color: var(--bad); padding: 20px; text-align: center;">Unable to verify authentication. Please try refreshing the page.</p>';
-    return;
-  }
+  if (!container) return;
   
   try {
-    showLoader();
     const result = await API.users.list();
     const users = result.users || [];
-    
-    if (users.length === 0) {
-      container.innerHTML = '<p style="color: var(--ink-muted); padding: 20px; text-align: center;">No users found.</p>';
-      return;
-    }
     
     container.innerHTML = users.map(user => {
       const createdDate = user.created_at ? new Date(user.created_at).toLocaleDateString() : 'N/A';
       const lastLogin = user.last_login ? new Date(user.last_login).toLocaleDateString() : 'Never';
-      const isCurrentUser = window.AppState?.user?.id === user.id;
+      const isCurrentUser = user.id === window.AppState.user.id;
       
       return `
       <div class="user-item" data-user-id="${user.id}">
         <div class="user-info">
           <div style="display: flex; align-items: center; gap: 12px;">
             <span class="user-name">${escapeHtml(user.display_name || user.username)}</span>
-            <span class="user-role ${user.role === 'admin' ? 'admin' : ''}" style="background: ${user.role === 'admin' ? 'var(--accent)' : 'var(--chip)'}; color: ${user.role === 'admin' ? '#fff' : 'var(--ink)'}; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 600; text-transform: uppercase;">${escapeHtml(user.role || 'user')}</span>
+            <span class="user-role ${user.role === 'admin' ? 'admin' : ''}">${user.role}</span>
           </div>
           <div style="display: flex; flex-direction: column; gap: 4px; margin-top: 4px;">
-            <span class="user-email" style="color: var(--ink-muted);">${escapeHtml(user.email || 'No email')}</span>
-            <div style="display: flex; gap: 16px; font-size: 12px; color: var(--ink-faint);">
+            <span class="user-email">${escapeHtml(user.email)}</span>
+            <div style="display: flex; gap: 16px; font-size: 12px; color: #888;">
               <span>Created: ${createdDate}</span>
               <span>Last login: ${lastLogin}</span>
             </div>
@@ -1620,7 +1455,7 @@ async function loadUsers() {
             <button class="btn clear btn-sm" data-action="view-user" data-user-id="${user.id}">View</button>
             <button class="btn approve btn-sm" data-action="edit-user" data-user-id="${user.id}">Edit</button>
             <button class="btn reject btn-sm" data-action="delete-user" data-user-id="${user.id}">Delete</button>
-          ` : '<span style="color: var(--ink-muted); font-size: 12px;">Current user</span>'}
+          ` : '<span style="color: #888; font-size: 12px;">Current user</span>'}
         </div>
       </div>
     `;
@@ -1638,40 +1473,7 @@ async function loadUsers() {
     });
   } catch (error) {
     console.error('Failed to load users:', error);
-    
-    // Check if it's an auth error
-    if (error.message && (error.message.includes('401') || error.message.includes('Authentication required'))) {
-      // Verify session before showing auth error
-      try {
-        const authStatus = await API.auth.status();
-        if (!authStatus.authenticated) {
-          // User is actually not authenticated
-          if (typeof showLoginPage === 'function') {
-            showLoginPage();
-          } else {
-            window.location.href = '/login';
-          }
-          return;
-        } else {
-          // User is authenticated but got 401 - don't clear state, show generic error
-          container.innerHTML = '<p style="color: var(--bad); padding: 20px; text-align: center;">Unable to load users. Please try refreshing the page.</p>';
-          // Don't clear window.AppState.user - preserve state
-          return;
-        }
-      } catch (authCheckError) {
-        // Auth check failed - don't assume auth error
-        container.innerHTML = '<p style="color: var(--bad); padding: 20px; text-align: center;">Unable to verify authentication. Please try again.</p>';
-        return;
-      }
-    }
-    
-    if (error.message && error.message.includes('403')) {
-      container.innerHTML = '<p style="color: var(--bad); padding: 20px; text-align: center;">Access denied. Admin privileges required.</p>';
-    } else {
-      container.innerHTML = `<p style="color: var(--bad); padding: 20px; text-align: center;">Failed to load users: ${escapeHtml(error.message || 'Unknown error')}</p>`;
-    }
-  } finally {
-    hideLoader();
+    container.innerHTML = '<p style="color: #666;">Failed to load users</p>';
   }
 }
 
@@ -1686,16 +1488,6 @@ function initUserEditModal() {
   const submitBtn = form?.querySelector('button[type="submit"]');
   const passwordField = form?.querySelector('#userPassword');
   const passwordLabel = form?.querySelector('label[for="userPassword"]');
-  
-  // Initialize close icon
-  if (typeof window.initCloseIcon === 'function') {
-    window.initCloseIcon(closeBtn);
-  } else if (closeBtn && window.Icons && window.Icons.get) {
-    const iconSpan = closeBtn.querySelector('.close-icon');
-    if (iconSpan && !iconSpan.innerHTML.trim()) {
-      iconSpan.innerHTML = window.Icons.get('close', '', { size: '16px' });
-    }
-  }
   
   // Close handlers
   closeBtn?.addEventListener('click', () => {
@@ -1909,6 +1701,28 @@ function initClearInstanceOptions() {
   document.querySelectorAll('[data-clear-action="users"]').forEach(btn => {
     btn.addEventListener('click', () => clearAllUsers());
   });
+  
+  // Full reset form
+  const form = document.getElementById('instanceRefreshForm');
+  if (form) {
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      await fullInstanceReset();
+    });
+  }
+  
+  // Copy confirmation text button
+  const copyBtn = document.getElementById('btnCopyConfirmation');
+  if (copyBtn) {
+    copyBtn.addEventListener('click', () => {
+      const text = "Humpty Dumpty sat on a wall. Humpty Dumpty had a great fall. All the king's horses and all the king's men couldn't put Humpty together again.";
+      navigator.clipboard.writeText(text).then(() => {
+        showToast('Confirmation text copied to clipboard', 'ok');
+      }).catch(() => {
+        showToast('Failed to copy text', 'bad');
+      });
+    });
+  }
 }
 
 async function clearAllPosts() {
@@ -1976,198 +1790,34 @@ async function clearAllUsers() {
   }
 }
 
-/**
- * Instance Refresh Workflow - Multi-step password-gated process
- */
-const CONFIRMATION_TEXT = "Humpty Dumpty sat on a wall. Humpty Dumpty had a great fall. All the king's horses and all the king's men couldn't put Humpty together again.";
-
-let currentRefreshStep = 1;
-let refreshData = {};
-
-function initInstanceRefreshWorkflow() {
-  const modal = document.getElementById('instanceRefreshModal');
-  const startBtn = document.getElementById('btnStartInstanceRefresh');
-  const closeBtn = document.getElementById('instanceRefreshClose');
+async function fullInstanceReset() {
+  const form = document.getElementById('instanceRefreshForm');
+  if (!form) return;
   
-  // Initialize close icon
-  if (typeof window.initCloseIcon === 'function') {
-    window.initCloseIcon(closeBtn);
-  } else if (closeBtn && window.Icons && window.Icons.get) {
-    const iconSpan = closeBtn.querySelector('.close-icon');
-    if (iconSpan && !iconSpan.innerHTML.trim()) {
-      iconSpan.innerHTML = window.Icons.get('close', '', { size: '16px' });
-    }
+  const data = {
+    adminUsername: form.refreshAdminUsername.value.trim(),
+    adminPassword: form.refreshAdminPassword.value,
+    confirmationText: form.refreshConfirmationText.value.trim()
+  };
+  
+  if (!data.adminUsername || !data.adminPassword || !data.confirmationText) {
+    showToast('All fields are required', 'bad');
+    return;
   }
-  
-  if (!modal || !startBtn) return;
-  
-  // Start button
-  startBtn.addEventListener('click', () => {
-    currentRefreshStep = 1;
-    refreshData = {};
-    showRefreshStep(1);
-    modal.showModal();
-    initPasswordVisibilityToggles(); // Initialize password toggles in modal
-  });
-  
-  // Close button
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-      modal.close();
-      resetRefreshWorkflow();
-    });
-  }
-  
-  // Close on backdrop click
-  modal.addEventListener('click', (e) => {
-    if (e.target === modal) {
-      modal.close();
-      resetRefreshWorkflow();
-    }
-  });
-  
-  // Step 1: Continue
-  const continue1 = document.getElementById('refreshContinue1');
-  const cancel1 = document.getElementById('refreshCancel1');
-  if (continue1) continue1.addEventListener('click', () => showRefreshStep(2));
-  if (cancel1) cancel1.addEventListener('click', () => { modal.close(); resetRefreshWorkflow(); });
-  
-  // Step 2: Password verification
-  const continue2 = document.getElementById('refreshContinue2');
-  const cancel2 = document.getElementById('refreshCancel2');
-  if (continue2) {
-    continue2.addEventListener('click', async () => {
-      const username = document.getElementById('refreshAdminUsername')?.value.trim();
-      const password = document.getElementById('refreshAdminPassword')?.value;
-      
-      if (!username || !password) {
-        showToast('Username and password are required', 'bad');
-        return;
-      }
-      
-      refreshData.adminUsername = username;
-      refreshData.adminPassword = password;
-      showRefreshStep(3);
-    });
-  }
-  if (cancel2) cancel2.addEventListener('click', () => { modal.close(); resetRefreshWorkflow(); });
-  
-  // Step 3: Confirmation text
-  const continue3 = document.getElementById('refreshContinue3');
-  const cancel3 = document.getElementById('refreshCancel3');
-  const confirmationText = document.getElementById('refreshConfirmationText');
-  const copyBtn = document.getElementById('btnCopyConfirmation');
-  
-  if (copyBtn) {
-    copyBtn.addEventListener('click', () => {
-      navigator.clipboard.writeText(CONFIRMATION_TEXT).then(() => {
-        showToast('Confirmation text copied to clipboard', 'ok');
-      }).catch(() => {
-        const source = document.getElementById('refreshConfirmationSource');
-        if (source) {
-          source.select();
-          document.execCommand('copy');
-          showToast('Confirmation text copied', 'ok');
-        }
-      });
-    });
-  }
-  
-  if (confirmationText) {
-    confirmationText.addEventListener('input', () => {
-      const continueBtn = document.getElementById('refreshContinue3');
-      if (continueBtn) {
-        continueBtn.disabled = confirmationText.value.trim() !== CONFIRMATION_TEXT;
-      }
-    });
-  }
-  
-  if (continue3) {
-    continue3.addEventListener('click', () => {
-      const text = confirmationText?.value.trim();
-      if (text !== CONFIRMATION_TEXT) {
-        showToast('Confirmation text does not match', 'bad');
-        return;
-      }
-      refreshData.confirmationText = text;
-      showRefreshStep(4);
-    });
-  }
-  if (cancel3) cancel3.addEventListener('click', () => { modal.close(); resetRefreshWorkflow(); });
-  
-  // Step 4: Final confirmation
-  const continue4 = document.getElementById('refreshContinue4');
-  const cancel4 = document.getElementById('refreshCancel4');
-  const finalCheckbox = document.getElementById('refreshFinalConfirm');
-  
-  if (finalCheckbox) {
-    finalCheckbox.addEventListener('change', () => {
-      if (continue4) {
-        continue4.disabled = !finalCheckbox.checked;
-      }
-    });
-  }
-  
-  if (continue4) {
-    continue4.addEventListener('click', async () => {
-      if (!finalCheckbox?.checked) {
-        showToast('Please confirm that you understand the consequences', 'bad');
-        return;
-      }
-      await executeInstanceReset();
-    });
-  }
-  if (cancel4) cancel4.addEventListener('click', () => { modal.close(); resetRefreshWorkflow(); });
-}
-
-function showRefreshStep(step) {
-  document.querySelectorAll('.refresh-step').forEach(el => el.classList.add('hidden'));
-  const stepEl = document.getElementById(`refreshStep${step}`);
-  if (stepEl) {
-    stepEl.classList.remove('hidden');
-  }
-  currentRefreshStep = step;
-}
-
-function resetRefreshWorkflow() {
-  currentRefreshStep = 1;
-  refreshData = {};
-  document.querySelectorAll('.refresh-step').forEach(el => el.classList.add('hidden'));
-  showRefreshStep(1);
-  
-  const username = document.getElementById('refreshAdminUsername');
-  const password = document.getElementById('refreshAdminPassword');
-  const confirmation = document.getElementById('refreshConfirmationText');
-  const checkbox = document.getElementById('refreshFinalConfirm');
-  
-  if (username) username.value = '';
-  if (password) password.value = '';
-  if (confirmation) confirmation.value = '';
-  if (checkbox) checkbox.checked = false;
-  
-  const continue3 = document.getElementById('refreshContinue3');
-  const continue4 = document.getElementById('refreshContinue4');
-  if (continue3) continue3.disabled = true;
-  if (continue4) continue4.disabled = true;
-}
-
-async function executeInstanceReset() {
-  showRefreshStep(5);
   
   try {
-    const result = await API.call('/settings/reset-instance', { 
-      method: 'POST', 
-      body: refreshData 
-    });
-    
+    showLoader();
+    const result = await API.call('/settings/reset-instance', { method: 'POST', body: data });
     showToast(result.message || 'Instance reset successfully', 'ok');
     
+    // Redirect to login after a delay
     setTimeout(() => {
       window.location.href = '/';
     }, 2000);
   } catch (error) {
     showToast(error.message || 'Failed to reset instance', 'bad');
-    showRefreshStep(4);
+  } finally {
+    hideLoader();
   }
 }
 
@@ -2191,35 +1841,89 @@ function initSettingsTiles() {
   // Populate tile icons
   populateSettingsTileIcons();
   
-  // Reset tilesInitialized flag to allow re-initialization
-  tilesInitialized = false;
-  
   if (!tilesInitialized) {
-    // Add click handlers to tiles - use router navigation
+    // Add click handlers to tiles
     tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
       tile.addEventListener('click', () => {
         const section = tile.dataset.section;
-        if (section && window.Router && window.Router.navigate) {
-          window.Router.navigate(`settings/${section}`);
+        if (section) {
+          showSection(section);
         }
       });
     });
     
+    // Handle back button
+    if (backBtn) {
+      backBtn.addEventListener('click', () => {
+        showTiles();
+      });
+    }
+    
     tilesInitialized = true;
   }
   
-  // showSection is now only used internally for admin-specific logic
-  // Navigation is handled by router
-  function showSection(sectionName) {
-    // Only handle admin-specific logic here
-    if (sectionName === 'admin') {
-      if (window.AppState.user?.role === 'admin') {
-        loadUsers();
-      }
+  // Always show tiles by default when settings tab is activated
+  showTiles();
+  
+  function showTiles() {
+    // Show tiles grid
+    if (tilesGrid) tilesGrid.classList.remove('hidden');
+    // Hide back button
+    if (backContainer) backContainer.classList.add('hidden');
+    // Hide all sections
+    document.querySelectorAll('.settings-section-content').forEach(section => {
+      section.classList.add('hidden');
+    });
+    // Remove active state from all tiles
+    if (tilesGrid) {
+      tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
+        tile.classList.remove('active');
+      });
     }
   }
   
-  // Make showSection available globally for admin page initialization
+  function showSection(sectionName) {
+    // Hide tiles grid
+    if (tilesGrid) tilesGrid.classList.add('hidden');
+    // Show back button
+    if (backContainer) backContainer.classList.remove('hidden');
+    // Hide all sections
+    document.querySelectorAll('.settings-section-content').forEach(section => {
+      section.classList.add('hidden');
+    });
+    // Show target section
+    const targetSection = document.querySelector(`.settings-section-content[data-section="${sectionName}"]`);
+    if (targetSection) {
+      targetSection.classList.remove('hidden');
+      
+      // Update URL hash
+      window.location.hash = `#/settings/${sectionName}`;
+      
+      // Load users if admin section is shown
+      if (sectionName === 'admin') {
+        if (window.AppState.user?.role === 'admin') {
+          loadUsers();
+          // Explicitly show admin sections
+          const userMgmtSection = document.getElementById('userManagementSection');
+          const instanceRefreshSection = document.getElementById('instanceRefreshSection');
+          if (userMgmtSection) userMgmtSection.classList.remove('hidden');
+          if (instanceRefreshSection) instanceRefreshSection.classList.remove('hidden');
+        } else {
+          // Hide admin sections for non-admin users
+          document.getElementById('userManagementSection')?.classList.add('hidden');
+          document.getElementById('instanceRefreshSection')?.classList.add('hidden');
+        }
+      }
+    }
+    // Update active tile
+    if (tilesGrid) {
+      tilesGrid.querySelectorAll('.settings-tile').forEach(tile => {
+        tile.classList.toggle('active', tile.dataset.section === sectionName);
+      });
+    }
+  }
+  
+  // Make showSection available globally for other code
   window.showSettingsSection = showSection;
 }
 
@@ -2236,7 +1940,6 @@ function populateSettingsTileIcons() {
     storage: 'storage',
     ai: 'ai',
     content: 'contentManagement', // Note: icon name is contentManagement
-    calculator: 'calculator',
     admin: 'admin'
   };
   
@@ -2260,404 +1963,20 @@ function populateSettingsTileIcons() {
   });
 }
 
-/**
- * Populate AI service card icons
- */
-function populateAIServiceIcons() {
-  // Retry mechanism if Icons module not loaded yet
-  if (!window.Icons || !window.Icons.get) {
-    setTimeout(() => populateAIServiceIcons(), 100);
-    return;
-  }
-  
-  // Populate OpenAI icon
-  const openaiIcon = document.getElementById('aiServiceIconOpenai');
-  if (openaiIcon && !openaiIcon.innerHTML.trim()) {
-    const iconSvg = window.Icons.get('openai', 'icon');
-    if (iconSvg) {
-      openaiIcon.innerHTML = iconSvg;
-    }
-  }
-  
-  // Populate Stability AI icon (use image icon to represent image generation)
-  const stabilityIcon = document.getElementById('aiServiceIconStability');
-  if (stabilityIcon && !stabilityIcon.innerHTML.trim()) {
-    // Use 'stability' icon (image icon) for Stability AI to represent image generation
-    const iconSvg = window.Icons.get('stability', 'icon') || window.Icons.get('ai', 'icon');
-    if (iconSvg) {
-      stabilityIcon.innerHTML = iconSvg;
-    }
-  }
-}
-
-/**
- * Initialize Calculator
- * Loads stats and sets up calculator functionality
- */
-async function initCalculator() {
-  try {
-    await loadCalculatorStats();
-    initCalculatorForm();
-  } catch (error) {
-    console.error('Failed to initialize calculator:', error);
-  }
-}
-
-/**
- * Load calculator statistics
- */
-async function loadCalculatorStats() {
-  try {
-    // Try to get scheduled posts first
-    let gptCount = 0;
-    let imageCount = 0;
-    
-    try {
-      const scheduled = await API.posts.getScheduled();
-      if (scheduled && scheduled.posts && scheduled.posts.length > 0) {
-        gptCount = scheduled.posts.length;
-        imageCount = scheduled.posts.length * 3; // Assume 3 images per post
-      }
-    } catch (e) {
-      // Fallback to workflow stats
-      const stats = await API.workflow.getStats();
-      if (stats && stats.stats) {
-        gptCount = stats.stats.totalGenerations || 0;
-        imageCount = stats.stats.totalImages || 0;
-      }
-    }
-    
-    updateCalculatorDisplay(gptCount, imageCount);
-  } catch (error) {
-    console.error('Failed to load calculator stats:', error);
-  }
-}
-
-/**
- * Update calculator display with stats
- */
-function updateCalculatorDisplay(gptCount, imageCount) {
-  const CALC_CONSTANTS = {
-    GPT_ENERGY_PER_REQUEST: 0.03, // Wh
-    IMAGE_ENERGY_PER_IMAGE: 0.1, // Wh
-    CO2_PER_KWH: 0.4, // kg CO2 per kWh
-    CO2_PER_TREE_YEAR: 21 // kg CO2 per tree per year
-  };
-  
-  const gptEnergy = gptCount * CALC_CONSTANTS.GPT_ENERGY_PER_REQUEST;
-  const imageEnergy = imageCount * CALC_CONSTANTS.IMAGE_ENERGY_PER_IMAGE;
-  const totalEnergy = gptEnergy + imageEnergy;
-  const totalCO2 = (totalEnergy / 1000) * CALC_CONSTANTS.CO2_PER_KWH;
-  const treesNeeded = Math.ceil(totalCO2 / CALC_CONSTANTS.CO2_PER_TREE_YEAR);
-  
-  // Update display
-  const totalGenerations = gptCount + imageCount;
-  document.getElementById('calcTotalGenerations').textContent = totalGenerations;
-  document.getElementById('calcEnergyUsed').textContent = formatEnergy(totalEnergy);
-  document.getElementById('calcCO2Equivalent').textContent = totalCO2.toFixed(3) + ' kg';
-  document.getElementById('calcTreesOffset').textContent = treesNeeded;
-  document.getElementById('calcGptCount').textContent = gptCount;
-  document.getElementById('calcImageCount').textContent = imageCount;
-  document.getElementById('calcGptEnergy').textContent = formatEnergy(gptEnergy);
-  document.getElementById('calcImageEnergy').textContent = formatEnergy(imageEnergy);
-}
-
-/**
- * Format energy value
- */
-function formatEnergy(wh) {
-  if (wh < 1) return wh.toFixed(3) + ' Wh';
-  if (wh < 1000) return wh.toFixed(1) + ' Wh';
-  return (wh / 1000).toFixed(2) + ' kWh';
-}
-
-/**
- * Calculator constants (from OG)
- */
-const CALCULATOR_CONSTANTS = {
-  CO2_PER_POST_MIN: 3,      // grams
-  CO2_PER_POST_MAX: 13,     // grams
-  CO2_PER_POST_AVG: 8,      // grams (average)
-  WATER_PER_POST_MIN: 10,    // milliliters
-  WATER_PER_POST_MAX: 500,  // milliliters
-  WATER_PER_POST_AVG: 255,  // milliliters (average)
-  TREES_PER_POST: 0.000008,  // trees cut down per post (3 variations + images)
-  UAE_POPULATION: 10000000,  // 10 million
-  WORLD_POPULATION: 8000000000  // 8 billion
-};
-
-/**
- * Comparison constants for real-world comparisons
- */
-const COMPARISON_CONSTANTS = {
-  DRIVE_DUBAI_ABU_DHABI_CO2: 25000,  // 25 kg CO2 for 140km drive
-  STEAK_CO2: 5400,                    // 5.4 kg CO2 for 200g steak
-  TOWNHOUSE_ELECTRICITY_CO2_PER_YEAR: 1200000,  // 1,200 kg CO2 per year
-  CARBON_CREDIT_COST_PER_TONNE_USD: 20,  // $20 per tonne CO2 (average voluntary market, nature-based removal)
-  USD_TO_AED_RATE: 3.67  // 1 USD = 3.67 AED
-};
-
-/**
- * Formats a number with appropriate units and commas.
- */
-function formatImpact(value, type) {
-  if (type === 'CO2') {
-    if (value >= 1000) {
-      const kgValue = value / 1000;
-      return formatNumber(kgValue.toFixed(2)) + ' kg CO₂';
-    } else {
-      return value.toFixed(2) + ' g CO₂';
-    }
-  } else if (type === 'WATER') {
-    const litres = value / 1000;
-    if (litres >= 1) {
-      return formatNumber(litres.toFixed(2)) + ' L';
-    } else {
-      return litres.toFixed(3) + ' L';
-    }
-  } else if (type === 'TREES') {
-    if (value >= 1000000) {
-      return (value / 1000000).toFixed(2) + ' million trees';
-    } else if (value >= 1000) {
-      return (value / 1000).toFixed(2) + ' thousand trees';
-    } else if (value >= 1) {
-      return value.toFixed(3) + ' trees';
-    } else {
-      return value.toFixed(6) + ' trees';
-    }
-  }
-  return value.toString();
-}
-
-/**
- * Formats large numbers with commas.
- */
-function formatNumber(num) {
-  return new Intl.NumberFormat('en-US').format(num);
-}
-
-/**
- * Updates the calculator display with current values (from OG).
- */
-window.updateCalculator = function() {
-  const slider = document.getElementById('postsPerWeek');
-  const valueDisplay = document.getElementById('postsPerWeekValue');
-  
-  if (!slider || !valueDisplay) return;
-  
-  const postsPerWeek = parseInt(slider.value, 10);
-  valueDisplay.textContent = postsPerWeek;
-  
-  // Calculate individual impact
-  const postsPerDay = postsPerWeek / 7;
-  const postsPerMonth = postsPerWeek * 4.33; // Average weeks per month
-  const postsPerYear = postsPerWeek * 52;
-  
-  // CO2 calculations (using average 8g per post)
-  const co2PerDay = postsPerDay * CALCULATOR_CONSTANTS.CO2_PER_POST_AVG;
-  const co2PerMonth = postsPerMonth * CALCULATOR_CONSTANTS.CO2_PER_POST_AVG;
-  const co2PerYear = postsPerYear * CALCULATOR_CONSTANTS.CO2_PER_POST_AVG;
-  
-  // Water calculations (using average 255ml per post)
-  const waterPerDay = postsPerDay * CALCULATOR_CONSTANTS.WATER_PER_POST_AVG;
-  const waterPerMonth = postsPerMonth * CALCULATOR_CONSTANTS.WATER_PER_POST_AVG;
-  const waterPerYear = postsPerYear * CALCULATOR_CONSTANTS.WATER_PER_POST_AVG;
-  
-  // Tree calculations (using 0.000008 trees per post)
-  const treesPerDay = postsPerDay * CALCULATOR_CONSTANTS.TREES_PER_POST;
-  const treesPerMonth = postsPerMonth * CALCULATOR_CONSTANTS.TREES_PER_POST;
-  const treesPerYear = postsPerYear * CALCULATOR_CONSTANTS.TREES_PER_POST;
-  
-  // Update individual results
-  const resultDayCO2 = document.getElementById('resultDayCO2');
-  const resultDayWater = document.getElementById('resultDayWater');
-  const resultDayTrees = document.getElementById('resultDayTrees');
-  const resultMonthCO2 = document.getElementById('resultMonthCO2');
-  const resultMonthWater = document.getElementById('resultMonthWater');
-  const resultMonthTrees = document.getElementById('resultMonthTrees');
-  const resultYearCO2 = document.getElementById('resultYearCO2');
-  const resultYearWater = document.getElementById('resultYearWater');
-  const resultYearTrees = document.getElementById('resultYearTrees');
-  
-  if (resultDayCO2) resultDayCO2.textContent = formatImpact(co2PerDay, 'CO2');
-  if (resultDayWater) resultDayWater.textContent = formatImpact(waterPerDay, 'WATER');
-  if (resultDayTrees) resultDayTrees.textContent = formatImpact(treesPerDay, 'TREES');
-  if (resultMonthCO2) resultMonthCO2.textContent = formatImpact(co2PerMonth, 'CO2');
-  if (resultMonthWater) resultMonthWater.textContent = formatImpact(waterPerMonth, 'WATER');
-  if (resultMonthTrees) resultMonthTrees.textContent = formatImpact(treesPerMonth, 'TREES');
-  if (resultYearCO2) resultYearCO2.textContent = formatImpact(co2PerYear, 'CO2');
-  if (resultYearWater) resultYearWater.textContent = formatImpact(waterPerYear, 'WATER');
-  if (resultYearTrees) resultYearTrees.textContent = formatImpact(treesPerYear, 'TREES');
-  
-  // Calculate population impact (100% of population)
-  const uaeCO2PerYear = co2PerYear * CALCULATOR_CONSTANTS.UAE_POPULATION;
-  const uaeWaterPerYear = waterPerYear * CALCULATOR_CONSTANTS.UAE_POPULATION;
-  const uaeTreesPerYear = treesPerYear * CALCULATOR_CONSTANTS.UAE_POPULATION;
-  const worldCO2PerYear = co2PerYear * CALCULATOR_CONSTANTS.WORLD_POPULATION;
-  const worldWaterPerYear = waterPerYear * CALCULATOR_CONSTANTS.WORLD_POPULATION;
-  const worldTreesPerYear = treesPerYear * CALCULATOR_CONSTANTS.WORLD_POPULATION;
-  
-  // Update population results
-  const resultUAE_CO2 = document.getElementById('resultUAE_CO2');
-  const resultUAE_Water = document.getElementById('resultUAE_Water');
-  const resultUAE_Trees = document.getElementById('resultUAE_Trees');
-  const resultWorld_CO2 = document.getElementById('resultWorld_CO2');
-  const resultWorld_Water = document.getElementById('resultWorld_Water');
-  const resultWorld_Trees = document.getElementById('resultWorld_Trees');
-  
-  if (resultUAE_CO2) resultUAE_CO2.textContent = formatImpact(uaeCO2PerYear, 'CO2');
-  if (resultUAE_Water) resultUAE_Water.textContent = formatImpact(uaeWaterPerYear, 'WATER');
-  if (resultUAE_Trees) resultUAE_Trees.textContent = formatImpact(uaeTreesPerYear, 'TREES');
-  if (resultWorld_CO2) resultWorld_CO2.textContent = formatImpact(worldCO2PerYear, 'CO2');
-  if (resultWorld_Water) resultWorld_Water.textContent = formatImpact(worldWaterPerYear, 'WATER');
-  if (resultWorld_Trees) resultWorld_Trees.textContent = formatImpact(worldTreesPerYear, 'TREES');
-  
-  // Calculate and display comparison values
-  const drivesCount = co2PerYear / COMPARISON_CONSTANTS.DRIVE_DUBAI_ABU_DHABI_CO2;
-  const resultDrives = document.getElementById('resultDrives');
-  if (resultDrives) {
-    resultDrives.textContent = formatNumber(drivesCount.toFixed(1)) + ' drives';
-  }
-  
-  const steaksCount = co2PerYear / COMPARISON_CONSTANTS.STEAK_CO2;
-  const resultSteaks = document.getElementById('resultSteaks');
-  if (resultSteaks) {
-    resultSteaks.textContent = formatNumber(steaksCount.toFixed(1)) + ' steaks';
-  }
-  
-  const townhouseYears = co2PerYear / COMPARISON_CONSTANTS.TOWNHOUSE_ELECTRICITY_CO2_PER_YEAR;
-  const resultTownhouse = document.getElementById('resultTownhouse');
-  if (resultTownhouse) {
-    resultTownhouse.textContent = formatNumber(townhouseYears.toFixed(2)) + ' years';
-  }
-  
-  // Carbon credit costs
-  const tonnesCO2 = co2PerYear / 1000000; // Convert grams to tonnes
-  const usdCost = tonnesCO2 * COMPARISON_CONSTANTS.CARBON_CREDIT_COST_PER_TONNE_USD;
-  const aedCost = usdCost * COMPARISON_CONSTANTS.USD_TO_AED_RATE;
-  
-  const resultCarbonUSD = document.getElementById('resultCarbonUSD');
-  const resultCarbonAED = document.getElementById('resultCarbonAED');
-  
-  if (resultCarbonUSD) {
-    resultCarbonUSD.textContent = '$' + formatNumber(usdCost.toFixed(2));
-  }
-  if (resultCarbonAED) {
-    resultCarbonAED.textContent = 'د.إ ' + formatNumber(aedCost.toFixed(2));
-  }
-  
-  // Update comparison bar visualizations
-  updateComparisonBars(co2PerYear);
-};
-
-/**
- * Updates comparison bar visualizations
- */
-function updateComparisonBars(annualCO2) {
-  const drivesBar = document.getElementById('drivesBar');
-  const steaksBar = document.getElementById('steaksBar');
-  const townhouseBar = document.getElementById('townhouseBar');
-  
-  if (drivesBar) {
-    const drivesCount = annualCO2 / COMPARISON_CONSTANTS.DRIVE_DUBAI_ABU_DHABI_CO2;
-    const percentage = Math.min(100, (drivesCount / 10) * 100); // Scale: 10 drives = 100%
-    drivesBar.style.width = percentage + '%';
-  }
-  
-  if (steaksBar) {
-    const steaksCount = annualCO2 / COMPARISON_CONSTANTS.STEAK_CO2;
-    const percentage = Math.min(100, (steaksCount / 20) * 100); // Scale: 20 steaks = 100%
-    steaksBar.style.width = percentage + '%';
-  }
-  
-  if (townhouseBar) {
-    const townhouseYears = annualCO2 / COMPARISON_CONSTANTS.TOWNHOUSE_ELECTRICITY_CO2_PER_YEAR;
-    const percentage = Math.min(100, townhouseYears * 100); // Scale: 1 year = 100%
-    townhouseBar.style.width = percentage + '%';
-  }
-}
-
-/**
- * Initialize calculator form
- */
-function initCalculatorForm() {
-  const slider = document.getElementById('postsPerWeek');
-  const valueDisplay = document.getElementById('postsPerWeekValue');
-  
-  if (slider && valueDisplay) {
-    // Attach slider handlers
-    slider.addEventListener('input', () => {
-      if (typeof window.updateCalculator === 'function') {
-        window.updateCalculator();
-      }
-    });
-    
-    slider.addEventListener('change', () => {
-      if (typeof window.updateCalculator === 'function') {
-        window.updateCalculator();
-      }
-    });
-    
-    // Initial calculation
-    if (typeof window.updateCalculator === 'function') {
-      window.updateCalculator();
-    }
-  }
-}
-
-/**
- * Calculate manual impact
- */
-function calculateManualImpact(posts, variants, images) {
-  const CALC_CONSTANTS = {
-    GPT_ENERGY_PER_REQUEST: 0.03,
-    IMAGE_ENERGY_PER_IMAGE: 0.1,
-    CO2_PER_KWH: 0.4,
-    CO2_PER_TREE_YEAR: 21
-  };
-  
-  const gptRequests = posts * variants;
-  const totalImages = posts * images;
-  const gptEnergy = gptRequests * CALC_CONSTANTS.GPT_ENERGY_PER_REQUEST;
-  const imageEnergy = totalImages * CALC_CONSTANTS.IMAGE_ENERGY_PER_IMAGE;
-  const totalEnergy = gptEnergy + imageEnergy;
-  const totalCO2 = (totalEnergy / 1000) * CALC_CONSTANTS.CO2_PER_KWH;
-  const treesNeeded = Math.ceil(totalCO2 / CALC_CONSTANTS.CO2_PER_TREE_YEAR);
-  
-  // Show results
-  const resultsDiv = document.getElementById('calcManualResults');
-  if (resultsDiv) {
-    resultsDiv.style.display = 'block';
-    document.getElementById('calcManualEnergy').textContent = formatEnergy(totalEnergy);
-    document.getElementById('calcManualCO2').textContent = totalCO2.toFixed(3) + ' kg';
-    document.getElementById('calcManualTrees').textContent = treesNeeded;
-  }
-}
-
 function initPasswordVisibilityToggles() {
-  // Add toggle buttons to all password fields in settings pages
-  // Updated selector to work with separate HTML files loaded into mainContent
-  const passwordFields = document.querySelectorAll('.settings-container input[type="password"], .settings-section input[type="password"], #refreshAdminPassword');
+  // Add toggle buttons to all password fields in settings
+  const passwordFields = document.querySelectorAll('#settingsView input[type="password"]');
   
   passwordFields.forEach(field => {
     // Skip if already has a toggle
     if (field.parentElement.classList.contains('password-input-wrapper')) {
       const toggle = field.parentElement.querySelector('.password-toggle');
       if (toggle) {
-        // Remove existing listeners by cloning
-        const newToggle = toggle.cloneNode(true);
-        toggle.parentNode.replaceChild(newToggle, toggle);
-        newToggle.addEventListener('click', () => {
+        toggle.addEventListener('click', () => {
           const isPassword = field.type === 'password';
           field.type = isPassword ? 'text' : 'password';
-          if (window.Icons && window.Icons.get) {
-            newToggle.innerHTML = isPassword ? window.Icons.get('eyeSlash', 'password-toggle-icon') : window.Icons.get('eye', 'password-toggle-icon');
-          }
+          toggle.innerHTML = isPassword ? (window.Icons ? window.Icons.get('eyeSlash') : '👁️') : (window.Icons ? window.Icons.get('eye') : '👁️');
         });
-        // Initialize icon
-        if (window.Icons && window.Icons.get) {
-          newToggle.innerHTML = window.Icons.get('eye', 'password-toggle-icon');
-        }
       }
       return;
     }
@@ -2671,11 +1990,7 @@ function initPasswordVisibilityToggles() {
     toggle.type = 'button';
     toggle.className = 'password-toggle';
     toggle.setAttribute('aria-label', 'Toggle password visibility');
-    if (window.Icons && window.Icons.get) {
-      toggle.innerHTML = window.Icons.get('eye', 'password-toggle-icon');
-    } else {
-      toggle.innerHTML = '👁️';
-    }
+    toggle.innerHTML = window.Icons ? window.Icons.get('eye') : '👁️';
     
     // Wrap the field
     field.parentNode.insertBefore(wrapper, field);
@@ -2686,9 +2001,7 @@ function initPasswordVisibilityToggles() {
     toggle.addEventListener('click', () => {
       const isPassword = field.type === 'password';
       field.type = isPassword ? 'text' : 'password';
-      if (window.Icons && window.Icons.get) {
-        toggle.innerHTML = isPassword ? window.Icons.get('eyeSlash', 'password-toggle-icon') : window.Icons.get('eye', 'password-toggle-icon');
-      }
+      toggle.innerHTML = isPassword ? (window.Icons ? window.Icons.get('eyeSlash') : '👁️') : (window.Icons ? window.Icons.get('eye') : '👁️');
     });
   });
 }
@@ -2703,10 +2016,11 @@ function initSettingsModule() {
   initStorageSettings();
   initPostEditModal();
   initCsvButtons();
+  initBulkDelete();
   initUserEditModal();
   initClearInstanceOptions();
-  initCalculatorForm();
   initInstanceRefreshWorkflow();
+  initCalculatorForm();
 }
 
 // Initialize on DOM ready
@@ -2714,7 +2028,3 @@ document.addEventListener('DOMContentLoaded', initSettingsModule);
 
 // Make functions globally available
 window.loadSettings = loadSettings;
-window.initCalculator = initCalculator;
-window.updateCalculator = window.updateCalculator; // Already defined above
-window.loadUsers = loadUsers;
-window.initUserEditModal = initUserEditModal;

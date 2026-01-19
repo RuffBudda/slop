@@ -66,14 +66,14 @@ router.get('/', (req, res) => {
 });
 
 /**
- * Get content for review (status = 'generated')
+ * Get content for review (status = 'Generated – Pending Review' or 'generated')
  * GET /api/posts/content
  */
 router.get('/content', async (req, res) => {
   try {
     const posts = db.prepare(`
       SELECT * FROM posts 
-      WHERE status = 'generated'
+      WHERE status = 'Generated – Pending Review' OR status = 'generated'
       ORDER BY created_at DESC
     `).all();
 
@@ -139,7 +139,7 @@ router.get('/calendar', (req, res) => {
 
     let query = `
       SELECT * FROM posts 
-      WHERE status = 'Approved'
+      WHERE status = 'Approved & Posted' OR status = 'Approved'
     `;
     const params = [];
 
@@ -442,17 +442,27 @@ router.post('/:id/approve', (req, res) => {
       finalImg = post.additional_img;
     }
 
+    // Verify post is in "Generated – Pending Review" status
+    if (post.status !== 'Generated – Pending Review' && post.status !== 'generated') {
+      return res.status(400).json({ error: 'Can only approve posts that are pending review' });
+    }
+    
+    const { checkAutomaticReset } = require('../services/workflowService');
+    
     db.prepare(`
       UPDATE posts SET 
         choice = ?,
         img_choice = ?,
         post_schedule = ?,
-        status = 'Approved',
+        status = 'Approved & Posted',
         final_content = ?,
         final_img = ?,
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(choice, imgChoice, schedule, finalContent, finalImg, id);
+
+    // Check for automatic reset after approval
+    checkAutomaticReset();
 
     res.json({ success: true, message: 'Post approved' });
 
@@ -469,6 +479,16 @@ router.post('/:id/approve', (req, res) => {
 router.post('/:id/reject', (req, res) => {
   try {
     const { id } = req.params;
+    
+    const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(id);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    
+    // Verify post is in "Generated – Pending Review" status
+    if (post.status !== 'Generated – Pending Review' && post.status !== 'generated') {
+      return res.status(400).json({ error: 'Can only reject posts that are pending review' });
+    }
 
     db.prepare(`
       UPDATE posts SET 
@@ -486,16 +506,46 @@ router.post('/:id/reject', (req, res) => {
 });
 
 /**
- * Restore post (from rejected to generated)
+ * Regenerate post (backend_working.md spec - regenerate rejected posts)
+ * POST /api/posts/:id/regenerate
+ */
+router.post('/:id/regenerate', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { regeneratePost } = require('../services/workflowService');
+    
+    const result = await regeneratePost(req.user.id, parseInt(id));
+    
+    res.json({ success: true, message: result.message || 'Post regenerated successfully' });
+
+  } catch (error) {
+    console.error('Regenerate post error:', error);
+    res.status(400).json({ error: error.message || 'Failed to regenerate post' });
+  }
+});
+
+/**
+ * Restore post (from rejected to generated) - kept for backward compatibility
  * POST /api/posts/:id/restore
+ * Note: Consider using /regenerate instead
  */
 router.post('/:id/restore', (req, res) => {
   try {
     const { id } = req.params;
+    
+    const post = db.prepare('SELECT * FROM posts WHERE id = ?').get(id);
+    if (!post) {
+      return res.status(404).json({ error: 'Post not found' });
+    }
+    
+    // Only allow restoring rejected posts
+    if (post.status !== 'Rejected') {
+      return res.status(400).json({ error: 'Can only restore rejected posts' });
+    }
 
     db.prepare(`
       UPDATE posts SET 
-        status = 'generated',
+        status = 'Generated – Pending Review',
         updated_at = CURRENT_TIMESTAMP
       WHERE id = ?
     `).run(id);
@@ -743,7 +793,10 @@ router.get('/generation-status', (req, res) => {
  */
 router.get('/has-generated', (req, res) => {
   try {
-    const generatedCount = db.prepare("SELECT COUNT(*) as count FROM posts WHERE status = 'generated'").get();
+    const generatedCount = db.prepare(`
+      SELECT COUNT(*) as count FROM posts 
+      WHERE status = 'Generated – Pending Review' OR status = 'generated'
+    `).get();
     
     res.json({
       hasGenerated: generatedCount.count > 0,

@@ -58,7 +58,7 @@ CREATE TABLE IF NOT EXISTS posts (
   purpose TEXT,
   sample TEXT,
   keywords TEXT,
-  status TEXT DEFAULT NULL CHECK(status IN (NULL, 'Queue', 'generated', 'Approved', 'Rejected', 'Posted')),
+  status TEXT DEFAULT 'Not Started' CHECK(status IN ('Not Started', 'Generated – Pending Review', 'Approved & Posted', 'Rejected', 'Queue', 'generated', 'Approved', 'Posted', NULL)),
   variant_1 TEXT,
   variant_2 TEXT,
   variant_3 TEXT,
@@ -117,6 +117,38 @@ try {
   if (!columnNames.includes('identification')) {
     db.exec('ALTER TABLE posts ADD COLUMN identification TEXT');
     console.log('✓ Added identification column to posts table');
+  }
+  
+  // Migrate status values to new system (backend_working.md specification)
+  // NULL or empty -> 'Not Started'
+  // 'generated' -> 'Generated – Pending Review'
+  // 'Approved' or 'Posted' -> 'Approved & Posted'
+  // 'Rejected' -> 'Rejected' (no change)
+  // 'Queue' -> 'Not Started' (reset queued items)
+  try {
+    db.prepare(`
+      UPDATE posts 
+      SET status = CASE
+        WHEN status IS NULL OR status = '' THEN 'Not Started'
+        WHEN status = 'generated' THEN 'Generated – Pending Review'
+        WHEN status = 'Approved' OR status = 'Posted' THEN 'Approved & Posted'
+        WHEN status = 'Queue' THEN 'Not Started'
+        WHEN status = 'Rejected' THEN 'Rejected'
+        ELSE status
+      END
+      WHERE status IS NOT NULL AND (status != 'Not Started' 
+        AND status != 'Generated – Pending Review' 
+        AND status != 'Approved & Posted'
+        AND status != 'Rejected')
+    `).run();
+    
+    // Set NULL statuses to 'Not Started'
+    db.prepare(`UPDATE posts SET status = 'Not Started' WHERE status IS NULL`).run();
+    
+    console.log('✓ Migrated post statuses to new system');
+  } catch (migrationError) {
+    // Migration already done or constraint issue - ignore
+    console.log('Status migration skipped (may already be done)');
   }
 } catch (error) {
   console.error('Migration error:', error);

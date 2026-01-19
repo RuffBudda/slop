@@ -9,7 +9,7 @@
     
     <!-- Sheet Management Section -->
     <section class="settings-section">
-      <p class="section-description">Add and manage content ideas. These will be processed during content generation.</p>
+      <p class="section-description">Add and manage content generation instructions. Configure your post templates, instructions, and keywords here. These instructions will be used to generate LinkedIn posts. Generated content appears in the Content tab.</p>
       
       <div class="sheet-toolbar">
         <button class="btn approve" id="btnAddPost">
@@ -21,12 +21,16 @@
         <button class="btn clear" id="btnExportPosts">
           Export CSV
         </button>
+        <button class="btn reject" id="btnBulkDelete" style="display: none;">
+          <span class="ico"></span> Delete Selected
+        </button>
       </div>
       
       <div class="sheet-container" id="sheetContainer">
         <table class="sheet-table" id="sheetTable">
           <thead>
             <tr>
+              <th class="col-select"><input type="checkbox" id="selectAllPosts" title="Select All"></th>
               <th class="col-id">ID</th>
               <th class="col-identification">Identification</th>
               <th class="col-instruction">Instruction</th>

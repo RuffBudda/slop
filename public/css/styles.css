@@ -110,6 +110,7 @@ a {
   align-items: center;
   gap: 8px;
   order: 3;
+  margin-left: auto;
 }
 
 .brand {

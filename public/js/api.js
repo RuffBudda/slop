@@ -272,7 +272,7 @@ const API = {
     },
     
     async bulkDelete(ids) {
-      return API.call('/posts/bulk', { method: 'DELETE', body: { ids } });
+      return API.call('/posts/bulk-delete', { method: 'POST', body: { ids } });
     },
     
     async getByStatus(status, page = 1, limit = 50) {

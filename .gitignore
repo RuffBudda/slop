@@ -43,3 +43,6 @@ OG/
 DEPLOYMENT.md
 # SERVER_UPDATE.md - uncomment to ignore local changes
 # SERVER_UPDATE.md
+
+# Backend specification
+backend_working.md
